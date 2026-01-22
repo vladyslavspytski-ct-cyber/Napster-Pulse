@@ -72,9 +72,14 @@ const Header = ({ isLoggedIn = false, onLogout }: HeaderProps) => {
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-3">
               {isLoggedIn ? (
-                <Button variant="outline" size="sm" onClick={onLogout}>
-                  Log out
-                </Button>
+                <>
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href="/dashboard">Dashboard</a>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={onLogout}>
+                    Log out
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => openAuthModal("login")}>
@@ -121,9 +126,14 @@ const Header = ({ isLoggedIn = false, onLogout }: HeaderProps) => {
                 </a>
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (
-                    <Button variant="outline" size="sm" className="flex-1" onClick={onLogout}>
-                      Log out
-                    </Button>
+                    <>
+                      <Button variant="ghost" size="sm" className="flex-1" asChild>
+                        <a href="/dashboard">Dashboard</a>
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={onLogout}>
+                        Log out
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login")}>

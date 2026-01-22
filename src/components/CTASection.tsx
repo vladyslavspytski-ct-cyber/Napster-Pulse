@@ -15,8 +15,8 @@ const CTASection = () => {
               <Mic className="w-8 h-8 text-primary-foreground" />
             </div>
             
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-primary-foreground mb-6 tracking-tight">
-              Ready to <span className="text-white/90 underline decoration-white/30 underline-offset-4">transform</span> your interviews?
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4">
+              Ready to transform your interviews?
             </h2>
             
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8">

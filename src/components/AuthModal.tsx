@@ -20,6 +20,11 @@ interface AuthModalProps {
 const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthModalProps) => {
   const [activeTab, setActiveTab] = useState<"login" | "signup">(defaultTab);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // Test credentials
+  const TEST_EMAIL = "testuser@example.com";
+  const TEST_PASSWORD = "password123";
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -33,13 +38,20 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError("");
     
-    // Simulate login - replace with actual auth logic later
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    setIsLoading(false);
-    onSuccess?.();
-    onClose();
+    // Validate against test credentials
+    if (loginEmail === TEST_EMAIL && loginPassword === TEST_PASSWORD) {
+      setIsLoading(false);
+      onSuccess?.();
+      onClose();
+    } else {
+      setIsLoading(false);
+      setLoginError("Invalid email or password");
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -60,6 +72,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
     setSignupName("");
     setSignupEmail("");
     setSignupPassword("");
+    setLoginError("");
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -117,6 +130,11 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
         <div className="p-6 pt-4">
           {activeTab === "login" ? (
             <form onSubmit={handleLogin} className="space-y-4">
+              {loginError && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                  {loginError}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="login-email" className="text-sm font-medium">
                   Email
@@ -126,7 +144,10 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   type="email"
                   placeholder="name@example.com"
                   value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    setLoginError("");
+                  }}
                   required
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
@@ -140,7 +161,10 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   type="password"
                   placeholder="••••••••"
                   value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onChange={(e) => {
+                    setLoginPassword(e.target.value);
+                    setLoginError("");
+                  }}
                   required
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />

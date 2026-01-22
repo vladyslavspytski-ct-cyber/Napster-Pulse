@@ -74,8 +74,8 @@ const HowItWorksSection = () => {
           <span className="inline-block px-4 py-2 rounded-full bg-interu-blue-light text-primary text-sm font-medium mb-4">
             How it works
           </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Four simple steps to better interviews
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground mb-6 tracking-tight">
+            Four simple steps to <span className="text-primary">better interviews</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             From creation to insights in minutes. Our streamlined process makes voice-based interviews effortless.

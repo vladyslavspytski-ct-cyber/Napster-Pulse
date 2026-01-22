@@ -1,7 +1,11 @@
 import { ArrowRight, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const CTASection = () => {
+interface CTASectionProps {
+  onCreateInterview?: () => void;
+}
+
+const CTASection = ({ onCreateInterview }: CTASectionProps) => {
   return (
     <section className="py-20 md:py-32 bg-card">
       <div className="section-container">
@@ -27,6 +31,7 @@ const CTASection = () => {
               <Button 
                 size="lg" 
                 className="bg-white text-primary hover:bg-white/90 text-base h-12 px-8 group"
+                onClick={onCreateInterview}
               >
                 Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />

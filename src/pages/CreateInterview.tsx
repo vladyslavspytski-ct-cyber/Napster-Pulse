@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mic, MicOff, Trash2, Pencil, Copy, Check, Plus } from "lucide-react";
+import { Mic, MicOff, Trash2, Pencil, Copy, Check, Plus, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,14 +88,18 @@ const CreateInterview = () => {
   };
 
   const handleGenerateLink = () => {
-    // Placeholder link generation (will be replaced with actual logic)
-    const uniqueId = Math.random().toString(36).substring(2, 10);
-    const link = `https://interu.app/interview/${uniqueId}`;
+    const token = Math.random().toString(36).substring(2, 10);
+    const origin = window.location.origin;
+    const link = `${origin}/i/${token}`;
     setGeneratedLink(link);
     toast({
       title: "Link generated!",
       description: "Your interview link is ready to share.",
     });
+  };
+
+  const handleOpenLink = () => {
+    window.open(generatedLink, "_blank");
   };
 
   const handleCopyLink = async () => {
@@ -278,6 +282,9 @@ const CreateInterview = () => {
                 </Button>
               ) : (
                 <div className="space-y-4">
+                  <label className="text-sm font-medium text-foreground">
+                    Public Interview Link
+                  </label>
                   <div className="flex gap-2">
                     <Input
                       value={generatedLink}
@@ -289,12 +296,22 @@ const CreateInterview = () => {
                       variant="outline"
                       size="icon"
                       className="shrink-0"
+                      title="Copy link"
                     >
                       {isCopied ? (
                         <Check className="h-4 w-4 text-primary" />
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
+                    </Button>
+                    <Button
+                      onClick={handleOpenLink}
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      title="Open link"
+                    >
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground text-center">

@@ -3,12 +3,8 @@ import { Mic, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AuthModal from "@/components/AuthModal";
 
-interface HeaderProps {
-  isLoggedIn?: boolean;
-  onLogout?: () => void;
-}
-
-const Header = ({ isLoggedIn = false, onLogout }: HeaderProps) => {
+const Header = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "signup">("login");
@@ -28,8 +24,13 @@ const Header = ({ isLoggedIn = false, onLogout }: HeaderProps) => {
   };
 
   const handleAuthSuccess = () => {
-    // Handle successful auth - can add navigation or state updates here
-    console.log("Auth successful");
+    setIsLoggedIn(true);
+    console.log("Auth successful - user logged in");
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    console.log("User logged out");
   };
 
   return (
@@ -76,7 +77,7 @@ const Header = ({ isLoggedIn = false, onLogout }: HeaderProps) => {
                   <Button variant="ghost" size="sm" asChild>
                     <a href="/dashboard">Dashboard</a>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={onLogout}>
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
                     Log out
                   </Button>
                 </>
@@ -130,7 +131,7 @@ const Header = ({ isLoggedIn = false, onLogout }: HeaderProps) => {
                       <Button variant="ghost" size="sm" className="flex-1" asChild>
                         <a href="/dashboard">Dashboard</a>
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1" onClick={onLogout}>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
                         Log out
                       </Button>
                     </>

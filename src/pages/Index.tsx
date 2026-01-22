@@ -10,31 +10,21 @@ import AuthModal from "@/components/AuthModal";
 const Index = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "signup">("signup");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleCreateInterview = () => {
-    if (!isLoggedIn) {
-      setAuthModalTab("signup");
-      setIsAuthModalOpen(true);
-    } else {
-      // Navigate to create interview page when logged in
-      window.location.href = "/create-interview";
-    }
+    // For now, open signup modal - Header manages its own auth state
+    setAuthModalTab("signup");
+    setIsAuthModalOpen(true);
   };
 
   const handleAuthSuccess = () => {
-    setIsLoggedIn(true);
     // After auth, redirect to create interview
     window.location.href = "/create-interview";
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      <Header />
       <main>
         <HeroSection onCreateInterview={handleCreateInterview} />
         <HowItWorksSection />

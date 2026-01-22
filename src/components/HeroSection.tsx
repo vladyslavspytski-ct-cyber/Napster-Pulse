@@ -1,7 +1,11 @@
 import { ArrowRight, Play, Mic, BarChart3, Users, TrendingUp, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  onCreateInterview?: () => void;
+}
+
+const HeroSection = ({ onCreateInterview }: HeroSectionProps) => {
   return (
     <section className="relative min-h-screen hero-gradient overflow-hidden">
       {/* Background Decorations */}
@@ -31,7 +35,11 @@ const HeroSection = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="lg" className="btn-gradient border-0 text-base h-12 px-8 group">
+              <Button 
+                size="lg" 
+                className="btn-gradient border-0 text-base h-12 px-8 group"
+                onClick={onCreateInterview}
+              >
                 Create Interview
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Button>

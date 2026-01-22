@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Mic, MicOff, Trash2, Pencil, Copy, Check, ArrowLeft, Plus } from "lucide-react";
+import { Mic, MicOff, Trash2, Pencil, Copy, Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 interface Question {
   id: string;
@@ -114,24 +116,10 @@ const CreateInterview = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass-card border-b border-border/50">
-        <div className="section-container py-4">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/dashboard" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </a>
-            </Button>
-            <h1 className="text-lg font-semibold text-foreground">Create Interview</h1>
-            <div className="w-24" /> {/* Spacer for centering */}
-          </div>
-        </div>
-      </header>
-
-      <main className="section-container py-8 md:py-12">
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      
+      <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28">
         <div className="max-w-2xl mx-auto space-y-8">
           {/* Interview Name Section */}
           <Card className="glass-card border-border/50 animate-fade-up">
@@ -339,6 +327,8 @@ const CreateInterview = () => {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };

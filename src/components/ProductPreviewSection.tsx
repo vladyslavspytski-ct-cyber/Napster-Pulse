@@ -41,8 +41,8 @@ const ProductPreviewSection = () => {
           <span className="inline-block px-4 py-2 rounded-full bg-interu-coral-light text-accent text-sm font-medium mb-4">
             Product Preview
           </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Powerful insights at your fingertips
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground mb-6 tracking-tight">
+            Powerful insights <span className="text-primary">at your fingertips</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Experience a dashboard designed for clarity. Get actionable insights from every interview.

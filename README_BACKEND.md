@@ -23,6 +23,7 @@ This project follows Clean Architecture principles with the following layers:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ELEVENLABS_API_KEY` | ElevenLabs API key (required for connection URL generation) | - |
+| `ELEVENLABS_AGENT_ID` | ElevenLabs Agent ID for conversation | default |
 | `PGHOST` | PostgreSQL host | localhost |
 | `PGPORT` | PostgreSQL port | 5432 |
 | `PGUSER` | PostgreSQL user | postgres |

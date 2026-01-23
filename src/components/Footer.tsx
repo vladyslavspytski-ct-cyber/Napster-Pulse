@@ -5,7 +5,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-card border-t border-border">
-      <div className="section-container py-12 md:py-16">
+      <div className="section-container py-10 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="md:col-span-2">

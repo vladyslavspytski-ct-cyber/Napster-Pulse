@@ -10,6 +10,8 @@ import {
   Sparkles,
   Share2
 } from "lucide-react";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Button } from "@/components/ui/button";
 
 const ProductPreviewSection = () => {
@@ -63,14 +65,14 @@ const ProductPreviewSection = () => {
                 <p className="text-sm text-muted-foreground">Welcome back! Here's your interview overview.</p>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" size="sm" className="gap-2">
+                <SecondaryButton size="sm" className="gap-2">
                   <Share2 className="w-4 h-4" />
                   Share
-                </Button>
-                <Button size="sm" className="btn-gradient border-0 gap-2">
+                </SecondaryButton>
+                <PrimaryButton size="sm" className="gap-2">
                   <Mic className="w-4 h-4" />
                   New Interview
-                </Button>
+                </PrimaryButton>
               </div>
             </div>
 

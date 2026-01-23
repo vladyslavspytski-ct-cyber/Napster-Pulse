@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Mic, MicOff, Trash2, Pencil, Copy, Check, Plus, ExternalLink } from "lucide-react";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,29 +155,26 @@ const CreateInterview = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
+                <PrimaryButton
                   size="lg"
                   onClick={handleStartRecording}
                   disabled={isRecording}
-                  className={`btn-gradient gap-2 transition-all duration-300 ${
-                    isRecording ? "opacity-50" : "hover:scale-105"
-                  }`}
+                  className={`gap-2 ${isRecording ? "opacity-50" : ""}`}
                 >
                   <Mic className="h-5 w-5" />
                   Start Recording
-                </Button>
-                <Button
+                </PrimaryButton>
+                <SecondaryButton
                   size="lg"
-                  variant="outline"
                   onClick={handleStopRecording}
                   disabled={!isRecording}
-                  className={`gap-2 transition-all duration-300 ${
-                    !isRecording ? "opacity-50" : "hover:scale-105 border-destructive text-destructive"
+                  className={`gap-2 ${
+                    !isRecording ? "opacity-50" : "border-destructive text-destructive"
                   }`}
                 >
                   <MicOff className="h-5 w-5" />
                   Stop Recording
-                </Button>
+                </SecondaryButton>
               </div>
               {isRecording && (
                 <div className="flex items-center justify-center gap-2 text-primary animate-pulse">
@@ -272,14 +271,14 @@ const CreateInterview = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {!generatedLink ? (
-                <Button
+                <PrimaryButton
                   onClick={handleGenerateLink}
                   disabled={questions.length === 0}
-                  className="w-full btn-gradient"
+                  className="w-full"
                   size="lg"
                 >
                   Generate Public Link
-                </Button>
+                </PrimaryButton>
               ) : (
                 <div className="space-y-4">
                   <label className="text-sm font-medium text-foreground">

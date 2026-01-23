@@ -13,9 +13,7 @@ const Footer = () => {
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary">
                 <Mic className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-semibold text-foreground tracking-tight">
-                Interu
-              </span>
+              <span className="text-xl font-semibold text-foreground tracking-tight">Interu</span>
             </a>
             <p className="text-sm text-muted-foreground max-w-sm">
               Create and participate in voice-based interviews. Easy, fast, and insightful.
@@ -27,20 +25,26 @@ const Footer = () => {
             <h4 className="text-sm font-semibold text-foreground mb-4">Product</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a
+                  href="#how-it-works"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   How it works
                 </a>
               </li>
               <li>
-                <a href="#product-preview" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a
+                  href="#product-preview"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Features
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Pricing
                 </a>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -69,9 +73,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground text-center">
-            © {currentYear} Interu. All rights reserved.
-          </p>
+          <p className="text-sm text-muted-foreground text-center">© {currentYear} Interu. All rights reserved.</p>
         </div>
       </div>
     </footer>

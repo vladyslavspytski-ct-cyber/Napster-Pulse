@@ -31,7 +31,7 @@ const CTASection = ({ onCreateInterview }: CTASectionProps) => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <PrimaryButton 
                 size="lg" 
-                className="bg-white text-primary hover:bg-white/90 text-base h-12 px-8 group"
+                className="!bg-white !text-primary hover:!bg-white/90 !border-0 shadow-lg shadow-black/20 text-base h-12 px-8 group"
                 onClick={onCreateInterview}
               >
                 Get Started Free
@@ -39,7 +39,7 @@ const CTASection = ({ onCreateInterview }: CTASectionProps) => {
               </PrimaryButton>
               <SecondaryButton 
                 size="lg" 
-                className="border-white/30 text-primary-foreground hover:bg-white/10 text-base h-12 px-8"
+                className="!border-white !text-white hover:!bg-white/15 !bg-transparent text-base h-12 px-8"
               >
                 Schedule Demo
               </SecondaryButton>

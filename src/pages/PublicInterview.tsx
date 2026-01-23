@@ -107,7 +107,7 @@ const PublicInterview = () => {
       <Header />
 
       <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28 flex items-center justify-center">
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-[550px]">
           {/* Debug token display */}
           {token && (
             <motion.p
@@ -128,7 +128,7 @@ const PublicInterview = () => {
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <Card className="glass-card border-border/50 min-h-[550px] flex flex-col">
+                <Card className="glass-card border-border/50">
                   <CardHeader className="text-center pb-2">
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -149,7 +149,7 @@ const PublicInterview = () => {
                       </CardDescription>
                     </motion.div>
                   </CardHeader>
-                  <CardContent className="pt-6 flex-1 flex flex-col justify-center">
+                  <CardContent className="pt-6">
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
@@ -266,8 +266,8 @@ const PublicInterview = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
-                <Card className="glass-card border-border/50 overflow-hidden min-h-[550px] flex flex-col">
-                  <CardContent className="p-8 md:p-12 flex-1 flex flex-col justify-center">
+                <Card className="glass-card border-border/50 overflow-hidden">
+                  <CardContent className="p-8 md:p-12">
                     <div className="flex flex-col items-center space-y-8">
                       {/* Agent Avatar/Orb */}
                       <div className="relative">

@@ -1,0 +1,83 @@
+DO NOT MODIFY CURRENT FILES and add a backend service in Go (Golang) using Clean Architecture.
+
+General requirements:
+- Language: Go
+- Architecture: Clean Architecture
+- HTTP API
+- Database: PostgreSQL
+- Code should be separated into layers: entities, use cases, repositories, and delivery.
+- The ElevenLabs API key should NEVER be shared with the front-end.
+
+--------------------------------------------------
+
+Environment variables:
+
+- ELEVENLABS_API_KEY — ElevenLabs API key
+- DB_HOST
+- DB_PORT
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+- SERVER_PORT
+
+--------------------------------------------------
+
+Project structure:
+
+/cmd/api/main.go
+/internal/
+/entities
+Connection.Go
+/usages
+get_connection_url.go
+/repositories
+Connection_repository.go
+postgres/
+Connection_repository.go
+/delivery
+/http
+handler.go
+router.go
+/infrastructure
+postgres.go
+elevenlabs.go
+
+/migrations
+001_init.sql
+
+--------------------------------------------------
+
+Functional requirements:
+
+1. ELEVENLABS_API_KEY should be taken ONLY from the SSL environment.
+2. PostgreSQL is used to store data in requests/logs (without keys).
+3. For an HTTP request from the frontend:
+- The backend uses ELEVENLABS_API_KEY.
+- Generates a connection URL/websocket URL for ElevenLabs.
+- Returns the connection URL to the frontend ONLY.
+
+4. The frontend should not have access to the API key.
+5. The logic for generating the connection URL should be in the use case, not in the handler.
+6. Work with PostgreSQL should be encapsulated in the repository.
+7. The HTTP layer should not know the details of the ElevenLabs API.
+8. Add a simple health check endpoint (/health).
+
+-------------------------------------------------
+
+DB Migration (PostgreSQL):
+
+Create a SQL file for the tables:
+- Connection_requests
+- identifier (uuid)
+- created_at (timestamp)
+- client_ip (text)
+
+--------------------------------------------------
+
+Additional:
+
+- Add a README.md with instructions for running in Replit
+- Add a sample curl query
+- The code should be tested, readable, and ready to run.
+
+The result should be a fully functional project.

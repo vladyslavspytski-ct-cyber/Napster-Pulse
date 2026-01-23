@@ -1,5 +1,7 @@
 import { ArrowRight, Play, Mic, BarChart3, Users, TrendingUp, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 
 interface HeroSectionProps {
   onCreateInterview?: () => void;
@@ -35,18 +37,18 @@ const HeroSection = ({ onCreateInterview }: HeroSectionProps) => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button 
+              <PrimaryButton 
                 size="lg" 
-                className="btn-gradient border-0 text-base h-12 px-8 group"
+                className="text-base h-12 px-8 group"
                 onClick={onCreateInterview}
               >
                 Create Interview
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-              <Button variant="outline" size="lg" className="text-base h-12 px-8 group">
+              </PrimaryButton>
+              <SecondaryButton size="lg" className="text-base h-12 px-8 group">
                 <Play className="mr-2 w-5 h-5" />
                 Watch Demo
-              </Button>
+              </SecondaryButton>
             </div>
             
             {/* Stats */}

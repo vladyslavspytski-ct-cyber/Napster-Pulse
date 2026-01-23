@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mic } from "lucide-react";
@@ -169,13 +169,13 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
               </div>
-              <Button
+              <PrimaryButton
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 btn-gradient border-0 font-medium"
+                className="w-full h-11 font-medium"
               >
                 {isLoading ? "Logging in..." : "Log in"}
-              </Button>
+              </PrimaryButton>
             </form>
           ) : (
             <form onSubmit={handleSignup} className="space-y-4">
@@ -221,13 +221,13 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
               </div>
-              <Button
+              <PrimaryButton
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 btn-gradient border-0 font-medium"
+                className="w-full h-11 font-medium"
               >
                 {isLoading ? "Creating account..." : "Create account"}
-              </Button>
+              </PrimaryButton>
             </form>
           )}
 

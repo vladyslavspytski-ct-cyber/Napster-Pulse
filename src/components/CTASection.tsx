@@ -1,5 +1,6 @@
 import { ArrowRight, Mic } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { SecondaryButton } from "@/components/ui/SecondaryButton";
 
 interface CTASectionProps {
   onCreateInterview?: () => void;
@@ -28,21 +29,20 @@ const CTASection = ({ onCreateInterview }: CTASectionProps) => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
+              <PrimaryButton 
                 size="lg" 
                 className="bg-white text-primary hover:bg-white/90 text-base h-12 px-8 group"
                 onClick={onCreateInterview}
               >
                 Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-              <Button 
-                variant="outline" 
+              </PrimaryButton>
+              <SecondaryButton 
                 size="lg" 
                 className="border-white/30 text-primary-foreground hover:bg-white/10 text-base h-12 px-8"
               >
                 Schedule Demo
-              </Button>
+              </SecondaryButton>
             </div>
             
             <p className="text-sm text-primary-foreground/60 mt-6">

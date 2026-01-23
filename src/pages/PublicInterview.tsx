@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Phone, PhoneOff } from "lucide-react";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -248,12 +249,12 @@ const PublicInterview = () => {
                         transition={{ delay: 0.6 }}
                         className="pt-4"
                       >
-                        <Button
+                        <PrimaryButton
                           type="submit"
-                          className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                          className="w-full h-12 text-base font-medium"
                         >
                           Start interview
-                        </Button>
+                        </PrimaryButton>
                       </motion.div>
                     </form>
                   </CardContent>
@@ -387,13 +388,13 @@ const PublicInterview = () => {
                             animate={{ opacity: 1, y: 0 }}
                             className="w-full"
                           >
-                            <Button
+                            <PrimaryButton
                               onClick={handleStartCall}
-                              className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                              className="w-full h-12 text-base font-medium"
                             >
                               <Phone className="mr-2 h-5 w-5" />
                               Start interview
-                            </Button>
+                            </PrimaryButton>
                           </motion.div>
                         )}
 

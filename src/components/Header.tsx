@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Mic, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import AuthModal from "@/components/AuthModal";
 
 const Header = () => {
@@ -86,9 +87,9 @@ const Header = () => {
                   <Button variant="ghost" size="sm" onClick={() => openAuthModal("login")}>
                     Log in
                   </Button>
-                  <Button size="sm" className="btn-gradient border-0" onClick={() => openAuthModal("signup")}>
+                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup")}>
                     Sign up
-                  </Button>
+                  </PrimaryButton>
                 </>
               )}
             </div>
@@ -140,9 +141,9 @@ const Header = () => {
                       <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login")}>
                         Log in
                       </Button>
-                      <Button size="sm" className="flex-1 btn-gradient border-0" onClick={() => openAuthModal("signup")}>
+                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup")}>
                         Sign up
-                      </Button>
+                      </PrimaryButton>
                     </>
                   )}
                 </div>

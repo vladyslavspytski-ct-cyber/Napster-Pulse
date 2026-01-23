@@ -35,7 +35,7 @@ const CTASection = ({ onCreateInterview }: CTASectionProps) => {
                 className="!text-white hover:!bg-white/90 !border-0 shadow-lg shadow-black/20 text-base h-12 px-8 group"
                 onClick={onCreateInterview}
               >
-                Get Started Free TEST
+                Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </PrimaryButton>
               <SecondaryButton

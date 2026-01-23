@@ -128,7 +128,7 @@ const PublicInterview = () => {
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <Card className="glass-card border-border/50">
+                <Card className="glass-card border-border/50 min-h-[550px] flex flex-col">
                   <CardHeader className="text-center pb-2">
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -149,7 +149,7 @@ const PublicInterview = () => {
                       </CardDescription>
                     </motion.div>
                   </CardHeader>
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-6 flex-1 flex flex-col justify-center">
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
@@ -266,8 +266,8 @@ const PublicInterview = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
-                <Card className="glass-card border-border/50 overflow-hidden">
-                  <CardContent className="p-8 md:p-12">
+                <Card className="glass-card border-border/50 overflow-hidden min-h-[550px] flex flex-col">
+                  <CardContent className="p-8 md:p-12 flex-1 flex flex-col justify-center">
                     <div className="flex flex-col items-center space-y-8">
                       {/* Agent Avatar/Orb */}
                       <div className="relative">
@@ -389,10 +389,10 @@ const PublicInterview = () => {
                           >
                             <Button
                               onClick={handleStartCall}
-                              className="w-full h-12 text-base font-medium bg-interu-mint hover:bg-interu-mint/90 text-foreground transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                              className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                             >
                               <Phone className="mr-2 h-5 w-5" />
-                              Start call
+                              Start interview
                             </Button>
                           </motion.div>
                         )}

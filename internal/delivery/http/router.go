@@ -20,9 +20,9 @@ func NewRouter(connectionUseCase *usecases.ConnectionUseCase) *gin.Engine {
 
         router.GET("/health", handler.HealthCheck)
 
-        api := router.Group("/api")
+        v1 := router.Group("/api/v1")
         {
-                api.POST("/connection", handler.GetConnectionURL)
+                v1.POST("/connection", handler.GetConnectionURL)
         }
 
         return router

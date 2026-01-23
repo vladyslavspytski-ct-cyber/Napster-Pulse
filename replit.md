@@ -93,4 +93,4 @@ Preferred communication style: Simple, everyday language.
 
 ### API Endpoints
 - `GET /health` - Health check endpoint
-- `POST /api/connection` - Get ElevenLabs connection URL
+- `POST /api/v1/connection` - Get ElevenLabs connection URL

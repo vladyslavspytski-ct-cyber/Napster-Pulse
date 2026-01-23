@@ -45,7 +45,7 @@ Response:
 
 ### Get Connection URL
 ```bash
-curl -X POST http://localhost:8080/api/connection
+curl -X POST http://localhost:8080/api/v1/connection
 ```
 
 Response:
@@ -85,9 +85,9 @@ CREATE TABLE connection_requests (
 curl http://localhost:8080/health
 
 # Get connection URL
-curl -X POST http://localhost:8080/api/connection \
+curl -X POST http://localhost:8080/api/v1/connection \
   -H "Content-Type: application/json"
 
 # With verbose output
-curl -v -X POST http://localhost:8080/api/connection
+curl -v -X POST http://localhost:8080/api/v1/connection
 ```

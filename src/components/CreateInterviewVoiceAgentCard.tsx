@@ -44,21 +44,22 @@ const CreateInterviewVoiceAgentCard = ({
     <Card className="w-full max-w-[650px] mx-auto glass-card border-border/50">
       <CardContent className="p-8 flex flex-col items-center justify-between min-h-[420px]">
         {/* Orb Visualization */}
-        <div className="relative w-32 h-32 flex items-center justify-center">
+        <div className="relative w-32 h-32 flex items-center justify-center overflow-visible">
           {/* Outer glow layer */}
           <motion.div
-            className="absolute inset-0 rounded-full opacity-40"
+            className="absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, hsl(var(--interu-purple-light)) 0%, transparent 70%)`,
-              filter: `blur(${orbBlur}px)`,
+              filter: `blur(${isConnected ? orbBlur : 60}px)`,
             }}
-            animate={{
-              scale: [orbScale, orbScale * 1.1, orbScale],
-              opacity: isConnected ? [0.4, 0.6, 0.4] : 0.2,
-            }}
+            animate={
+              isConnected
+                ? { scale: [orbScale, orbScale * 1.1, orbScale], opacity: [0.4, 0.6, 0.4] }
+                : { scale: 1, opacity: 0.2 }
+            }
             transition={{
               duration: 2,
-              repeat: Infinity,
+              repeat: isConnected ? Infinity : 0,
               ease: "easeInOut",
             }}
           />
@@ -70,14 +71,16 @@ const CreateInterviewVoiceAgentCard = ({
               background: `linear-gradient(135deg, hsl(var(--interu-blue-light)) 0%, hsl(var(--interu-purple-light)) 50%, hsl(var(--interu-coral-light)) 100%)`,
               filter: "blur(8px)",
             }}
-            animate={{
-              scale: orbScale,
-              rotate: [0, 360],
-            }}
-            transition={{
-              scale: { duration: 0.3, ease: "easeOut" },
-              rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-            }}
+            animate={
+              isConnected
+                ? { scale: orbScale, rotate: 360 }
+                : { scale: 1, rotate: 0 }
+            }
+            transition={
+              isConnected
+                ? { scale: { duration: 0.3, ease: "easeOut" }, rotate: { duration: 20, repeat: Infinity, ease: "linear" } }
+                : { scale: { duration: 0.3 }, rotate: { duration: 0.5 } }
+            }
           />
           
           {/* Core orb */}
@@ -86,12 +89,14 @@ const CreateInterviewVoiceAgentCard = ({
             style={{
               background: `linear-gradient(145deg, hsl(var(--interu-blue)) 0%, hsl(var(--interu-purple)) 60%, hsl(var(--interu-coral)) 100%)`,
             }}
-            animate={{
-              scale: isConnected ? [1, 1.05, 1] : 1,
-            }}
+            animate={
+              isConnected
+                ? { scale: [1, 1.05, 1] }
+                : { scale: 1 }
+            }
             transition={{
               duration: 1.5,
-              repeat: Infinity,
+              repeat: isConnected ? Infinity : 0,
               ease: "easeInOut",
             }}
           >
@@ -104,22 +109,24 @@ const CreateInterviewVoiceAgentCard = ({
             />
           </motion.div>
           
-          {/* Pulse rings when connected */}
+          {/* Pulse rings - only when connected */}
           <AnimatePresence>
             {isConnected && (
               <>
                 <motion.div
+                  key="pulse-ring-1"
                   className="absolute inset-0 rounded-full border-2 border-interu-purple/30"
                   initial={{ scale: 1, opacity: 0.6 }}
                   animate={{ scale: 1.8, opacity: 0 }}
-                  exit={{ opacity: 0 }}
+                  exit={{ scale: 1, opacity: 0 }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                 />
                 <motion.div
+                  key="pulse-ring-2"
                   className="absolute inset-0 rounded-full border-2 border-interu-blue/30"
                   initial={{ scale: 1, opacity: 0.4 }}
                   animate={{ scale: 2.2, opacity: 0 }}
-                  exit={{ opacity: 0 }}
+                  exit={{ scale: 1, opacity: 0 }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
                 />
               </>

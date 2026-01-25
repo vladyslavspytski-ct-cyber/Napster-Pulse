@@ -23,6 +23,62 @@ const statusConfig = {
   disconnecting: { label: "Disconnecting...", dotClass: "bg-yellow-500 animate-pulse" },
 };
 
+const PulseRings = ({ active }: { active: boolean }) => {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {active && (
+        <motion.div
+          key="pulse-rings"
+          className="absolute inset-0"
+          // IMPORTANT: keep exit snappy and non-repeating so rings never linger
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          exit={{
+            opacity: 0,
+            transition: { duration: 0.08, ease: "easeOut", repeat: 0 },
+          }}
+        >
+          <motion.div
+            key="pulse-ring-1"
+            className="absolute inset-0 rounded-full border-2 border-interu-purple/30"
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{ scale: [1, 1.8], opacity: [0, 0.6, 0] }}
+            exit={{
+              opacity: 0,
+              transition: { duration: 0.08, ease: "easeOut", repeat: 0 },
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "loop",
+              ease: "easeOut",
+              times: [0, 0.15, 1],
+            }}
+          />
+          <motion.div
+            key="pulse-ring-2"
+            className="absolute inset-0 rounded-full border-2 border-interu-blue/30"
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{ scale: [1, 2.2], opacity: [0, 0.4, 0] }}
+            exit={{
+              opacity: 0,
+              transition: { duration: 0.08, ease: "easeOut", repeat: 0 },
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "loop",
+              ease: "easeOut",
+              delay: 0.5,
+              times: [0, 0.15, 1],
+            }}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const CreateInterviewVoiceAgentCard = ({
   agentName,
   agentDescription,
@@ -108,30 +164,9 @@ const CreateInterviewVoiceAgentCard = ({
               }}
             />
           </motion.div>
-          
+
           {/* Pulse rings - only when connected */}
-          <AnimatePresence>
-            {isConnected && (
-              <>
-                <motion.div
-                  key="pulse-ring-1"
-                  className="absolute inset-0 rounded-full border-2 border-interu-purple/30"
-                  initial={{ scale: 1, opacity: 0.6 }}
-                  animate={{ scale: 1.8, opacity: 0 }}
-                  exit={{ scale: 1, opacity: 0 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                />
-                <motion.div
-                  key="pulse-ring-2"
-                  className="absolute inset-0 rounded-full border-2 border-interu-blue/30"
-                  initial={{ scale: 1, opacity: 0.4 }}
-                  animate={{ scale: 2.2, opacity: 0 }}
-                  exit={{ scale: 1, opacity: 0 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
-                />
-              </>
-            )}
-          </AnimatePresence>
+          <PulseRings active={isConnected} />
         </div>
 
         {/* Agent Info */}

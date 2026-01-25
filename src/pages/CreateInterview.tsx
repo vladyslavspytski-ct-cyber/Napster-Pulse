@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SavedInterviewBlock from "@/components/SavedInterviewBlock";
+import CreateInterviewVoiceAgentCard from "@/components/CreateInterviewVoiceAgentCard";
 import { generateInterviewId, generateToken, saveInterview } from "@/lib/interviewStorage";
+
+type AgentUIState = "disconnected" | "connecting" | "connected" | "disconnecting";
 
 interface Question {
   id: string;
@@ -22,6 +25,9 @@ const CreateInterview = () => {
   const { toast } = useToast();
   const [interviewName, setInterviewName] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [agentState, setAgentState] = useState<AgentUIState>("disconnected");
+  const [inputLevel, setInputLevel] = useState(0);
+  const [outputLevel, setOutputLevel] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [savedData, setSavedData] = useState<{
@@ -29,6 +35,29 @@ const CreateInterview = () => {
     questionsCount: number;
     publicUrl: string;
   } | null>(null);
+  const audioIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Mock audio levels when recording
+  useEffect(() => {
+    if (isRecording) {
+      audioIntervalRef.current = setInterval(() => {
+        setInputLevel(Math.random() * 0.6 + 0.2);
+        setOutputLevel(Math.random() * 0.4);
+      }, 100);
+    } else {
+      setInputLevel(0);
+      setOutputLevel(0);
+      if (audioIntervalRef.current) {
+        clearInterval(audioIntervalRef.current);
+        audioIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (audioIntervalRef.current) {
+        clearInterval(audioIntervalRef.current);
+      }
+    };
+  }, [isRecording]);
 
   // Placeholder questions to simulate voice recognition
   const placeholderQuestions = [
@@ -39,26 +68,42 @@ const CreateInterview = () => {
   ];
 
   const handleStartRecording = () => {
-    setIsRecording(true);
-    toast({
-      title: "Recording started",
-      description: "Speak clearly to dictate your questions.",
-    });
+    setAgentState("connecting");
+    setTimeout(() => {
+      setIsRecording(true);
+      setAgentState("connected");
+      toast({
+        title: "Recording started",
+        description: "Speak clearly to dictate your questions.",
+      });
+    }, 400);
   };
 
   const handleStopRecording = () => {
-    setIsRecording(false);
-    // Simulate adding placeholder questions (will be replaced with ElevenLabs SDK)
-    const newQuestions = placeholderQuestions.map((text, index) => ({
-      id: `q-${Date.now()}-${index}`,
-      text,
-      isEditing: false,
-    }));
-    setQuestions((prev) => [...prev, ...newQuestions]);
-    toast({
-      title: "Recording stopped",
-      description: `${placeholderQuestions.length} questions recognized.`,
-    });
+    setAgentState("disconnecting");
+    setTimeout(() => {
+      setIsRecording(false);
+      setAgentState("disconnected");
+      // Simulate adding placeholder questions (will be replaced with ElevenLabs SDK)
+      const newQuestions = placeholderQuestions.map((text, index) => ({
+        id: `q-${Date.now()}-${index}`,
+        text,
+        isEditing: false,
+      }));
+      setQuestions((prev) => [...prev, ...newQuestions]);
+      toast({
+        title: "Recording stopped",
+        description: `${placeholderQuestions.length} questions recognized.`,
+      });
+    }, 300);
+  };
+
+  const handleAgentToggle = () => {
+    if (agentState === "disconnected") {
+      handleStartRecording();
+    } else if (agentState === "connected") {
+      handleStopRecording();
+    }
   };
 
   const handleDeleteQuestion = (id: string) => {
@@ -177,50 +222,17 @@ const CreateInterview = () => {
                   </Card>
                 </motion.div>
 
-                {/* Voice Input Section */}
+                {/* Voice Agent Section */}
                 <motion.div variants={itemVariants}>
-                  <Card className="glass-card border-border/50">
-                    <CardHeader>
-                      <CardTitle className="text-xl">Voice Input</CardTitle>
-                      <CardDescription>
-                        Dictate your interview questions using voice
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <PrimaryButton
-                          size="lg"
-                          onClick={handleStartRecording}
-                          disabled={isRecording}
-                          className={`gap-2 ${isRecording ? "opacity-50" : ""}`}
-                        >
-                          <Mic className="h-5 w-5" />
-                          Start Recording
-                        </PrimaryButton>
-                        <SecondaryButton
-                          size="lg"
-                          onClick={handleStopRecording}
-                          disabled={!isRecording}
-                          className={`gap-2 ${
-                            !isRecording ? "opacity-50" : "border-destructive text-destructive"
-                          }`}
-                        >
-                          <MicOff className="h-5 w-5" />
-                          Stop Recording
-                        </SecondaryButton>
-                      </div>
-                      {isRecording && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex items-center justify-center gap-2 text-primary"
-                        >
-                          <div className="w-3 h-3 bg-destructive rounded-full animate-ping" />
-                          <span className="text-sm font-medium">Recording in progress...</span>
-                        </motion.div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <CreateInterviewVoiceAgentCard
+                    agentName="Interview Assistant"
+                    agentDescription="Tap to start voice dictation. Your questions will appear below."
+                    state={agentState}
+                    errorMessage={null}
+                    inputLevel={inputLevel}
+                    outputLevel={outputLevel}
+                    onToggle={handleAgentToggle}
+                  />
                 </motion.div>
 
                 {/* Questions List Section */}

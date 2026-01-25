@@ -191,7 +191,7 @@ const CreateInterview = () => {
       <Header />
       
       <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28">
-        <div className="max-w-2xl mx-auto">
+        <div className="mx-auto w-full max-w-[650px]">
           <AnimatePresence mode="wait">
             {!isSaved ? (
               <motion.div
@@ -203,7 +203,7 @@ const CreateInterview = () => {
                 className="space-y-8"
               >
                 {/* Interview Name Section */}
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} id="interview-name">
                   <Card className="glass-card border-border/50">
                     <CardHeader>
                       <CardTitle className="text-xl">Interview Name</CardTitle>
@@ -223,7 +223,7 @@ const CreateInterview = () => {
                 </motion.div>
 
                 {/* Voice Agent Section */}
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} id="interview-assistant" className="py-4">
                   <CreateInterviewVoiceAgentCard
                     agentName="Interview Assistant"
                     agentDescription="Tap to start voice dictation. Your questions will appear below."
@@ -239,6 +239,7 @@ const CreateInterview = () => {
                 <AnimatePresence>
                   {questions.length > 0 && (
                     <motion.div
+                      id="interview-questions"
                       variants={itemVariants}
                       initial="hidden"
                       animate="visible"
@@ -311,7 +312,7 @@ const CreateInterview = () => {
                 </AnimatePresence>
 
                 {/* Save & Generate Link Section */}
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} id="save-share">
                   <Card className="glass-card border-border/50">
                     <CardHeader>
                       <CardTitle className="text-xl">Save & Share</CardTitle>

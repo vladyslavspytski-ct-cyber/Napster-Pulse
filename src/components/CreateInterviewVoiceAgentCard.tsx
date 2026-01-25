@@ -41,8 +41,8 @@ const CreateInterviewVoiceAgentCard = ({
   const orbBlur = 60 + combinedLevel * 20;
 
   return (
-    <Card className="w-full max-w-[560px] mx-auto glass-card border-border/50 overflow-hidden">
-      <CardContent className="p-8 flex flex-col items-center justify-between min-h-[380px]">
+    <Card className="w-full max-w-[650px] mx-auto glass-card border-border/50">
+      <CardContent className="p-8 flex flex-col items-center justify-between min-h-[420px]">
         {/* Orb Visualization */}
         <div className="relative w-32 h-32 flex items-center justify-center">
           {/* Outer glow layer */}

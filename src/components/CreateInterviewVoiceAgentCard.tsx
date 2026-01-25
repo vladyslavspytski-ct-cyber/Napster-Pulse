@@ -23,6 +23,26 @@ const statusConfig = {
   disconnecting: { label: "Disconnecting...", dotClass: "bg-yellow-500 animate-pulse" },
 };
 
+// Extracted component to ensure repeat: Infinity only runs while mounted
+const PulseRings = () => (
+  <>
+    <motion.div
+      className="absolute inset-0 rounded-full border-2 border-interu-purple/30"
+      initial={{ scale: 1, opacity: 0.6 }}
+      animate={{ scale: 1.8, opacity: 0 }}
+      exit={{ scale: 1.8, opacity: 0 }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+    />
+    <motion.div
+      className="absolute inset-0 rounded-full border-2 border-interu-blue/30"
+      initial={{ scale: 1, opacity: 0.4 }}
+      animate={{ scale: 2.2, opacity: 0 }}
+      exit={{ scale: 2.2, opacity: 0 }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
+    />
+  </>
+);
+
 const CreateInterviewVoiceAgentCard = ({
   agentName,
   agentDescription,
@@ -104,25 +124,10 @@ const CreateInterviewVoiceAgentCard = ({
             />
           </motion.div>
           
-          {/* Pulse rings when connected */}
+          {/* Pulse rings - only mounted when state === "connected" */}
           <AnimatePresence>
-            {isConnected && (
-              <>
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-interu-purple/30"
-                  initial={{ scale: 1, opacity: 0.6 }}
-                  animate={{ scale: 1.8, opacity: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-                />
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-interu-blue/30"
-                  initial={{ scale: 1, opacity: 0.4 }}
-                  animate={{ scale: 2.2, opacity: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
-                />
-              </>
+            {state === "connected" && (
+              <PulseRings key="pulse-rings" />
             )}
           </AnimatePresence>
         </div>

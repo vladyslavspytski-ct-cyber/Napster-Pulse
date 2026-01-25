@@ -115,15 +115,11 @@ const CreateInterview = () => {
   };
 
   const handleEditQuestion = (id: string) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, isEditing: true } : q))
-    );
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, isEditing: true } : q)));
   };
 
   const handleSaveQuestion = (id: string, newText: string) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, text: newText, isEditing: false } : q))
-    );
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, text: newText, isEditing: false } : q)));
   };
 
   const handleSaveAndGenerateLink = () => {
@@ -189,9 +185,9 @@ const CreateInterview = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      
+
       <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28">
-        <div className="mx-auto w-full max-w-[650px]">
+        <div className="mx-auto w-full lg:w-[650px]">
           <AnimatePresence mode="wait">
             {!isSaved ? (
               <motion.div
@@ -207,9 +203,7 @@ const CreateInterview = () => {
                   <Card className="glass-card border-border/50">
                     <CardHeader>
                       <CardTitle className="text-xl">Interview Name</CardTitle>
-                      <CardDescription>
-                        Give your interview a descriptive name (optional)
-                      </CardDescription>
+                      <CardDescription>Give your interview a descriptive name (optional)</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Input
@@ -354,7 +348,7 @@ const CreateInterview = () => {
                     onCreateAnother={handleCreateAnother}
                   />
                 )}
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -370,7 +364,7 @@ const CreateInterview = () => {
           </AnimatePresence>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

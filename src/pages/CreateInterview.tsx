@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import SavedInterviewBlock from "@/components/SavedInterviewBlock";
 import CreateInterviewVoiceAgentCard from "@/components/CreateInterviewVoiceAgentCard";
 import { generateInterviewId, generateToken, saveInterview } from "@/lib/interviewStorage";
+import { getSignedUrl, ElevenLabsConversation } from "@/lib/elevenlabs";
 
 type AgentUIState = "disconnected" | "connecting" | "connected" | "disconnecting";
 
@@ -21,13 +22,15 @@ interface Question {
   isEditing: boolean;
 }
 
+const AGENT_ID = "agent_5501kfn6xt2vek481a42ezynaqbq";
+
 const CreateInterview = () => {
   const { toast } = useToast();
   const [interviewName, setInterviewName] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
   const [agentState, setAgentState] = useState<AgentUIState>("disconnected");
   const [inputLevel, setInputLevel] = useState(0);
   const [outputLevel, setOutputLevel] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [savedData, setSavedData] = useState<{
@@ -35,67 +38,205 @@ const CreateInterview = () => {
     questionsCount: number;
     publicUrl: string;
   } | null>(null);
-  const audioIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mock audio levels when recording
+  const conversationRef = useRef<ElevenLabsConversation | null>(null);
+  const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const assistantBufferRef = useRef<string>("");
+  const lastQuestionsRef = useRef<{ questions: string[] } | null>(null);
+
+  // Cleanup on unmount
   useEffect(() => {
-    if (isRecording) {
-      audioIntervalRef.current = setInterval(() => {
-        setInputLevel(Math.random() * 0.6 + 0.2);
-        setOutputLevel(Math.random() * 0.4);
-      }, 100);
-    } else {
-      setInputLevel(0);
-      setOutputLevel(0);
-      if (audioIntervalRef.current) {
-        clearInterval(audioIntervalRef.current);
-        audioIntervalRef.current = null;
-      }
-    }
     return () => {
-      if (audioIntervalRef.current) {
-        clearInterval(audioIntervalRef.current);
+      const volumeInterval = volumeIntervalRef.current;
+      const conversation = conversationRef.current;
+
+      if (volumeInterval) {
+        clearInterval(volumeInterval);
+      }
+      if (conversation) {
+        conversation.endSession();
       }
     };
-  }, [isRecording]);
+  }, []);
 
-  // Placeholder questions to simulate voice recognition
-  const placeholderQuestions = [
-    "What inspired you to pursue this career path?",
-    "Can you describe a challenging project you've worked on?",
-    "How do you handle feedback and criticism?",
-    "What are your goals for the next five years?",
-  ];
+  // Start volume polling
+  const startVolumePolling = () => {
+    if (volumeIntervalRef.current) {
+      clearInterval(volumeIntervalRef.current);
+    }
 
-  const handleStartRecording = () => {
-    setAgentState("connecting");
-    setTimeout(() => {
-      setIsRecording(true);
-      setAgentState("connected");
-      toast({
-        title: "Recording started",
-        description: "Speak clearly to dictate your questions.",
-      });
-    }, 400);
+    volumeIntervalRef.current = setInterval(() => {
+      if (conversationRef.current) {
+        const inputVol = conversationRef.current.getInputVolume();
+        const outputVol = conversationRef.current.getOutputVolume();
+        setInputLevel(inputVol);
+        setOutputLevel(outputVol);
+      }
+    }, 80);
   };
 
-  const handleStopRecording = () => {
-    setAgentState("disconnecting");
-    setTimeout(() => {
-      setIsRecording(false);
-      setAgentState("disconnected");
-      // Simulate adding placeholder questions (will be replaced with ElevenLabs SDK)
-      const newQuestions = placeholderQuestions.map((text, index) => ({
-        id: `q-${Date.now()}-${index}`,
-        text,
-        isEditing: false,
-      }));
-      setQuestions((prev) => [...prev, ...newQuestions]);
-      toast({
-        title: "Recording stopped",
-        description: `${placeholderQuestions.length} questions recognized.`,
+  // Stop volume polling
+  const stopVolumePolling = () => {
+    if (volumeIntervalRef.current) {
+      clearInterval(volumeIntervalRef.current);
+      volumeIntervalRef.current = null;
+    }
+    setInputLevel(0);
+    setOutputLevel(0);
+  };
+
+  // Try to parse questions from assistant buffer
+  const tryParseQuestions = (buffer: string): { questions: string[] } | null => {
+    try {
+      // Try to find JSON in the buffer
+      const jsonMatch = buffer.match(/\{[\s\S]*"questions"[\s\S]*\}/);
+      if (!jsonMatch) return null;
+
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+        return { questions: parsed.questions };
+      }
+    } catch (err) {
+      // Invalid JSON, continue accumulating
+    }
+    return null;
+  };
+
+  // Handle assistant messages and accumulate
+  const handleAssistantMessage = (message: string) => {
+    // Accumulate the message
+    assistantBufferRef.current += message;
+
+    // Try to parse questions
+    const result = tryParseQuestions(assistantBufferRef.current);
+    if (result) {
+      lastQuestionsRef.current = result;
+    }
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      setAgentState("connecting");
+      setErrorMessage(null);
+
+      // Request microphone permission
+      let mediaStream: MediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (micError) {
+        if (micError instanceof Error && micError.name === "NotAllowedError") {
+          setErrorMessage("Microphone access denied. Please allow microphone access to use voice dictation.");
+        } else {
+          setErrorMessage("Could not access microphone. Please check your device settings.");
+        }
+        setAgentState("disconnected");
+        toast({
+          title: "Microphone error",
+          description: "Unable to access microphone",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get signed URL from backend
+      const signedUrl = await getSignedUrl(AGENT_ID);
+
+      // Clear buffers on new session
+      assistantBufferRef.current = "";
+      lastQuestionsRef.current = null;
+
+      // Create and start conversation
+      const conversation = new ElevenLabsConversation({
+        onStatusChange: (status) => {
+          if (status === "connected") {
+            setAgentState("connected");
+            startVolumePolling();
+            toast({
+              title: "Connected",
+              description: "Voice assistant is ready. Start speaking.",
+            });
+          } else if (status === "disconnected") {
+            setAgentState("disconnected");
+            stopVolumePolling();
+          } else if (status === "error") {
+            setErrorMessage("Connection error occurred");
+            setAgentState("disconnected");
+            stopVolumePolling();
+          }
+        },
+        onError: (error) => {
+          console.error("Conversation error:", error);
+          setErrorMessage(error.message || "An error occurred");
+          toast({
+            title: "Error",
+            description: error.message || "An error occurred",
+            variant: "destructive",
+          });
+        },
+        onAssistantMessage: handleAssistantMessage,
       });
-    }, 300);
+
+      conversationRef.current = conversation;
+      await conversation.startSession(signedUrl, mediaStream);
+
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      setAgentState("disconnected");
+      setErrorMessage(error instanceof Error ? error.message : "Failed to start voice session");
+      toast({
+        title: "Connection failed",
+        description: error instanceof Error ? error.message : "Failed to start voice session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStopRecording = async () => {
+    try {
+      setAgentState("disconnecting");
+      stopVolumePolling();
+
+      if (conversationRef.current) {
+        await conversationRef.current.endSession();
+        conversationRef.current = null;
+      }
+
+      // Finalize: append questions from lastQuestionsRef if available
+      if (lastQuestionsRef.current && lastQuestionsRef.current.questions.length > 0) {
+        const newQuestions = lastQuestionsRef.current.questions.map((text, index) => ({
+          id: `q-${Date.now()}-${index}`,
+          text,
+          isEditing: false,
+        }));
+
+        setQuestions((prev) => [...prev, ...newQuestions]);
+
+        toast({
+          title: "Session ended",
+          description: `${newQuestions.length} question${newQuestions.length !== 1 ? 's' : ''} captured.`,
+        });
+      } else {
+        toast({
+          title: "Session ended",
+          description: "Voice session has been stopped.",
+        });
+      }
+
+      // Clear buffers
+      assistantBufferRef.current = "";
+      lastQuestionsRef.current = null;
+
+      setAgentState("disconnected");
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      setAgentState("disconnected");
+      toast({
+        title: "Error",
+        description: "Error stopping session",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAgentToggle = () => {
@@ -222,7 +363,7 @@ const CreateInterview = () => {
                     agentName="Interview Assistant"
                     agentDescription="Tap to start voice dictation. Your questions will appear below."
                     state={agentState}
-                    errorMessage={null}
+                    errorMessage={errorMessage}
                     inputLevel={inputLevel}
                     outputLevel={outputLevel}
                     onToggle={handleAgentToggle}

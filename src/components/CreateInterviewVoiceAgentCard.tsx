@@ -59,7 +59,7 @@ const PulseRings = ({ active }: { active: boolean }) => {
             key="pulse-ring-2"
             className="absolute inset-0 rounded-full border-2 border-interu-blue/30"
             initial={{ scale: 1, opacity: 0 }}
-            animate={{ scale: [1, 2.2], opacity: [0, 0.4, 0] }}
+            animate={{ scale: [1, 2], opacity: [0, 0.4, 0] }}
             exit={{
               opacity: 0,
               transition: { duration: 0.08, ease: "easeOut", repeat: 0 },
@@ -100,7 +100,7 @@ const CreateInterviewVoiceAgentCard = ({
     <Card className="w-full max-w-[650px] mx-auto glass-card border-border/50">
       <CardContent className="p-8 flex flex-col items-center justify-between min-h-[420px]">
         {/* Orb Visualization */}
-        <div className="relative w-32 h-32 flex items-center justify-center overflow-visible">
+        <div className="relative w-32 h-32 flex items-center justify-center overflow-visible m-[22px]">
           {/* Outer glow layer */}
           <motion.div
             className="absolute inset-0 rounded-full"

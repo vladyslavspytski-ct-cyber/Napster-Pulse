@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, CheckCircle2, RotateCcw } from "lucide-react";
@@ -7,9 +7,11 @@ import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PublicInterviewVoiceAgentCard from "@/components/PublicInterviewVoiceAgentCard";
+import { getSignedUrl, ElevenLabsConversation } from "@/lib/elevenlabs";
 
 type Step = "details" | "interview" | "completed";
 type AgentState = "idle" | "connecting" | "connected" | "listening" | "processing" | "completed";
@@ -26,8 +28,19 @@ interface FormErrors {
   email?: string;
 }
 
+// Interview Host Agent ID
+const INTERVIEW_HOST_AGENT_ID = "agent_3901kfzdsmpjeee9n3tvfkhgnnrm";
+
+// Hardcoded test questions (for now)
+const TEST_QUESTIONS = [
+  "What is your name?",
+  "How old are you?",
+  "Do you have a cat?",
+];
+
 const PublicInterview = () => {
   const { token } = useParams<{ token: string }>();
+  const { toast } = useToast();
   const [step, setStep] = useState<Step>("details");
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -36,9 +49,50 @@ const PublicInterview = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [agentState, setAgentState] = useState<AgentState>("idle");
+  const [currentQuestion, setCurrentQuestion] = useState<string | undefined>(undefined);
 
-  // Mock question for demo
-  const mockQuestion = "Tell us about your experience with our product.";
+  // Refs for ElevenLabs session
+  const conversationRef = useRef<ElevenLabsConversation | null>(null);
+  const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const assistantBufferRef = useRef<string>("");
+
+  // Type for interview results from agent
+  interface InterviewResult {
+    status: "completed" | "stopped";
+    answers: Array<{ question: string; answer: string }>;
+  }
+
+  // Try to parse interview results from agent messages
+  const tryParseResults = (buffer: string): InterviewResult | null => {
+    try {
+      // Look for JSON in the buffer
+      const jsonMatch = buffer.match(/\{[\s\S]*"status"[\s\S]*"answers"[\s\S]*\}/);
+      if (!jsonMatch) return null;
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.status && Array.isArray(parsed.answers)) {
+        return parsed as InterviewResult;
+      }
+    } catch {
+      // Not valid JSON yet
+    }
+    return null;
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    const conversationInstance = conversationRef;
+    const volumeIntervalInstance = volumeIntervalRef;
+
+    return () => {
+      if (volumeIntervalInstance.current) {
+        clearInterval(volumeIntervalInstance.current);
+      }
+      if (conversationInstance.current) {
+        conversationInstance.current.endSession();
+      }
+    };
+  }, []);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -80,28 +134,167 @@ const PublicInterview = () => {
     }
   };
 
-  const handleStartInterview = () => {
-    setAgentState("connecting");
-    // Simulate connection
-    setTimeout(() => {
-      setAgentState("connected");
-      // Simulate listening state
-      setTimeout(() => {
-        setAgentState("listening");
-      }, 1000);
-    }, 2000);
+  const handleStartInterview = async () => {
+    try {
+      console.log("[PublicInterview] Starting interview...");
+      setAgentState("connecting");
+
+      // Clear any previous transcript
+      assistantBufferRef.current = "";
+
+      // Request microphone permission
+      let mediaStream: MediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("[PublicInterview] Microphone access granted");
+      } catch (micError) {
+        console.error("[PublicInterview] Microphone error:", micError);
+        if (micError instanceof Error && micError.name === "NotAllowedError") {
+          toast({
+            title: "Microphone access denied",
+            description: "Please allow microphone access to start the interview.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Microphone error",
+            description: "Could not access microphone. Please check your device settings.",
+            variant: "destructive",
+          });
+        }
+        setAgentState("idle");
+        return;
+      }
+
+      // Get signed URL from backend
+      console.log("[PublicInterview] Fetching signed URL for agent:", INTERVIEW_HOST_AGENT_ID);
+      const signedUrl = await getSignedUrl(INTERVIEW_HOST_AGENT_ID);
+      console.log("[PublicInterview] Signed URL received");
+
+      // Format questions for dynamic variables (must match agent prompt variable name exactly)
+      const questionsText = TEST_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n");
+      console.log("[PublicInterview] QUESTIONS variable value:", questionsText);
+      console.log("[PublicInterview] Will send dynamic_variables.QUESTIONS (uppercase)");
+
+      // Create conversation instance
+      const conversation = new ElevenLabsConversation({
+        onStatusChange: (status) => {
+          console.log("[PublicInterview] Status changed:", status);
+          if (status === "connected") {
+            setAgentState("listening");
+            // Set the first question as current (for UI display)
+            setCurrentQuestion(TEST_QUESTIONS[0]);
+            toast({
+              title: "Connected",
+              description: "Interview started. Please answer the questions.",
+            });
+          } else if (status === "disconnected") {
+            console.log("[PublicInterview] Disconnected");
+          } else if (status === "error") {
+            setAgentState("idle");
+            toast({
+              title: "Connection error",
+              description: "Failed to connect to the interview agent.",
+              variant: "destructive",
+            });
+          }
+        },
+        onError: (error) => {
+          console.error("[PublicInterview] Conversation error:", error);
+          toast({
+            title: "Error",
+            description: error.message || "An error occurred",
+            variant: "destructive",
+          });
+        },
+        onAssistantMessage: (message) => {
+          console.log("[PublicInterview] Agent message:", message);
+          // Accumulate all agent messages for later parsing
+          assistantBufferRef.current += message + "\n";
+        },
+      });
+
+      conversationRef.current = conversation;
+
+      // Start session with dynamic variables for questions
+      // Note: Variable name must match exactly what the agent prompt expects (QUESTIONS)
+      await conversation.startSession(signedUrl, mediaStream, {
+        dynamicVariables: {
+          QUESTIONS: questionsText,
+        },
+      });
+
+      console.log("[PublicInterview] Session started successfully");
+
+    } catch (error) {
+      console.error("[PublicInterview] Error starting interview:", error);
+      setAgentState("idle");
+      toast({
+        title: "Connection failed",
+        description: error instanceof Error ? error.message : "Failed to start interview",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEndInterview = () => {
-    setAgentState("processing");
-    // Simulate processing
-    setTimeout(() => {
+  const handleEndInterview = async () => {
+    try {
+      console.log("[PublicInterview] Ending interview...");
+      setAgentState("processing");
+
+      // End the session
+      if (conversationRef.current) {
+        await conversationRef.current.endSession();
+        conversationRef.current = null;
+      }
+
+      // Clear volume polling
+      if (volumeIntervalRef.current) {
+        clearInterval(volumeIntervalRef.current);
+        volumeIntervalRef.current = null;
+      }
+
+      console.log("[PublicInterview] Session ended, transitioning to completed");
+
+      // Try to parse interview results from accumulated agent messages
+      const buffer = assistantBufferRef.current;
+      console.log("[PublicInterview] Full agent transcript:", buffer);
+
+      const results = tryParseResults(buffer);
+      if (results) {
+        console.log("[PublicInterview] === Interview Results ===");
+        console.log("[PublicInterview] Status:", results.status);
+        console.log("[PublicInterview] Q&A Pairs:");
+        results.answers.forEach((qa, index) => {
+          console.log(`[PublicInterview]   ${index + 1}. Q: ${qa.question}`);
+          console.log(`[PublicInterview]      A: ${qa.answer}`);
+        });
+        console.log("[PublicInterview] === End Results ===");
+      } else {
+        console.log("[PublicInterview] Could not parse interview results from transcript");
+        console.log("[PublicInterview] Note: The agent may not have output the final JSON summary yet");
+      }
+
+      // Clear the buffer for potential future interviews
+      assistantBufferRef.current = "";
+
       setAgentState("completed");
-      // Transition to completed step
+      setCurrentQuestion(undefined);
+
+      // Transition to completed step after a brief delay
       setTimeout(() => {
         setStep("completed");
       }, 1500);
-    }, 1500);
+
+    } catch (error) {
+      console.error("[PublicInterview] Error ending interview:", error);
+      setAgentState("idle");
+      toast({
+        title: "Error",
+        description: "Error ending interview session",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleStartOver = () => {
@@ -109,6 +302,8 @@ const PublicInterview = () => {
     setFormData({ firstName: "", lastName: "", email: "" });
     setErrors({});
     setAgentState("idle");
+    setCurrentQuestion(undefined);
+    assistantBufferRef.current = "";
   };
 
   const containerVariants = {
@@ -315,7 +510,7 @@ const PublicInterview = () => {
                 <motion.div variants={itemVariants}>
                   <PublicInterviewVoiceAgentCard
                     participantName={formData.firstName}
-                    currentQuestion={agentState !== "idle" ? mockQuestion : undefined}
+                    currentQuestion={currentQuestion}
                     state={agentState}
                     onStart={handleStartInterview}
                     onEnd={handleEndInterview}

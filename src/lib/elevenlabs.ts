@@ -51,7 +51,18 @@ export type ConversationEventHandler = {
   onStatusChange?: (status: ConversationStatus) => void;
   onError?: (error: Error) => void;
   onAssistantMessage?: (message: string) => void;
+  onUserMessage?: (message: string) => void;
 };
+
+/**
+ * Options for starting a conversation session
+ */
+export interface StartSessionOptions {
+  /** Override the agent's first message */
+  firstMessage?: string;
+  /** Dynamic variables to pass to the agent (e.g., questions) */
+  dynamicVariables?: Record<string, string>;
+}
 
 /**
  * ElevenLabs Conversation wrapper for browser-based WebRTC sessions
@@ -76,9 +87,16 @@ export class ElevenLabsConversation {
    * Start the conversation session with a signed URL
    * @param signedUrl - The signed WebSocket URL from the backend
    * @param mediaStream - The user's microphone stream
-   * @param firstMessageOverride - Optional override for the agent's first message
+   * @param options - Optional configuration (firstMessage override, dynamic variables) or string for backwards compatibility
    */
-  async startSession(signedUrl: string, mediaStream: MediaStream, firstMessageOverride?: string): Promise<void> {
+  async startSession(signedUrl: string, mediaStream: MediaStream, options?: StartSessionOptions | string): Promise<void> {
+    // Support legacy string parameter for backwards compatibility
+    const opts: StartSessionOptions = typeof options === 'string'
+      ? { firstMessage: options }
+      : (options || {});
+
+    console.log("[ElevenLabs] Starting session with options:", opts);
+
     try {
       // Store the media stream
       this.mediaStream = mediaStream;
@@ -116,20 +134,37 @@ export class ElevenLabsConversation {
       this.ws.onopen = () => {
         console.log("[ElevenLabs] WebSocket opened");
 
-        // Send first message override if provided
-        if (firstMessageOverride && this.ws) {
-          const overrideMessage = {
+        // Send conversation_initiation_client_data if we have overrides or dynamic variables
+        const hasFirstMessage = !!opts.firstMessage;
+        const hasDynamicVars = opts.dynamicVariables && Object.keys(opts.dynamicVariables).length > 0;
+
+        if ((hasFirstMessage || hasDynamicVars) && this.ws) {
+          const initiationMessage: Record<string, unknown> = {
             type: "conversation_initiation_client_data",
-            conversation_config_override: {
-              agent: {
-                first_message: firstMessageOverride
-              }
-            }
           };
-          console.log("[ElevenLabs] Sending first message override:", firstMessageOverride);
-          this.ws.send(JSON.stringify(overrideMessage));
+
+          // Add first message override
+          if (hasFirstMessage) {
+            initiationMessage.conversation_config_override = {
+              agent: {
+                first_message: opts.firstMessage
+              }
+            };
+          }
+
+          // Add dynamic variables
+          if (hasDynamicVars) {
+            initiationMessage.dynamic_variables = opts.dynamicVariables;
+            console.log("[ElevenLabs] Dynamic variable keys:", Object.keys(opts.dynamicVariables!));
+            console.log("[ElevenLabs] Dynamic variables payload:", opts.dynamicVariables);
+          }
+
+          console.log("[ElevenLabs] Sending initiation_client_data BEFORE audio streaming");
+          console.log("[ElevenLabs] Full initiation message:", JSON.stringify(initiationMessage, null, 2));
+          this.ws.send(JSON.stringify(initiationMessage));
         }
 
+        console.log("[ElevenLabs] Starting audio streaming AFTER initiation sent");
         this.eventHandlers.onStatusChange?.("connected");
         this.startAudioStreaming();
       };

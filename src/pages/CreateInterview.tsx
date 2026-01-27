@@ -105,12 +105,16 @@ const CreateInterview = () => {
 
   // Handle assistant messages and accumulate
   const handleAssistantMessage = (message: string) => {
+    console.log("[Agent Message]", message);
+
     // Accumulate the message
     assistantBufferRef.current += message;
+    console.log("[Agent Buffer]", assistantBufferRef.current);
 
     // Try to parse questions
     const result = tryParseQuestions(assistantBufferRef.current);
     if (result) {
+      console.log("[Agent Questions Parsed]", result.questions);
       lastQuestionsRef.current = result;
     }
   };
@@ -178,7 +182,13 @@ const CreateInterview = () => {
       });
 
       conversationRef.current = conversation;
-      await conversation.startSession(signedUrl, mediaStream);
+
+      // Use different greeting based on whether questions already exist
+      const greeting = questions.length > 0
+        ? "Would you like to continue and add more questions?"
+        : "Hi! Dictate your interview questions one by one. When you're finished, say Done.";
+
+      await conversation.startSession(signedUrl, mediaStream, greeting);
 
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -194,16 +204,32 @@ const CreateInterview = () => {
 
   const handleStopRecording = async () => {
     try {
+      console.log("[Stop] Starting stop process...");
+      console.log("[Stop] lastQuestionsRef.current:", lastQuestionsRef.current);
+      console.log("[Stop] assistantBufferRef.current:", assistantBufferRef.current);
+
       setAgentState("disconnecting");
+
+      // If no questions captured yet, wait briefly for agent to respond
+      if (!lastQuestionsRef.current) {
+        console.log("[Stop] No questions yet, waiting 2.5s for agent response...");
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+        console.log("[Stop] Done waiting. lastQuestionsRef.current:", lastQuestionsRef.current);
+      }
+
       stopVolumePolling();
 
       if (conversationRef.current) {
+        console.log("[Stop] Ending session...");
         await conversationRef.current.endSession();
         conversationRef.current = null;
       }
 
+      console.log("[Stop] After endSession. lastQuestionsRef.current:", lastQuestionsRef.current);
+
       // Finalize: append questions from lastQuestionsRef if available
       if (lastQuestionsRef.current && lastQuestionsRef.current.questions.length > 0) {
+        console.log("[Stop] Adding questions:", lastQuestionsRef.current.questions);
         const newQuestions = lastQuestionsRef.current.questions.map((text, index) => ({
           id: `q-${Date.now()}-${index}`,
           text,
@@ -217,6 +243,7 @@ const CreateInterview = () => {
           description: `${newQuestions.length} question${newQuestions.length !== 1 ? 's' : ''} captured.`,
         });
       } else {
+        console.log("[Stop] No questions to add");
         toast({
           title: "Session ended",
           description: "Voice session has been stopped.",
@@ -226,6 +253,7 @@ const CreateInterview = () => {
       // Clear buffers
       assistantBufferRef.current = "";
       lastQuestionsRef.current = null;
+      console.log("[Stop] Buffers cleared");
 
       setAgentState("disconnected");
     } catch (error) {

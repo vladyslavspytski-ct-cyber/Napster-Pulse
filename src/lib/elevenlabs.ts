@@ -74,8 +74,11 @@ export class ElevenLabsConversation {
 
   /**
    * Start the conversation session with a signed URL
+   * @param signedUrl - The signed WebSocket URL from the backend
+   * @param mediaStream - The user's microphone stream
+   * @param firstMessageOverride - Optional override for the agent's first message
    */
-  async startSession(signedUrl: string, mediaStream: MediaStream): Promise<void> {
+  async startSession(signedUrl: string, mediaStream: MediaStream, firstMessageOverride?: string): Promise<void> {
     try {
       // Store the media stream
       this.mediaStream = mediaStream;
@@ -111,15 +114,33 @@ export class ElevenLabsConversation {
       this.ws = new WebSocket(signedUrl);
 
       this.ws.onopen = () => {
+        console.log("[ElevenLabs] WebSocket opened");
+
+        // Send first message override if provided
+        if (firstMessageOverride && this.ws) {
+          const overrideMessage = {
+            type: "conversation_initiation_client_data",
+            conversation_config_override: {
+              agent: {
+                first_message: firstMessageOverride
+              }
+            }
+          };
+          console.log("[ElevenLabs] Sending first message override:", firstMessageOverride);
+          this.ws.send(JSON.stringify(overrideMessage));
+        }
+
         this.eventHandlers.onStatusChange?.("connected");
         this.startAudioStreaming();
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event) => {
+        console.log("[ElevenLabs] WebSocket closed:", event.code, event.reason);
         this.eventHandlers.onStatusChange?.("disconnected");
       };
 
-      this.ws.onerror = () => {
+      this.ws.onerror = (event) => {
+        console.error("[ElevenLabs] WebSocket error:", event);
         const error = new Error("WebSocket connection error");
         this.eventHandlers.onError?.(error);
         this.eventHandlers.onStatusChange?.("error");

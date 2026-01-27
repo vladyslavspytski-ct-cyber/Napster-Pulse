@@ -184,21 +184,26 @@ const PublicInterviewVoiceAgentCard = ({
           </span>
         </div>
 
-        {/* Current Question Card */}
-        {currentQuestion && !isCompleted && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full mt-6"
-          >
-            <Card className="bg-background/50 border-border/30">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground mb-1">Current Question</p>
-                <p className="text-foreground font-medium">{currentQuestion}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        {/* Current Question Card - always reserve space to prevent layout shift */}
+        <div className="w-full mt-6 min-h-[72px]">
+          <AnimatePresence mode="wait">
+            {currentQuestion && !isCompleted && (
+              <motion.div
+                key="question-card"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10, transition: { duration: 0.15 } }}
+              >
+                <Card className="bg-background/50 border-border/30">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Current Question</p>
+                    <p className="text-foreground font-medium">{currentQuestion}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Call Button */}
         <motion.div className="mt-6" whileTap={{ scale: 0.95 }}>

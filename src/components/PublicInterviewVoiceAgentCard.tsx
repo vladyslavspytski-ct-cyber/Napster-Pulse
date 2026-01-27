@@ -90,7 +90,7 @@ const PublicInterviewVoiceAgentCard = ({
   const isCompleted = state === "completed";
 
   return (
-    <Card className="w-full max-w-[650px] mx-auto glass-card border-border/50">
+    <Card className="w-full glass-card border-border/50">
       <CardContent className="p-8 flex flex-col items-center justify-between min-h-[420px]">
         {/* Orb Visualization */}
         <div className="relative w-32 h-32 flex items-center justify-center overflow-visible m-[22px]">

@@ -134,7 +134,7 @@ const PublicInterview = () => {
       <Header />
 
       <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28">
-        <div className="mx-auto w-full max-w-[650px]">
+        <div className="mx-auto w-full lg:w-[650px]">
           <AnimatePresence mode="wait">
             {/* STEP 1: Participant Details Form */}
             {step === "details" && (

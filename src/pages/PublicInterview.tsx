@@ -303,6 +303,7 @@ const PublicInterview = () => {
             {/* STEP 2: Interview Session */}
             {step === "interview" && (
               <motion.div
+                id="public-interview-step-agent"
                 key="interview"
                 variants={containerVariants}
                 initial="hidden"

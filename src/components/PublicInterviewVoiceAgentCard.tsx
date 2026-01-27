@@ -209,6 +209,7 @@ const PublicInterviewVoiceAgentCard = ({
         <motion.div className="mt-6" whileTap={{ scale: 0.95 }}>
           {state === "idle" && (
             <Button
+              id="public-interview-agent-idle"
               onClick={onStart}
               size="icon"
               className="w-16 h-16 rounded-full btn-gradient text-primary-foreground hover:scale-105 transition-all duration-300 shadow-lg"
@@ -219,6 +220,7 @@ const PublicInterviewVoiceAgentCard = ({
           
           {isLoading && (
             <Button
+              id="public-interview-agent-connecting"
               disabled
               size="icon"
               className="w-16 h-16 rounded-full btn-gradient text-primary-foreground shadow-lg"
@@ -234,6 +236,7 @@ const PublicInterviewVoiceAgentCard = ({
           
           {isActive && (
             <Button
+              id="public-interview-agent-listening"
               onClick={onEnd}
               size="icon"
               className="w-16 h-16 rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-all duration-300 shadow-lg"
@@ -243,7 +246,7 @@ const PublicInterviewVoiceAgentCard = ({
           )}
           
           {isCompleted && (
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <div id="public-interview-agent-completed" className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}

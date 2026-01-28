@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useSignedUrl } from "@/hooks/api/useSignedUrl";
+import { useCreateInterview } from "@/hooks/api/useCreateInterview";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SavedInterviewBlock from "@/components/SavedInterviewBlock";
 import CreateInterviewVoiceAgentCard from "@/components/CreateInterviewVoiceAgentCard";
-import { generateInterviewId, generateToken, saveInterview } from "@/lib/interviewStorage";
-import { getSignedUrl, ElevenLabsConversation } from "@/lib/elevenlabs";
+import { ElevenLabsConversation } from "@/lib/elevenlabs";
 
 type AgentUIState = "disconnected" | "connecting" | "connected" | "disconnecting";
 
@@ -26,6 +27,8 @@ const AGENT_ID = "agent_5501kfn6xt2vek481a42ezynaqbq";
 
 const CreateInterview = () => {
   const { toast } = useToast();
+  const { fetchSignedUrl } = useSignedUrl(AGENT_ID, { enabled: false });
+  const { createInterview, isLoading: isSaving } = useCreateInterview();
   const [interviewName, setInterviewName] = useState("");
   const [agentState, setAgentState] = useState<AgentUIState>("disconnected");
   const [inputLevel, setInputLevel] = useState(0);
@@ -144,7 +147,7 @@ const CreateInterview = () => {
       }
 
       // Get signed URL from backend
-      const signedUrl = await getSignedUrl(AGENT_ID);
+      const signedUrl = await fetchSignedUrl();
 
       // Clear buffers on new session
       assistantBufferRef.current = "";
@@ -291,24 +294,41 @@ const CreateInterview = () => {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, text: newText, isEditing: false } : q)));
   };
 
-  const handleSaveAndGenerateLink = () => {
-    const id = generateInterviewId();
-    const token = generateToken();
-    const origin = window.location.origin;
-    const publicUrl = `${origin}/i/${token}`;
+  const handleSaveAndGenerateLink = async () => {
+    const trimmedName = interviewName.trim();
 
-    // Save to localStorage
-    saveInterview({
-      id,
-      title: interviewName || "Untitled Interview",
-      questions: questions.map((q) => ({ id: q.id, text: q.text })),
-      token,
-      publicUrl,
-      createdAt: new Date().toISOString(),
+    // Validation check
+    if (!trimmedName || questions.length === 0) {
+      return;
+    }
+
+    const response = await createInterview({
+      title: trimmedName,
+      questions: questions.map((q) => q.text),
     });
 
+    if (!response) {
+      toast({
+        title: "Error",
+        description: "Failed to create interview. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Log response for debugging
+    console.log("[CreateInterview] Response:", {
+      id: response.id,
+      link_id: response.link_id,
+      is_active: response.is_active,
+      created_at: response.created_at,
+    });
+
+    const origin = window.location.origin;
+    const publicUrl = `${origin}/i/${response.link_id}`;
+
     setSavedData({
-      title: interviewName || "Untitled Interview",
+      title: trimmedName,
       questionsCount: questions.length,
       publicUrl,
     });
@@ -486,15 +506,19 @@ const CreateInterview = () => {
                     <CardContent className="space-y-4">
                       <PrimaryButton
                         onClick={handleSaveAndGenerateLink}
-                        disabled={questions.length === 0}
+                        disabled={!interviewName.trim() || questions.length === 0 || isSaving}
                         className="w-full"
                         size="lg"
                       >
-                        Save interview & Generate link
+                        {isSaving ? "Saving..." : "Save interview & Generate link"}
                       </PrimaryButton>
-                      {questions.length === 0 && (
+                      {(!interviewName.trim() || questions.length === 0) && (
                         <p className="text-sm text-muted-foreground text-center">
-                          Add at least one question to save your interview.
+                          {!interviewName.trim() && questions.length === 0
+                            ? "Enter an interview name and add at least one question to save."
+                            : !interviewName.trim()
+                            ? "Enter an interview name to save your interview."
+                            : "Add at least one question to save your interview."}
                         </p>
                       )}
                     </CardContent>

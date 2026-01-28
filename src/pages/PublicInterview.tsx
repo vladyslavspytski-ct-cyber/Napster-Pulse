@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useSignedUrl } from "@/hooks/api/useSignedUrl";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PublicInterviewVoiceAgentCard from "@/components/PublicInterviewVoiceAgentCard";
-import { getSignedUrl, ElevenLabsConversation } from "@/lib/elevenlabs";
+import { ElevenLabsConversation } from "@/lib/elevenlabs";
 
 type Step = "details" | "interview" | "completed";
 type AgentState = "idle" | "connecting" | "connected" | "listening" | "processing" | "completed";
@@ -31,6 +32,7 @@ interface FormErrors {
 // Interview Host Agent ID
 const INTERVIEW_HOST_AGENT_ID = "agent_3901kfzdsmpjeee9n3tvfkhgnnrm";
 
+
 // Hardcoded test questions (for now)
 const TEST_QUESTIONS = [
   "What is your name?",
@@ -41,6 +43,7 @@ const TEST_QUESTIONS = [
 const PublicInterview = () => {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
+  const { fetchSignedUrl } = useSignedUrl(INTERVIEW_HOST_AGENT_ID, { enabled: false });
   const [step, setStep] = useState<Step>("details");
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -54,29 +57,55 @@ const PublicInterview = () => {
   // Refs for ElevenLabs session
   const conversationRef = useRef<ElevenLabsConversation | null>(null);
   const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const assistantBufferRef = useRef<string>("");
 
-  // Type for interview results from agent
-  interface InterviewResult {
-    status: "completed" | "stopped";
-    answers: Array<{ question: string; answer: string }>;
-  }
+  // Transcript to track conversation messages in order
+  type TranscriptEntry = { role: "agent" | "user"; text: string };
+  const transcriptRef = useRef<TranscriptEntry[]>([]);
 
-  // Try to parse interview results from agent messages
-  const tryParseResults = (buffer: string): InterviewResult | null => {
-    try {
-      // Look for JSON in the buffer
-      const jsonMatch = buffer.match(/\{[\s\S]*"status"[\s\S]*"answers"[\s\S]*\}/);
-      if (!jsonMatch) return null;
+  // Parse Q&A from transcript by matching questions to subsequent user answers
+  const parseQAFromTranscript = (
+    transcript: TranscriptEntry[],
+    questions: string[]
+  ): Array<{ question: string; answer: string }> => {
+    const results: Array<{ question: string; answer: string }> = [];
 
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (parsed.status && Array.isArray(parsed.answers)) {
-        return parsed as InterviewResult;
+    // For each question, find when agent asked it and capture user's answer
+    for (const question of questions) {
+      // Find index where agent mentions this question (fuzzy match)
+      const questionLower = question.toLowerCase();
+      let questionIndex = -1;
+
+      for (let i = 0; i < transcript.length; i++) {
+        if (transcript[i].role === "agent") {
+          const agentText = transcript[i].text.toLowerCase();
+          // Check if agent message contains key words from the question
+          const questionWords = questionLower.split(" ").filter((w) => w.length > 3);
+          const matchCount = questionWords.filter((w) => agentText.includes(w)).length;
+          if (matchCount >= Math.min(2, questionWords.length)) {
+            questionIndex = i;
+            break;
+          }
+        }
       }
-    } catch {
-      // Not valid JSON yet
+
+      // Find next user response after this question
+      if (questionIndex >= 0) {
+        for (let j = questionIndex + 1; j < transcript.length; j++) {
+          if (transcript[j].role === "user") {
+            results.push({
+              question,
+              answer: transcript[j].text,
+            });
+            break;
+          }
+        }
+      } else {
+        // Question wasn't found in transcript, add with empty answer
+        results.push({ question, answer: "" });
+      }
     }
-    return null;
+
+    return results;
   };
 
   // Cleanup on unmount
@@ -140,7 +169,7 @@ const PublicInterview = () => {
       setAgentState("connecting");
 
       // Clear any previous transcript
-      assistantBufferRef.current = "";
+      transcriptRef.current = [];
 
       // Request microphone permission
       let mediaStream: MediaStream;
@@ -168,7 +197,7 @@ const PublicInterview = () => {
 
       // Get signed URL from backend
       console.log("[PublicInterview] Fetching signed URL for agent:", INTERVIEW_HOST_AGENT_ID);
-      const signedUrl = await getSignedUrl(INTERVIEW_HOST_AGENT_ID);
+      const signedUrl = await fetchSignedUrl();
       console.log("[PublicInterview] Signed URL received");
 
       // Format questions for dynamic variables (must match agent prompt variable name exactly)
@@ -209,8 +238,11 @@ const PublicInterview = () => {
         },
         onAssistantMessage: (message) => {
           console.log("[PublicInterview] Agent message:", message);
-          // Accumulate all agent messages for later parsing
-          assistantBufferRef.current += message + "\n";
+          transcriptRef.current.push({ role: "agent", text: message });
+        },
+        onUserMessage: (message) => {
+          console.log("[PublicInterview] User message:", message);
+          transcriptRef.current.push({ role: "user", text: message });
         },
       });
 
@@ -256,27 +288,21 @@ const PublicInterview = () => {
 
       console.log("[PublicInterview] Session ended, transitioning to completed");
 
-      // Try to parse interview results from accumulated agent messages
-      const buffer = assistantBufferRef.current;
-      console.log("[PublicInterview] Full agent transcript:", buffer);
+      // Log full transcript
+      console.log("[PublicInterview] Full transcript:", transcriptRef.current);
 
-      const results = tryParseResults(buffer);
-      if (results) {
-        console.log("[PublicInterview] === Interview Results ===");
-        console.log("[PublicInterview] Status:", results.status);
-        console.log("[PublicInterview] Q&A Pairs:");
-        results.answers.forEach((qa, index) => {
-          console.log(`[PublicInterview]   ${index + 1}. Q: ${qa.question}`);
-          console.log(`[PublicInterview]      A: ${qa.answer}`);
-        });
-        console.log("[PublicInterview] === End Results ===");
-      } else {
-        console.log("[PublicInterview] Could not parse interview results from transcript");
-        console.log("[PublicInterview] Note: The agent may not have output the final JSON summary yet");
-      }
+      // Parse Q&A from transcript
+      const qaResults = parseQAFromTranscript(transcriptRef.current, TEST_QUESTIONS);
 
-      // Clear the buffer for potential future interviews
-      assistantBufferRef.current = "";
+      console.log("[PublicInterview] === Interview Results ===");
+      qaResults.forEach((qa, index) => {
+        console.log(`[PublicInterview]   ${index + 1}. Q: ${qa.question}`);
+        console.log(`[PublicInterview]      A: ${qa.answer || "(no answer)"}`);
+      });
+      console.log("[PublicInterview] === End Results ===");
+
+      // Clear transcript for potential future interviews
+      transcriptRef.current = [];
 
       setAgentState("completed");
       setCurrentQuestion(undefined);
@@ -303,7 +329,7 @@ const PublicInterview = () => {
     setErrors({});
     setAgentState("idle");
     setCurrentQuestion(undefined);
-    assistantBufferRef.current = "";
+    transcriptRef.current = [];
   };
 
   const containerVariants = {

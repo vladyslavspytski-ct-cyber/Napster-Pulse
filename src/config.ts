@@ -1,0 +1,3 @@
+export const BACKEND_BASE_URL =
+  import.meta.env.VITE_BACKEND_BASE_URL ||
+  "https://6b1f480e-522b-4966-994d-ab07935e3eae-00-d9x034m4h7fk.worf.replit.dev";

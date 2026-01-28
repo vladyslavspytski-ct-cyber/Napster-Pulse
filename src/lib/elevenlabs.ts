@@ -1,41 +1,33 @@
-const BACKEND_SIGNED_URL_ENDPOINT =
-  "https://91fa0c1f-27e4-4865-b0e6-1480aa4fb32b-00-d6703fvz3gp.worf.replit.dev/signed-url";
+import { callApi } from "@/lib/api";
+import { API_ROUTES } from "@/lib/apiRoutes";
 
 /**
  * Fetches a signed URL from the backend for the given agent ID.
- * Handles both plain text and JSON responses.
  */
 export async function getSignedUrl(agentId: string): Promise<string> {
   try {
-    const response = await fetch(`${BACKEND_SIGNED_URL_ENDPOINT}?agentId=${agentId}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch signed URL: ${response.status} ${response.statusText}`);
-    }
-
-    const contentType = response.headers.get("content-type") || "";
-
-    // Handle JSON response
-    if (contentType.includes("application/json")) {
-      const data = await response.json();
-
-      if (typeof data === "object" && data.signedUrl) {
-        return data.signedUrl;
-      }
-      // If data itself is the URL string wrapped in JSON
-      if (typeof data === "string") {
-        return data;
-      }
-      throw new Error("Invalid JSON response: missing signedUrl field");
-    }
+    const path = `${API_ROUTES.signedUrl}?agentId=${encodeURIComponent(agentId)}`;
+    const data = await callApi<string | Record<string, unknown>>(path);
 
     // Handle plain text response
-    const text = await response.text();
-    if (!text || text.trim().length === 0) {
-      throw new Error("Empty signed URL received from backend");
+    if (typeof data === "string") {
+      if (!data.trim()) {
+        throw new Error("Empty signed URL received from backend");
+      }
+      return data.trim();
     }
 
-    return text.trim();
+    // Handle JSON response - support both signed_url and signedUrl
+    if (typeof data === "object" && data) {
+      const signed =
+        (typeof data.signedUrl === "string" && data.signedUrl) ||
+        (typeof data.signed_url === "string" && data.signed_url) ||
+        (typeof data.url === "string" && data.url);
+
+      if (signed) return signed.trim();
+    }
+
+    throw new Error("Invalid response: missing signedUrl field");
   } catch (error) {
     console.error("[ElevenLabs] Error fetching signed URL:", error);
     throw error;
@@ -89,11 +81,14 @@ export class ElevenLabsConversation {
    * @param mediaStream - The user's microphone stream
    * @param options - Optional configuration (firstMessage override, dynamic variables) or string for backwards compatibility
    */
-  async startSession(signedUrl: string, mediaStream: MediaStream, options?: StartSessionOptions | string): Promise<void> {
+  async startSession(
+    signedUrl: string,
+    mediaStream: MediaStream,
+    options?: StartSessionOptions | string,
+  ): Promise<void> {
     // Support legacy string parameter for backwards compatibility
-    const opts: StartSessionOptions = typeof options === 'string'
-      ? { firstMessage: options }
-      : (options || {});
+    const opts: StartSessionOptions =
+      typeof options === "string" ? { firstMessage: options } : options || {};
 
     console.log("[ElevenLabs] Starting session with options:", opts);
 
@@ -105,7 +100,7 @@ export class ElevenLabsConversation {
       this.audioContext = new AudioContext();
 
       // Resume audio context if suspended (required by browsers)
-      if (this.audioContext.state === 'suspended') {
+      if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
 
@@ -136,7 +131,9 @@ export class ElevenLabsConversation {
 
         // Send conversation_initiation_client_data if we have overrides or dynamic variables
         const hasFirstMessage = !!opts.firstMessage;
-        const hasDynamicVars = opts.dynamicVariables && Object.keys(opts.dynamicVariables).length > 0;
+        const hasDynamicVars =
+          opts.dynamicVariables &&
+          Object.keys(opts.dynamicVariables).length > 0;
 
         if ((hasFirstMessage || hasDynamicVars) && this.ws) {
           const initiationMessage: Record<string, unknown> = {
@@ -147,24 +144,37 @@ export class ElevenLabsConversation {
           if (hasFirstMessage) {
             initiationMessage.conversation_config_override = {
               agent: {
-                first_message: opts.firstMessage
-              }
+                first_message: opts.firstMessage,
+              },
             };
           }
 
           // Add dynamic variables
           if (hasDynamicVars) {
             initiationMessage.dynamic_variables = opts.dynamicVariables;
-            console.log("[ElevenLabs] Dynamic variable keys:", Object.keys(opts.dynamicVariables!));
-            console.log("[ElevenLabs] Dynamic variables payload:", opts.dynamicVariables);
+            console.log(
+              "[ElevenLabs] Dynamic variable keys:",
+              Object.keys(opts.dynamicVariables!),
+            );
+            console.log(
+              "[ElevenLabs] Dynamic variables payload:",
+              opts.dynamicVariables,
+            );
           }
 
-          console.log("[ElevenLabs] Sending initiation_client_data BEFORE audio streaming");
-          console.log("[ElevenLabs] Full initiation message:", JSON.stringify(initiationMessage, null, 2));
+          console.log(
+            "[ElevenLabs] Sending initiation_client_data BEFORE audio streaming",
+          );
+          console.log(
+            "[ElevenLabs] Full initiation message:",
+            JSON.stringify(initiationMessage, null, 2),
+          );
           this.ws.send(JSON.stringify(initiationMessage));
         }
 
-        console.log("[ElevenLabs] Starting audio streaming AFTER initiation sent");
+        console.log(
+          "[ElevenLabs] Starting audio streaming AFTER initiation sent",
+        );
         this.eventHandlers.onStatusChange?.("connected");
         this.startAudioStreaming();
       };
@@ -190,13 +200,16 @@ export class ElevenLabsConversation {
           } catch (err) {
             console.error("Error processing audio blob:", err);
           }
-        } else if (typeof event.data === 'string') {
+        } else if (typeof event.data === "string") {
           // Handle JSON or text messages
           try {
             const message = JSON.parse(event.data);
 
             // Handle audio events
-            if (message.type === 'audio' && message.audio_event?.audio_base_64) {
+            if (
+              message.type === "audio" &&
+              message.audio_event?.audio_base_64
+            ) {
               // Decode base64 to ArrayBuffer
               const base64Audio = message.audio_event.audio_base_64;
               const binaryString = atob(base64Audio);
@@ -210,23 +223,46 @@ export class ElevenLabsConversation {
             }
 
             // Handle assistant response events
-            if (message.type === 'agent_response' && message.agent_response_event?.agent_response) {
-              this.eventHandlers.onAssistantMessage?.(message.agent_response_event.agent_response);
+            if (
+              message.type === "agent_response" &&
+              message.agent_response_event?.agent_response
+            ) {
+              this.eventHandlers.onAssistantMessage?.(
+                message.agent_response_event.agent_response,
+              );
             }
 
             // Handle assistant response correction events
-            if (message.type === 'agent_response_correction' && message.agent_response_correction_event?.agent_response_correction) {
-              this.eventHandlers.onAssistantMessage?.(message.agent_response_correction_event.agent_response_correction);
+            if (
+              message.type === "agent_response_correction" &&
+              message.agent_response_correction_event?.agent_response_correction
+            ) {
+              this.eventHandlers.onAssistantMessage?.(
+                message.agent_response_correction_event
+                  .agent_response_correction,
+              );
+            }
+
+            // Handle user transcript events
+            if (
+              message.type === "user_transcript" &&
+              message.user_transcription_event?.user_transcript
+            ) {
+              this.eventHandlers.onUserMessage?.(
+                message.user_transcription_event.user_transcript,
+              );
             }
           } catch (err) {
             // Ignore non-JSON messages
           }
         }
       };
-
     } catch (error) {
       console.error("[ElevenLabs] Error starting conversation:", error);
-      const err = error instanceof Error ? error : new Error("Failed to start conversation");
+      const err =
+        error instanceof Error
+          ? error
+          : new Error("Failed to start conversation");
       this.eventHandlers.onError?.(err);
       throw err;
     }
@@ -259,7 +295,7 @@ export class ElevenLabsConversation {
       const pcmData = this.resampleAndConvertToPCM16(
         inputData,
         this.audioContext!.sampleRate,
-        16000
+        16000,
       );
 
       // Send PCM data as base64-encoded JSON message
@@ -270,7 +306,7 @@ export class ElevenLabsConversation {
 
         // Create the message in ElevenLabs format
         const message = {
-          user_audio_chunk: base64
+          user_audio_chunk: base64,
         };
 
         this.ws.send(JSON.stringify(message));
@@ -288,7 +324,7 @@ export class ElevenLabsConversation {
   private resampleAndConvertToPCM16(
     audioData: Float32Array,
     sourceSampleRate: number,
-    targetSampleRate: number
+    targetSampleRate: number,
   ): Int16Array {
     // Calculate resampling ratio
     const ratio = sourceSampleRate / targetSampleRate;
@@ -303,14 +339,15 @@ export class ElevenLabsConversation {
       const t = srcIndex - srcIndexFloor;
 
       // Linear interpolation
-      result[i] = audioData[srcIndexFloor] * (1 - t) + audioData[srcIndexCeil] * t;
+      result[i] =
+        audioData[srcIndexFloor] * (1 - t) + audioData[srcIndexCeil] * t;
     }
 
     // Convert Float32 [-1, 1] to Int16 [-32768, 32767]
     const pcm16 = new Int16Array(newLength);
     for (let i = 0; i < newLength; i++) {
       const s = Math.max(-1, Math.min(1, result[i])); // Clamp
-      pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
     }
 
     return pcm16;
@@ -321,7 +358,7 @@ export class ElevenLabsConversation {
 
     try {
       // Ensure audio context is running
-      if (this.audioContext.state === 'suspended') {
+      if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
 
@@ -332,14 +369,14 @@ export class ElevenLabsConversation {
       const float32Array = new Float32Array(int16Array.length);
       for (let i = 0; i < int16Array.length; i++) {
         // Convert Int16 [-32768, 32767] to Float32 [-1, 1]
-        float32Array[i] = int16Array[i] / (int16Array[i] < 0 ? 0x8000 : 0x7FFF);
+        float32Array[i] = int16Array[i] / (int16Array[i] < 0 ? 0x8000 : 0x7fff);
       }
 
       // Create audio buffer at 16kHz (server's sample rate)
       const audioBuffer = this.audioContext.createBuffer(
         1, // mono
         float32Array.length,
-        16000 // 16kHz sample rate
+        16000, // 16kHz sample rate
       );
 
       // Copy data to audio buffer
@@ -424,7 +461,7 @@ export class ElevenLabsConversation {
 
     // Stop media stream tracks
     if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream.getTracks().forEach((track) => track.stop());
       this.mediaStream = null;
     }
 

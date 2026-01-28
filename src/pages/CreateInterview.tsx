@@ -88,21 +88,90 @@ const CreateInterview = () => {
     setOutputLevel(0);
   };
 
+  // Try to extract balanced JSON object starting from a position
+  const extractJsonObject = (str: string, startIndex: number): string | null => {
+    if (str[startIndex] !== "{") return null;
+
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+
+    for (let i = startIndex; i < str.length; i++) {
+      const char = str[i];
+
+      if (escape) {
+        escape = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escape = true;
+        continue;
+      }
+
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (!inString) {
+        if (char === "{") depth++;
+        if (char === "}") {
+          depth--;
+          if (depth === 0) {
+            return str.slice(startIndex, i + 1);
+          }
+        }
+      }
+    }
+    return null; // Unbalanced JSON
+  };
+
   // Try to parse questions from assistant buffer
   const tryParseQuestions = (buffer: string): { questions: string[] } | null => {
-    try {
-      // Try to find JSON in the buffer
-      const jsonMatch = buffer.match(/\{[\s\S]*"questions"[\s\S]*\}/);
-      if (!jsonMatch) return null;
+    console.log("[tryParseQuestions] Buffer length:", buffer.length);
 
-      const parsed = JSON.parse(jsonMatch[0]);
+    // Find all positions where potential JSON starts with "questions"
+    const pattern = /\{\s*"questions"\s*:/g;
+    const startPositions: number[] = [];
+    let match: RegExpExecArray | null;
 
-      if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-        return { questions: parsed.questions };
-      }
-    } catch (err) {
-      // Invalid JSON, continue accumulating
+    while ((match = pattern.exec(buffer)) !== null) {
+      startPositions.push(match.index);
     }
+
+    console.log("[tryParseQuestions] Found potential JSON starts at positions:", startPositions);
+
+    if (startPositions.length === 0) {
+      console.log("[tryParseQuestions] No JSON candidates found");
+      return null;
+    }
+
+    // Try to parse from LAST position first (most recent)
+    for (let i = startPositions.length - 1; i >= 0; i--) {
+      const pos = startPositions[i];
+      const jsonStr = extractJsonObject(buffer, pos);
+
+      console.log(`[tryParseQuestions] Position ${pos}: extracted JSON = ${jsonStr ? jsonStr.substring(0, 100) + "..." : "null"}`);
+
+      if (!jsonStr) continue;
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        console.log("[tryParseQuestions] Parsed successfully:", parsed);
+
+        if (parsed.questions && Array.isArray(parsed.questions)) {
+          console.log("[tryParseQuestions] Valid questions array with", parsed.questions.length, "items");
+          if (parsed.questions.length > 0) {
+            return { questions: parsed.questions };
+          }
+        }
+      } catch (err) {
+        console.log(`[tryParseQuestions] Parse error at position ${pos}:`, err);
+      }
+    }
+
+    console.log("[tryParseQuestions] No valid JSON with questions found");
     return null;
   };
 
@@ -112,13 +181,20 @@ const CreateInterview = () => {
 
     // Accumulate the message
     assistantBufferRef.current += message;
-    console.log("[Agent Buffer]", assistantBufferRef.current);
+    console.log("[Agent Buffer] Length:", assistantBufferRef.current.length, "Content:", assistantBufferRef.current.substring(0, 200));
 
     // Try to parse questions
     const result = tryParseQuestions(assistantBufferRef.current);
     if (result) {
-      console.log("[Agent Questions Parsed]", result.questions);
+      console.log("[Agent] ✅ Questions parsed successfully:", result.questions);
+      console.log("[Agent] Previous lastQuestionsRef:", lastQuestionsRef.current?.questions);
       lastQuestionsRef.current = result;
+      console.log("[Agent] Updated lastQuestionsRef:", lastQuestionsRef.current.questions);
+      // Clear buffer after successful parse to prevent issues with multiple JSON outputs
+      assistantBufferRef.current = "";
+      console.log("[Agent] Buffer cleared");
+    } else {
+      console.log("[Agent] No valid JSON yet, continuing to accumulate");
     }
   };
 

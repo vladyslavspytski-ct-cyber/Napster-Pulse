@@ -9,10 +9,19 @@ export interface CreateInterviewPayload {
 
 export interface CreateInterviewResponse {
   id: string;
-  link_id: string;
   title: string;
   is_active: boolean;
-  created_at: string;
+  link: {
+    id: string;
+    unique_key: string;
+    created_at: string;
+  };
+  questions: Array<{
+    id: string;
+    interview_id: string;
+    text: string;
+    order: number;
+  }>;
 }
 
 interface UseCreateInterviewResult {

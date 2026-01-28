@@ -10,20 +10,24 @@ import { SecondaryButton } from "@/components/ui/SecondaryButton";
 interface SavedInterviewBlockProps {
   title: string;
   questionsCount: number;
-  publicUrl: string;
+  /** Clean URL displayed to user (without query params) */
+  displayUrl: string;
+  /** Full URL for copy/open actions (with query params) */
+  fullUrl: string;
   onCreateAnother: () => void;
 }
 
 const SavedInterviewBlock = ({
   title,
   questionsCount,
-  publicUrl,
+  displayUrl,
+  fullUrl,
 }: SavedInterviewBlockProps) => {
   const { toast } = useToast();
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyLink = async () => {
-    await navigator.clipboard.writeText(publicUrl);
+    await navigator.clipboard.writeText(fullUrl);
     setIsCopied(true);
     toast({
       title: "Link copied!",
@@ -33,7 +37,7 @@ const SavedInterviewBlock = ({
   };
 
   const handleOpenLink = () => {
-    window.open(publicUrl, "_blank");
+    window.open(fullUrl, "_blank");
   };
 
   return (
@@ -92,7 +96,7 @@ const SavedInterviewBlock = ({
             </label>
             <div className="flex gap-2">
               <Input
-                value={publicUrl}
+                value={displayUrl}
                 readOnly
                 className="bg-background/50 font-mono text-sm"
               />

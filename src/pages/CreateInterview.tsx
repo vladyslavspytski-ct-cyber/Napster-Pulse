@@ -39,7 +39,8 @@ const CreateInterview = () => {
   const [savedData, setSavedData] = useState<{
     title: string;
     questionsCount: number;
-    publicUrl: string;
+    displayUrl: string;
+    fullUrl: string;
   } | null>(null);
 
   const conversationRef = useRef<ElevenLabsConversation | null>(null);
@@ -395,18 +396,20 @@ const CreateInterview = () => {
     // Log response for debugging
     console.log("[CreateInterview] Response:", {
       id: response.id,
-      link_id: response.link_id,
+      link: response.link,
       is_active: response.is_active,
-      created_at: response.created_at,
     });
 
     const origin = window.location.origin;
-    const publicUrl = `${origin}/i/${response.link_id}`;
+    const uniqueKey = response.link?.unique_key;
+    const displayUrl = `${origin}/i/${uniqueKey}`;
+    const fullUrl = `${origin}/i/${uniqueKey}?interviewId=${response.id}`;
 
     setSavedData({
       title: trimmedName,
       questionsCount: questions.length,
-      publicUrl,
+      displayUrl,
+      fullUrl,
     });
     setIsSaved(true);
 
@@ -613,7 +616,8 @@ const CreateInterview = () => {
                   <SavedInterviewBlock
                     title={savedData.title}
                     questionsCount={savedData.questionsCount}
-                    publicUrl={savedData.publicUrl}
+                    displayUrl={savedData.displayUrl}
+                    fullUrl={savedData.fullUrl}
                     onCreateAnother={handleCreateAnother}
                   />
                 )}

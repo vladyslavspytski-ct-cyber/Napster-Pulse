@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, CheckCircle2, RotateCcw } from "lucide-react";
+import { User, Mail, CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useSignedUrl } from "@/hooks/api/useSignedUrl";
+import { usePublicInterview } from "@/hooks/api/usePublicInterview";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PublicInterviewVoiceAgentCard from "@/components/PublicInterviewVoiceAgentCard";
@@ -29,22 +29,20 @@ interface FormErrors {
   email?: string;
 }
 
-// Interview Host Agent ID
-const INTERVIEW_HOST_AGENT_ID = "agent_3901kfzdsmpjeee9n3tvfkhgnnrm";
-
-
-// Hardcoded test questions (for now)
-const TEST_QUESTIONS = [
-  "What is your name?",
-  "How old are you?",
-  "Do you have a cat?",
-];
-
 const PublicInterview = () => {
-  const { token } = useParams<{ token: string }>();
+  const { token: key } = useParams<{ token: string }>();
+
   const { toast } = useToast();
-  const { fetchSignedUrl } = useSignedUrl(INTERVIEW_HOST_AGENT_ID, { enabled: false });
+  const {
+    interviewData,
+    isLoading: isLoadingInterview,
+    error: interviewError,
+    fetchInterviewByKey,
+    fetchSignedUrlByKey,
+  } = usePublicInterview();
+
   const [step, setStep] = useState<Step>("details");
+  const [isInitializing, setIsInitializing] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -123,6 +121,53 @@ const PublicInterview = () => {
     };
   }, []);
 
+  // Initialize: fetch interview data by key
+  useEffect(() => {
+    const initializeInterview = async () => {
+      if (!key) {
+        console.error("[PublicInterview] No key provided in URL");
+        setIsInitializing(false);
+        return;
+      }
+
+      console.log("[PublicInterview] Initializing with key:", key);
+
+      try {
+        // Fetch interview data by key
+        console.log("[PublicInterview] Fetching interview by key:", key);
+        const data = await fetchInterviewByKey(key);
+
+        if (data) {
+          console.log("[PublicInterview] Interview loaded successfully:", {
+            title: data.title,
+            questions: data.questions,
+          });
+        } else {
+          console.error("[PublicInterview] Failed to load interview data");
+          toast({
+            title: "Error",
+            description: "Could not load interview. Please check the link.",
+            variant: "destructive",
+          });
+        }
+      } catch (err) {
+        console.error("[PublicInterview] Initialization error:", err);
+        toast({
+          title: "Error",
+          description: "Failed to initialize interview",
+          variant: "destructive",
+        });
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeInterview();
+  }, [key, fetchInterviewByKey, toast]);
+
+  // Get questions from interview data (already an array of strings)
+  const questions = interviewData?.questions || [];
+
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -166,6 +211,29 @@ const PublicInterview = () => {
   const handleStartInterview = async () => {
     try {
       console.log("[PublicInterview] Starting interview...");
+
+      // Get interviewId from backend response
+      const interviewId = interviewData?.id;
+
+      // Validate we have required data
+      if (!key || !interviewId) {
+        toast({
+          title: "Error",
+          description: "Missing interview key or ID",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (questions.length === 0) {
+        toast({
+          title: "Error",
+          description: "No questions available for this interview",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setAgentState("connecting");
 
       // Clear any previous transcript
@@ -195,13 +263,13 @@ const PublicInterview = () => {
         return;
       }
 
-      // Get signed URL from backend
-      console.log("[PublicInterview] Fetching signed URL for agent:", INTERVIEW_HOST_AGENT_ID);
-      const signedUrl = await fetchSignedUrl();
+      // Get signed URL from backend using key and interviewId
+      console.log("[PublicInterview] Fetching signed URL for key:", key, "interviewId:", interviewId);
+      const signedUrl = await fetchSignedUrlByKey(key, interviewId);
       console.log("[PublicInterview] Signed URL received");
 
       // Format questions for dynamic variables (must match agent prompt variable name exactly)
-      const questionsText = TEST_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join("\n");
+      const questionsText = questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
       console.log("[PublicInterview] QUESTIONS variable value:", questionsText);
       console.log("[PublicInterview] Will send dynamic_variables.QUESTIONS (uppercase)");
 
@@ -212,7 +280,7 @@ const PublicInterview = () => {
           if (status === "connected") {
             setAgentState("listening");
             // Set the first question as current (for UI display)
-            setCurrentQuestion(TEST_QUESTIONS[0]);
+            setCurrentQuestion(questions[0]);
             toast({
               title: "Connected",
               description: "Interview started. Please answer the questions.",
@@ -292,7 +360,7 @@ const PublicInterview = () => {
       console.log("[PublicInterview] Full transcript:", transcriptRef.current);
 
       // Parse Q&A from transcript
-      const qaResults = parseQAFromTranscript(transcriptRef.current, TEST_QUESTIONS);
+      const qaResults = parseQAFromTranscript(transcriptRef.current, questions);
 
       console.log("[PublicInterview] === Interview Results ===");
       qaResults.forEach((qa, index) => {
@@ -357,8 +425,41 @@ const PublicInterview = () => {
       <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28">
         <div className="mx-auto w-full lg:w-[650px]">
           <AnimatePresence mode="wait">
+            {/* Loading State */}
+            {isInitializing && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-20"
+              >
+                <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Loading interview...</p>
+              </motion.div>
+            )}
+
+            {/* Error State */}
+            {!isInitializing && interviewError && (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <Card className="glass-card border-destructive/50">
+                  <CardContent className="p-8 text-center">
+                    <p className="text-destructive font-medium mb-2">Failed to load interview</p>
+                    <p className="text-muted-foreground text-sm">
+                      Please check the link and try again.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* STEP 1: Participant Details Form */}
-            {step === "details" && (
+            {!isInitializing && !interviewError && step === "details" && (
               <motion.div
                 key="details"
                 variants={containerVariants}
@@ -376,7 +477,7 @@ const PublicInterview = () => {
                         transition={{ delay: 0.1 }}
                       >
                         <CardTitle className="text-2xl md:text-3xl font-bold">
-                          Welcome to the Interview
+                          {interviewData?.title || "Welcome to the Interview"}
                         </CardTitle>
                       </motion.div>
                       <motion.div
@@ -510,19 +611,19 @@ const PublicInterview = () => {
                 </motion.div>
 
                 {/* Interview ID (subtle) */}
-                {token && (
+                {key && (
                   <motion.p
                     variants={itemVariants}
                     className="text-xs text-muted-foreground/50 text-center"
                   >
-                    Interview: {token.slice(0, 8)}...
+                    Interview: {key.slice(0, 8)}...
                   </motion.p>
                 )}
               </motion.div>
             )}
 
             {/* STEP 2: Interview Session */}
-            {step === "interview" && (
+            {!isInitializing && !interviewError && step === "interview" && (
               <motion.div
                 id="public-interview-step-agent"
                 key="interview"
@@ -579,7 +680,7 @@ const PublicInterview = () => {
             )}
 
             {/* STEP 3: Completion Screen */}
-            {step === "completed" && (
+            {!isInitializing && !interviewError && step === "completed" && (
               <motion.div
                 key="completed"
                 variants={containerVariants}

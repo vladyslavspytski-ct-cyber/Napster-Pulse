@@ -185,7 +185,7 @@ const PublicInterviewVoiceAgentCard = ({
         </div>
 
         {/* Current Question Card - always reserve space to prevent layout shift */}
-        <div className="w-full mt-6 min-h-[72px]">
+        {/* <div className="w-full mt-6 min-h-[72px]">
           <AnimatePresence mode="wait">
             {currentQuestion && !isCompleted && (
               <motion.div
@@ -203,7 +203,7 @@ const PublicInterviewVoiceAgentCard = ({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </div> */}
 
         {/* Call Button */}
         <motion.div className="mt-6" whileTap={{ scale: 0.95 }}>

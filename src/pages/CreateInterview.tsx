@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useSignedUrl } from "@/hooks/api/useSignedUrl";
 import { useCreateInterview } from "@/hooks/api/useCreateInterview";
+import { callApi } from "@/lib/api";
+import { API_ROUTES } from "@/lib/apiRoutes";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SavedInterviewBlock from "@/components/SavedInterviewBlock";
@@ -39,8 +41,7 @@ const CreateInterview = () => {
   const [savedData, setSavedData] = useState<{
     title: string;
     questionsCount: number;
-    displayUrl: string;
-    fullUrl: string;
+    publicUrl: string;
   } | null>(null);
 
   const conversationRef = useRef<ElevenLabsConversation | null>(null);
@@ -394,22 +395,37 @@ const CreateInterview = () => {
     }
 
     // Log response for debugging
-    console.log("[CreateInterview] Response:", {
+    console.log("[CreateInterview] Interview created:", {
       id: response.id,
       link: response.link,
       is_active: response.is_active,
     });
 
+    // Activate the interview immediately after creation
+    try {
+      console.log("[CreateInterview] Activating interview:", response.id);
+      await callApi(API_ROUTES.activateInterview(response.id), {
+        method: "PUT",
+      });
+      console.log("[CreateInterview] Interview activated successfully");
+    } catch (activateError) {
+      console.error("[CreateInterview] Failed to activate interview:", activateError);
+      toast({
+        title: "Error",
+        description: "Interview created but activation failed. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const origin = window.location.origin;
     const uniqueKey = response.link?.unique_key;
-    const displayUrl = `${origin}/i/${uniqueKey}`;
-    const fullUrl = `${origin}/i/${uniqueKey}?interviewId=${response.id}`;
+    const publicUrl = `${origin}/i/${uniqueKey}`;
 
     setSavedData({
       title: trimmedName,
       questionsCount: questions.length,
-      displayUrl,
-      fullUrl,
+      publicUrl,
     });
     setIsSaved(true);
 
@@ -475,7 +491,7 @@ const CreateInterview = () => {
                     </CardHeader>
                     <CardContent>
                       <Input
-                        placeholder="e.g., Product Manager Interview Q1 2024"
+                        placeholder="e.g., Product Manager Interview — Q1 2026"
                         value={interviewName}
                         onChange={(e) => setInterviewName(e.target.value)}
                         className="bg-background/50"
@@ -616,8 +632,7 @@ const CreateInterview = () => {
                   <SavedInterviewBlock
                     title={savedData.title}
                     questionsCount={savedData.questionsCount}
-                    displayUrl={savedData.displayUrl}
-                    fullUrl={savedData.fullUrl}
+                    publicUrl={savedData.publicUrl}
                     onCreateAnother={handleCreateAnother}
                   />
                 )}

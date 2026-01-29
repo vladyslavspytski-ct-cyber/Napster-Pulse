@@ -167,11 +167,11 @@ const PublicInterviewVoiceAgentCard = ({
           <h3 className="text-xl font-semibold text-foreground">
             {isCompleted ? "Thank you!" : `Hi, ${participantName}!`}
           </h3>
-          <p className="text-sm text-muted-foreground max-w-xs">
+          <p className="text-sm text-muted-foreground max-w-xs lg:min-w-[450px]">
             {isCompleted
               ? "Your responses have been recorded"
               : state === "idle"
-              ? "Ready when you are"
+              ? "When you are ready to begin the interview just hit the Phone button. Once you're done with your answers, click the End Call button to submit your interview."
               : "Interview in progress"}
           </p>
         </div>

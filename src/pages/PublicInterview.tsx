@@ -56,6 +56,11 @@ const PublicInterview = () => {
   const conversationRef = useRef<ElevenLabsConversation | null>(null);
   const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auto-disconnect timer ref (for soft disconnect after agent goodbye)
+  const autoDisconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Prevent double-calling endSession
+  const isEndingRef = useRef(false);
+
   // Transcript to track conversation messages in order
   type TranscriptEntry = { role: "agent" | "user"; text: string };
   const transcriptRef = useRef<TranscriptEntry[]>([]);
@@ -110,8 +115,12 @@ const PublicInterview = () => {
   useEffect(() => {
     const conversationInstance = conversationRef;
     const volumeIntervalInstance = volumeIntervalRef;
+    const autoDisconnectInstance = autoDisconnectTimerRef;
 
     return () => {
+      if (autoDisconnectInstance.current) {
+        clearTimeout(autoDisconnectInstance.current);
+      }
       if (volumeIntervalInstance.current) {
         clearInterval(volumeIntervalInstance.current);
       }
@@ -319,6 +328,20 @@ const PublicInterview = () => {
         onAssistantMessage: (message) => {
           console.log("[PublicInterview] Agent message:", message);
           transcriptRef.current.push({ role: "agent", text: message });
+
+          // Detect goodbye phrase to trigger auto-disconnect
+          // Agent prompt ends with: "Thank you for your time. Goodbye."
+          const lowerMessage = message.toLowerCase();
+          const isGoodbye = lowerMessage.includes("goodbye");
+
+          if (isGoodbye && !isEndingRef.current && !autoDisconnectTimerRef.current) {
+            console.log("[PublicInterview] Goodbye detected in message:", message);
+            console.log("[PublicInterview] Starting auto-disconnect timer (4s)");
+            autoDisconnectTimerRef.current = setTimeout(() => {
+              console.log("[PublicInterview] Auto-disconnect timer fired");
+              handleEndInterview();
+            }, 4000);
+          }
         },
         onUserMessage: (message) => {
           console.log("[PublicInterview] User message:", message);
@@ -356,6 +379,20 @@ const PublicInterview = () => {
   };
 
   const handleEndInterview = async () => {
+    // Prevent double-calling
+    if (isEndingRef.current) {
+      console.log("[PublicInterview] Already ending, skipping duplicate call");
+      return;
+    }
+    isEndingRef.current = true;
+
+    // Cancel auto-disconnect timer if user clicked manually
+    if (autoDisconnectTimerRef.current) {
+      console.log("[PublicInterview] Cancelling auto-disconnect timer");
+      clearTimeout(autoDisconnectTimerRef.current);
+      autoDisconnectTimerRef.current = null;
+    }
+
     try {
       console.log("[PublicInterview] Ending interview...");
       setAgentState("processing");
@@ -416,6 +453,9 @@ const PublicInterview = () => {
     setAgentState("idle");
     setCurrentQuestion(undefined);
     transcriptRef.current = [];
+    // Reset refs for new interview
+    isEndingRef.current = false;
+    autoDisconnectTimerRef.current = null;
   };
 
   const containerVariants = {

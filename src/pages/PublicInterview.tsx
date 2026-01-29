@@ -268,10 +268,22 @@ const PublicInterview = () => {
       const signedUrl = await fetchSignedUrlByKey(key, interviewId);
       console.log("[PublicInterview] Signed URL received");
 
+      // Generate unique interview attempt ID for this run
+      const interviewAttemptId = crypto.randomUUID();
+
       // Format questions for dynamic variables (must match agent prompt variable name exactly)
       const questionsText = questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
-      console.log("[PublicInterview] QUESTIONS variable value:", questionsText);
-      console.log("[PublicInterview] Will send dynamic_variables.QUESTIONS (uppercase)");
+
+      // Log all dynamic variables being sent
+      console.log("[PublicInterview] === Dynamic Variables ===");
+      console.log("[PublicInterview] INTERVIEW_ID:", interviewId);
+      console.log("[PublicInterview] INTERVIEW_KEY:", key);
+      console.log("[PublicInterview] INTERVIEW_ATTEMPT_ID:", interviewAttemptId);
+      console.log("[PublicInterview] PARTICIPANT_FIRST_NAME:", formData.firstName);
+      console.log("[PublicInterview] PARTICIPANT_LAST_NAME:", formData.lastName);
+      console.log("[PublicInterview] PARTICIPANT_EMAIL:", formData.email);
+      console.log("[PublicInterview] QUESTIONS:", questionsText);
+      console.log("[PublicInterview] ===========================");
 
       // Create conversation instance
       const conversation = new ElevenLabsConversation({
@@ -316,11 +328,17 @@ const PublicInterview = () => {
 
       conversationRef.current = conversation;
 
-      // Start session with dynamic variables for questions
-      // Note: Variable name must match exactly what the agent prompt expects (QUESTIONS)
+      // Start session with dynamic variables
+      // Note: Variable names must match exactly what the agent prompt expects
       await conversation.startSession(signedUrl, mediaStream, {
         dynamicVariables: {
           QUESTIONS: questionsText,
+          INTERVIEW_ID: interviewId,
+          INTERVIEW_KEY: key,
+          INTERVIEW_ATTEMPT_ID: interviewAttemptId,
+          PARTICIPANT_FIRST_NAME: formData.firstName,
+          PARTICIPANT_LAST_NAME: formData.lastName,
+          PARTICIPANT_EMAIL: formData.email,
         },
       });
 

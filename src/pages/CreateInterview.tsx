@@ -487,7 +487,7 @@ const CreateInterview = () => {
                   <Card className="glass-card border-border/50">
                     <CardHeader>
                       <CardTitle className="text-xl">Interview Name</CardTitle>
-                      <CardDescription>Give your interview a descriptive name (optional)</CardDescription>
+                      <CardDescription>Give your interview a descriptive name</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Input

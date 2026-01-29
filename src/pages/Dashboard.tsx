@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, Inbox, FolderOpen } from "lucide-react";
+import { Search, Plus, Inbox, FolderOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,9 +15,30 @@ import {
 } from "@/lib/mockDashboardData";
 import { Link } from "react-router-dom";
 
+const ITEMS_PER_PAGE = 10;
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("conducted");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Pagination logic
+  const totalItems = mockInterviewResponses.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  
+  const paginatedResponses = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return mockInterviewResponses.slice(start, end);
+  }, [currentPage]);
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -101,20 +122,55 @@ const Dashboard = () => {
 
                     {/* Interview Responses List */}
                     {mockInterviewResponses.length > 0 ? (
-                      <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="space-y-4"
-                      >
-                        {mockInterviewResponses.map((response, index) => (
-                          <InterviewResponseCard
-                            key={response.id}
-                            response={response}
-                            index={index}
-                          />
-                        ))}
-                      </motion.div>
+                      <>
+                        <motion.div
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="visible"
+                          className="space-y-4"
+                        >
+                          {paginatedResponses.map((response, index) => (
+                            <InterviewResponseCard
+                              key={response.id}
+                              response={response}
+                              index={index}
+                            />
+                          ))}
+                        </motion.div>
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex items-center justify-center gap-4 pt-4"
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handlePreviousPage}
+                              disabled={currentPage === 1}
+                              className="gap-1"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                              Previous
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                              Page {currentPage} of {totalPages}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleNextPage}
+                              disabled={currentPage === totalPages}
+                              className="gap-1"
+                            >
+                              Next
+                              <ChevronRight className="w-4 h-4" />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </>
                     ) : (
                       <EmptyState type="conducted" />
                     )}

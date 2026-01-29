@@ -15,16 +15,14 @@ interface InterviewResponseCardProps {
 }
 
 const getSentimentVariant = (label: string): "default" | "secondary" | "destructive" | "outline" => {
-  switch (label.toLowerCase()) {
+  switch (label) {
     case "positive":
       return "default";
     case "negative":
       return "destructive";
     case "neutral":
-    case "mixed":
-      return "secondary";
     default:
-      return "outline";
+      return "secondary";
   }
 };
 
@@ -40,8 +38,16 @@ const formatDuration = (seconds: number): string => {
   return `${mins}m ${secs}s`;
 };
 
+const normalizeSentiment = (label: string): "positive" | "neutral" | "negative" => {
+  const lower = label.toLowerCase();
+  if (lower === "positive") return "positive";
+  if (lower === "negative") return "negative";
+  return "neutral";
+};
+
 const InterviewResponseCard = ({ response, index = 0 }: InterviewResponseCardProps) => {
-  const sentiment = extractSentiment(response.analysis);
+  const rawSentiment = extractSentiment(response.analysis);
+  const sentiment = normalizeSentiment(rawSentiment.label);
   const summary = getSummary(response);
   const title = response.interview_title || response.call_summary_title || "Interview Response";
 
@@ -62,12 +68,9 @@ const InterviewResponseCard = ({ response, index = 0 }: InterviewResponseCardPro
               <Badge variant={getStatusVariant(response.status, response.call_successful)}>
                 {response.call_successful ? "Completed" : response.status}
               </Badge>
-              {sentiment.label && sentiment.label !== "unknown" && (
-                <Badge variant={getSentimentVariant(sentiment.label)}>
-                  {sentiment.label}
-                  {sentiment.score !== undefined && ` (${(sentiment.score * 100).toFixed(0)}%)`}
-                </Badge>
-              )}
+              <Badge variant={getSentimentVariant(sentiment)}>
+                {sentiment}
+              </Badge>
             </div>
           </div>
 

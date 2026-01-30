@@ -8,35 +8,32 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import SavedInterviewListCard from "@/components/saved-interviews/SavedInterviewListCard";
 import { mockSavedInterviews, SavedInterview } from "@/lib/mockDashboardData";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ITEMS_PER_PAGE = 10;
 
-type StatusFilter = "all" | "active" | "inactive";
-
 const SavedInterviews = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [interviews, setInterviews] = useState<SavedInterview[]>(mockSavedInterviews);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [interviewToDelete, setInterviewToDelete] = useState<SavedInterview | null>(null);
 
-  // Filter interviews
+  // Filter interviews by search only
   const filteredInterviews = useMemo(() => {
-    let result = mockSavedInterviews;
-
-    // Filter by status
-    if (statusFilter === "active") {
-      result = result.filter((i) => i.is_active);
-    } else if (statusFilter === "inactive") {
-      result = result.filter((i) => !i.is_active);
-    }
-
-    // Filter by search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((i) => i.title.toLowerCase().includes(query));
-    }
-
-    return result;
-  }, [searchQuery, statusFilter]);
+    if (!searchQuery.trim()) return interviews;
+    const query = searchQuery.toLowerCase();
+    return interviews.filter((i) => i.title.toLowerCase().includes(query));
+  }, [searchQuery, interviews]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredInterviews.length / ITEMS_PER_PAGE));
@@ -45,15 +42,23 @@ const SavedInterviews = () => {
     return filteredInterviews.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredInterviews, currentPage]);
 
-  // Reset page when filters change
+  // Reset page when search changes
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
   };
 
-  const handleStatusChange = (status: StatusFilter) => {
-    setStatusFilter(status);
-    setCurrentPage(1);
+  const handleDeleteClick = (interview: SavedInterview) => {
+    setInterviewToDelete(interview);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (interviewToDelete) {
+      setInterviews((prev) => prev.filter((i) => i.id !== interviewToDelete.id));
+      setDeleteDialogOpen(false);
+      setInterviewToDelete(null);
+    }
   };
 
   const handleCreateInterview = () => {
@@ -97,10 +102,10 @@ const SavedInterviews = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="flex flex-col sm:flex-row gap-3 mb-6"
+            className="mb-6"
           >
             {/* Search */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by title..."
@@ -108,34 +113,6 @@ const SavedInterviews = () => {
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9"
               />
-            </div>
-
-            {/* Status filter */}
-            <div className="flex gap-2">
-              <Button
-                variant={statusFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleStatusChange("all")}
-                className="h-10"
-              >
-                All
-              </Button>
-              <Button
-                variant={statusFilter === "active" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleStatusChange("active")}
-                className="h-10"
-              >
-                Active
-              </Button>
-              <Button
-                variant={statusFilter === "inactive" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleStatusChange("inactive")}
-                className="h-10"
-              >
-                Inactive
-              </Button>
             </div>
           </motion.div>
 
@@ -160,15 +137,15 @@ const SavedInterviews = () => {
                       key={interview.id}
                       interview={interview}
                       index={index}
+                      onDelete={handleDeleteClick}
                     />
                   ))}
                 </motion.div>
               ) : (
                 <EmptyState
-                  hasFilters={searchQuery.trim() !== "" || statusFilter !== "all"}
+                  hasFilters={searchQuery.trim() !== ""}
                   onClearFilters={() => {
                     setSearchQuery("");
-                    setStatusFilter("all");
                   }}
                   onCreateInterview={handleCreateInterview}
                 />
@@ -209,6 +186,24 @@ const SavedInterviews = () => {
             </motion.div>
           )}
         </div>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete interview?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{interviewToDelete?.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
 
       <Footer />

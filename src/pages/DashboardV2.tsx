@@ -14,6 +14,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const INTERVIEWS_PER_PAGE = 15;
 
+type SentimentFilter = "all" | "positive" | "neutral" | "negative";
+
 const DashboardV2 = () => {
   const isMobile = useIsMobile();
 
@@ -23,6 +25,7 @@ const DashboardV2 = () => {
   );
   const [interviewSearch, setInterviewSearch] = useState("");
   const [runSearch, setRunSearch] = useState("");
+  const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter interviews by search
@@ -42,20 +45,31 @@ const DashboardV2 = () => {
   // Get runs for selected interview
   const selectedRuns = useMemo(() => {
     if (!selectedInterview) return [];
-    const runs = getRunsForInterview(selectedInterview.id);
-    if (!runSearch.trim()) return runs;
-    const query = runSearch.toLowerCase();
-    return runs.filter(
-      (run) =>
-        run.participantFirstName.toLowerCase().includes(query) ||
-        run.participantLastName.toLowerCase().includes(query) ||
-        run.participantEmail.toLowerCase().includes(query),
-    );
-  }, [selectedInterview, runSearch]);
+    let runs = getRunsForInterview(selectedInterview.id);
+    
+    // Filter by sentiment
+    if (sentimentFilter !== "all") {
+      runs = runs.filter((run) => run.sentimentLabel === sentimentFilter);
+    }
+    
+    // Filter by search
+    if (runSearch.trim()) {
+      const query = runSearch.toLowerCase();
+      runs = runs.filter(
+        (run) =>
+          run.participantFirstName.toLowerCase().includes(query) ||
+          run.participantLastName.toLowerCase().includes(query) ||
+          run.participantEmail.toLowerCase().includes(query),
+      );
+    }
+    
+    return runs;
+  }, [selectedInterview, runSearch, sentimentFilter]);
 
   const handleInterviewSelect = (interview: InterviewTemplate) => {
     setSelectedInterview(interview);
     setRunSearch("");
+    setSentimentFilter("all");
   };
 
   const handlePreviousPage = () => {
@@ -110,6 +124,21 @@ const DashboardV2 = () => {
                   onChange={(e) => setRunSearch(e.target.value)}
                   className="pl-9"
                 />
+              </div>
+
+              {/* Sentiment filter - Mobile */}
+              <div className="flex gap-2">
+                {(["all", "positive", "neutral", "negative"] as SentimentFilter[]).map((sentiment) => (
+                  <Button
+                    key={sentiment}
+                    variant={sentimentFilter === sentiment ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSentimentFilter(sentiment)}
+                    className="h-9 capitalize"
+                  >
+                    {sentiment}
+                  </Button>
+                ))}
               </div>
 
               {/* Runs list */}
@@ -196,21 +225,37 @@ const DashboardV2 = () => {
 
               {/* Right Column - Runs Detail */}
               <div id="runs-detail" className="flex-1 flex flex-col min-w-0">
-                {/* Header with search */}
-                <div className="flex items-center gap-4 mb-4">
-                  <h2 className="text-lg font-semibold text-foreground truncate">
-                    {selectedInterview?.title || "Select an interview"}
-                  </h2>
-                  <div className="flex-1 max-w-xs ml-auto">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search participants..."
-                        value={runSearch}
-                        onChange={(e) => setRunSearch(e.target.value)}
-                        className="pl-9"
-                      />
+                {/* Header with search and sentiment filter */}
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-lg font-semibold text-foreground truncate">
+                      {selectedInterview?.title || "Select an interview"}
+                    </h2>
+                    <div className="flex-1 max-w-xs ml-auto">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search participants..."
+                          value={runSearch}
+                          onChange={(e) => setRunSearch(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
                     </div>
+                  </div>
+                  {/* Sentiment filter */}
+                  <div className="flex gap-2">
+                    {(["all", "positive", "neutral", "negative"] as SentimentFilter[]).map((sentiment) => (
+                      <Button
+                        key={sentiment}
+                        variant={sentimentFilter === sentiment ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSentimentFilter(sentiment)}
+                        className="h-8 capitalize"
+                      >
+                        {sentiment}
+                      </Button>
+                    ))}
                   </div>
                 </div>
 

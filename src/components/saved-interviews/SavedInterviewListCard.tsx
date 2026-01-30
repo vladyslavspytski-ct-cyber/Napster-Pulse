@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
-import { Copy, ExternalLink, FileText, Calendar, Check } from "lucide-react";
+import { Copy, ExternalLink, FileText, Calendar, Check, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SavedInterview } from "@/lib/mockDashboardData";
 import { format } from "date-fns";
@@ -11,9 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 interface SavedInterviewListCardProps {
   interview: SavedInterview;
   index?: number;
+  onDelete?: (interview: SavedInterview) => void;
 }
 
-const SavedInterviewListCard = ({ interview, index = 0 }: SavedInterviewListCardProps) => {
+const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedInterviewListCardProps) => {
   const { toast } = useToast();
   const [isCopied, setIsCopied] = useState(false);
 
@@ -42,17 +42,9 @@ const SavedInterviewListCard = ({ interview, index = 0 }: SavedInterviewListCard
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             {/* Left: Title & Meta */}
             <div className="flex-1 min-w-0 space-y-2">
-              <div className="flex items-start gap-3">
-                <h3 className="text-base font-semibold text-foreground leading-tight truncate">
-                  {interview.title}
-                </h3>
-                <Badge
-                  variant={interview.is_active ? "default" : "secondary"}
-                  className="shrink-0"
-                >
-                  {interview.is_active ? "Active" : "Inactive"}
-                </Badge>
-              </div>
+              <h3 className="text-base font-semibold text-foreground leading-tight truncate">
+                {interview.title}
+              </h3>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5" />
@@ -91,6 +83,14 @@ const SavedInterviewListCard = ({ interview, index = 0 }: SavedInterviewListCard
               <Button variant="outline" size="sm" onClick={handleOpen} className="h-8 px-3">
                 <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                 Open
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete?.(interview)}
+                className="h-8 px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           </div>

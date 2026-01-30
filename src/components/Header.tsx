@@ -75,12 +75,6 @@ const Header = () => {
               >
                 Dashboard
               </a>
-              <a
-                href="/dashboard-v2"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Dashboard v2
-              </a>
             </nav>
 
             {/* Desktop Auth Buttons */}
@@ -143,12 +137,6 @@ const Header = () => {
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Dashboard
-                </a>
-                <a
-                  href="/dashboard-v2"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Dashboard v2
                 </a>
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (

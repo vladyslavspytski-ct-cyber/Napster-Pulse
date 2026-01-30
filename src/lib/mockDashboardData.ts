@@ -338,7 +338,7 @@ export const mockInterviewResponses: InterviewResponse[] = [
   },
 ];
 
-// Mock data for Saved Interviews
+// Mock data for Saved Interviews (expanded for pagination)
 export const mockSavedInterviews: SavedInterview[] = [
   {
     id: "int_001",
@@ -371,5 +371,93 @@ export const mockSavedInterviews: SavedInterview[] = [
     is_active: true,
     public_url: "https://interu.app/i/jkl012",
     created_at: "2025-01-10T11:00:00Z",
+  },
+  {
+    id: "int_005",
+    title: "Beta Tester Feedback",
+    questions_count: 6,
+    is_active: true,
+    public_url: "https://interu.app/i/mno345",
+    created_at: "2025-01-08T15:30:00Z",
+  },
+  {
+    id: "int_006",
+    title: "Annual Product Review",
+    questions_count: 10,
+    is_active: false,
+    public_url: "https://interu.app/i/pqr678",
+    created_at: "2025-01-05T10:00:00Z",
+  },
+  {
+    id: "int_007",
+    title: "UX Research Interview",
+    questions_count: 8,
+    is_active: true,
+    public_url: "https://interu.app/i/stu901",
+    created_at: "2025-01-03T14:45:00Z",
+  },
+  {
+    id: "int_008",
+    title: "Support Experience Survey",
+    questions_count: 4,
+    is_active: true,
+    public_url: "https://interu.app/i/vwx234",
+    created_at: "2024-12-28T09:00:00Z",
+  },
+  {
+    id: "int_009",
+    title: "New Feature Discovery",
+    questions_count: 5,
+    is_active: false,
+    public_url: "https://interu.app/i/yza567",
+    created_at: "2024-12-22T16:30:00Z",
+  },
+  {
+    id: "int_010",
+    title: "Mobile App Feedback",
+    questions_count: 6,
+    is_active: true,
+    public_url: "https://interu.app/i/bcd890",
+    created_at: "2024-12-18T11:15:00Z",
+  },
+  {
+    id: "int_011",
+    title: "Enterprise Client Interview",
+    questions_count: 9,
+    is_active: true,
+    public_url: "https://interu.app/i/efg123",
+    created_at: "2024-12-15T13:00:00Z",
+  },
+  {
+    id: "int_012",
+    title: "Accessibility Audit Feedback",
+    questions_count: 7,
+    is_active: false,
+    public_url: "https://interu.app/i/hij456",
+    created_at: "2024-12-10T08:30:00Z",
+  },
+  {
+    id: "int_013",
+    title: "API Integration Survey",
+    questions_count: 5,
+    is_active: true,
+    public_url: "https://interu.app/i/klm789",
+    created_at: "2024-12-05T17:00:00Z",
+  },
+  {
+    id: "int_014",
+    title: "Quarterly NPS Survey",
+    questions_count: 3,
+    is_active: true,
+    public_url: "https://interu.app/i/nop012",
+    created_at: "2024-12-01T10:00:00Z",
+  },
+  {
+    id: "int_015",
+    title: "Competitor Analysis Interviews",
+    questions_count: 8,
+    is_active: false,
+    public_url: "https://interu.app/i/qrs345",
+    created_at: "2024-11-25T14:30:00Z",
   },
 ];

@@ -1,58 +1,117 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import InterviewListItem from "@/components/dashboard-v2/InterviewListItem";
 import ConductedRunCard from "@/components/dashboard-v2/ConductedRunCard";
 import MobileInterviewSelector from "@/components/dashboard-v2/MobileInterviewSelector";
-import { mockInterviewTemplates, getRunsForInterview, InterviewTemplate } from "@/lib/mockDashboardV2Data";
+import {
+  InterviewTemplate,
+  transformInterviewToTemplate,
+  transformAttemptToRun,
+} from "@/lib/mockDashboardV2Data";
+import { useInterviews } from "@/hooks/api/useInterviews";
+import { useAttempts } from "@/hooks/api/useAttempts";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 const INTERVIEWS_PER_PAGE = 10;
+const RUNS_PER_PAGE = 4;
 
 type SentimentFilter = "all" | "positive" | "neutral" | "negative";
 
 const DashboardV2 = () => {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
-  // State
-  const [selectedInterview, setSelectedInterview] = useState<InterviewTemplate | null>(
-    mockInterviewTemplates[0] || null,
-  );
+  // State - Interviews
+  const [selectedInterview, setSelectedInterview] = useState<InterviewTemplate | null>(null);
   const [interviewSearch, setInterviewSearch] = useState("");
-  const [runSearch, setRunSearch] = useState("");
-  const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filter interviews by search
-  const filteredInterviews = useMemo(() => {
-    if (!interviewSearch.trim()) return mockInterviewTemplates;
-    const query = interviewSearch.toLowerCase();
-    return mockInterviewTemplates.filter((interview) => interview.title.toLowerCase().includes(query));
-  }, [interviewSearch]);
+  // State - Runs
+  const [runSearch, setRunSearch] = useState("");
+  const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
+  const [runsPage, setRunsPage] = useState(1);
 
-  // Pagination for interviews
-  const totalPages = Math.max(1, Math.ceil(filteredInterviews.length / INTERVIEWS_PER_PAGE));
+  // Fetch interviews from API - we fetch more to filter client-side for completed_count > 0
+  const {
+    interviews: rawInterviews,
+    isLoading: isLoadingInterviews,
+    error: interviewsError,
+  } = useInterviews({
+    limit: 100, // Fetch more to ensure we have enough after filtering
+    offset: 0,
+    search: interviewSearch,
+  });
+
+  // Transform and filter interviews: only show those with completed_count > 0
+  const allFilteredInterviews = useMemo(() => {
+    return rawInterviews
+      .filter((interview) => interview.completed_count > 0)
+      .map(transformInterviewToTemplate);
+  }, [rawInterviews]);
+
+  // Pagination for interviews (client-side since we filter by completed_count)
+  const totalPages = Math.max(1, Math.ceil(allFilteredInterviews.length / INTERVIEWS_PER_PAGE));
   const paginatedInterviews = useMemo(() => {
     const start = (currentPage - 1) * INTERVIEWS_PER_PAGE;
-    return filteredInterviews.slice(start, start + INTERVIEWS_PER_PAGE);
-  }, [filteredInterviews, currentPage]);
+    return allFilteredInterviews.slice(start, start + INTERVIEWS_PER_PAGE);
+  }, [allFilteredInterviews, currentPage]);
 
-  // Get runs for selected interview
+  // Auto-select first interview on initial load or when list changes
+  useEffect(() => {
+    if (!selectedInterview && paginatedInterviews.length > 0) {
+      setSelectedInterview(paginatedInterviews[0]);
+    }
+    // If currently selected interview is no longer in the list, select first one
+    if (selectedInterview && allFilteredInterviews.length > 0) {
+      const stillExists = allFilteredInterviews.some((i) => i.id === selectedInterview.id);
+      if (!stillExists) {
+        setSelectedInterview(paginatedInterviews[0] || null);
+      }
+    }
+    // If list becomes empty, clear selection
+    if (allFilteredInterviews.length === 0) {
+      setSelectedInterview(null);
+    }
+  }, [paginatedInterviews, allFilteredInterviews, selectedInterview]);
+
+  // Fetch attempts for selected interview with pagination
+  const runsOffset = (runsPage - 1) * RUNS_PER_PAGE;
+  const {
+    attempts: rawAttempts,
+    total: runsTotal,
+    isLoading: isLoadingAttempts,
+    error: attemptsError,
+  } = useAttempts({
+    interviewId: selectedInterview?.id,
+    limit: RUNS_PER_PAGE,
+    offset: runsOffset,
+    search: runSearch,
+    enabled: !!selectedInterview,
+  });
+
+  // Calculate total pages for runs
+  const runsTotalPages = Math.max(1, Math.ceil(runsTotal / RUNS_PER_PAGE));
+
+  // Transform attempts to runs and apply filters
   const selectedRuns = useMemo(() => {
-    if (!selectedInterview) return [];
-    let runs = getRunsForInterview(selectedInterview.id);
-    
-    // Filter by sentiment
+    // Filter to only completed runs (status "done" or call_successful "success")
+    let runs = rawAttempts
+      .filter((attempt) => attempt.status === "done")
+      .map(transformAttemptToRun);
+
+    // Filter by sentiment (client-side)
     if (sentimentFilter !== "all") {
       runs = runs.filter((run) => run.sentimentLabel === sentimentFilter);
     }
-    
-    // Filter by search
+
+    // Filter by search (client-side, in addition to server-side search)
     if (runSearch.trim()) {
       const query = runSearch.toLowerCase();
       runs = runs.filter(
@@ -62,14 +121,56 @@ const DashboardV2 = () => {
           run.participantEmail.toLowerCase().includes(query),
       );
     }
-    
+
     return runs;
-  }, [selectedInterview, runSearch, sentimentFilter]);
+  }, [rawAttempts, runSearch, sentimentFilter]);
+
+  // Show toast on errors
+  useEffect(() => {
+    if (interviewsError) {
+      toast({
+        variant: "destructive",
+        title: "Failed to load interviews",
+        description: interviewsError.message,
+      });
+    }
+  }, [interviewsError, toast]);
+
+  useEffect(() => {
+    if (attemptsError) {
+      toast({
+        variant: "destructive",
+        title: "Failed to load responses",
+        description: attemptsError.message,
+      });
+    }
+  }, [attemptsError, toast]);
 
   const handleInterviewSelect = (interview: InterviewTemplate) => {
     setSelectedInterview(interview);
     setRunSearch("");
     setSentimentFilter("all");
+    setRunsPage(1); // Reset runs pagination when interview changes
+  };
+
+  // Reset runs page when search or sentiment filter changes
+  const handleRunSearchChange = (value: string) => {
+    setRunSearch(value);
+    setRunsPage(1);
+  };
+
+  const handleSentimentFilterChange = (filter: SentimentFilter) => {
+    setSentimentFilter(filter);
+    setRunsPage(1);
+  };
+
+  // Runs pagination handlers
+  const handlePreviousRunsPage = () => {
+    setRunsPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextRunsPage = () => {
+    setRunsPage((prev) => Math.min(runsTotalPages, prev + 1));
   };
 
   const handlePreviousPage = () => {
@@ -108,11 +209,15 @@ const DashboardV2 = () => {
             >
               {/* Mobile interview selector */}
               <MobileInterviewSelector
-                interviews={filteredInterviews}
+                interviews={allFilteredInterviews}
                 selectedInterview={selectedInterview}
                 onSelectInterview={handleInterviewSelect}
                 searchQuery={interviewSearch}
-                onSearchChange={setInterviewSearch}
+                onSearchChange={(value) => {
+                  setInterviewSearch(value);
+                  setCurrentPage(1);
+                }}
+                isLoading={isLoadingInterviews}
               />
 
               {/* Search runs */}
@@ -121,7 +226,7 @@ const DashboardV2 = () => {
                 <Input
                   placeholder="Search participants..."
                   value={runSearch}
-                  onChange={(e) => setRunSearch(e.target.value)}
+                  onChange={(e) => handleRunSearchChange(e.target.value)}
                   className="pl-9"
                 />
               </div>
@@ -133,7 +238,7 @@ const DashboardV2 = () => {
                     key={sentiment}
                     variant={sentimentFilter === sentiment ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setSentimentFilter(sentiment)}
+                    onClick={() => handleSentimentFilterChange(sentiment)}
                     className="h-9 capitalize"
                   >
                     {sentiment}
@@ -144,13 +249,46 @@ const DashboardV2 = () => {
               {/* Runs list */}
               <div className="space-y-3">
                 <AnimatePresence mode="wait">
-                  {selectedRuns.length > 0 ? (
+                  {isLoadingAttempts ? (
+                    <LoadingRunsState />
+                  ) : selectedRuns.length > 0 ? (
                     selectedRuns.map((run, index) => <ConductedRunCard key={run.id} run={run} index={index} />)
+                  ) : allFilteredInterviews.length === 0 ? (
+                    <EmptyInterviewsState />
                   ) : (
                     <EmptyRunsState />
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Mobile Runs Pagination */}
+              {!isLoadingAttempts && selectedRuns.length > 0 && runsTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousRunsPage}
+                    disabled={runsPage === 1}
+                    className="h-8 px-3"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Prev
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {runsPage} of {runsTotalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextRunsPage}
+                    disabled={runsPage === runsTotalPages}
+                    className="h-8 px-3"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              )}
             </motion.div>
           ) : (
             /* Desktop Layout - Master-Detail */
@@ -158,11 +296,11 @@ const DashboardV2 = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="flex gap-6 min-h-[calc(100vh-220px)]"
+              className="flex gap-6"
             >
-              {/* Left Column - Interview List */}
-              <div id="interview-list" className="w-[340px] flex-shrink-0 flex flex-col">
-                <div className="bg-card border border-border rounded-2xl p-4 flex flex-col h-full">
+              {/* Left Column - Interview List - Fixed width, min height fits 10 items */}
+              <div id="interview-list" className="w-[360px] flex-shrink-0 flex-grow-0">
+                <div className="bg-card border border-border rounded-2xl p-4 min-h-[750px]">
                   {/* Search */}
                   <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -178,25 +316,47 @@ const DashboardV2 = () => {
                   </div>
 
                   {/* Interview list */}
-                  <ScrollArea className="flex-1 -mx-2 px-2">
-                    <div className="space-y-2">
-                      {paginatedInterviews.map((interview) => (
-                        <InterviewListItem
-                          key={interview.id}
-                          interview={interview}
-                          isSelected={selectedInterview?.id === interview.id}
-                          onClick={() => handleInterviewSelect(interview)}
-                        />
-                      ))}
-                      {paginatedInterviews.length === 0 && (
-                        <div className="text-center py-8 text-sm text-muted-foreground">No interviews found</div>
+                  <div className="space-y-2 mb-4">
+                      {isLoadingInterviews ? (
+                        // Loading skeletons
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="p-4 rounded-xl border border-border bg-card">
+                            <div className="flex items-start gap-3">
+                              <Skeleton className="w-9 h-9 rounded-lg flex-shrink-0" />
+                              <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <div className="flex gap-3">
+                                  <Skeleton className="h-3 w-20" />
+                                  <Skeleton className="h-3 w-16" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : paginatedInterviews.length > 0 ? (
+                        paginatedInterviews.map((interview) => (
+                          <InterviewListItem
+                            key={interview.id}
+                            interview={interview}
+                            isSelected={selectedInterview?.id === interview.id}
+                            onClick={() => handleInterviewSelect(interview)}
+                          />
+                        ))
+                      ) : interviewsError ? (
+                        <div className="text-center py-8">
+                          <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">Failed to load interviews</p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-sm text-muted-foreground">
+                          No interviews with completed responses
+                        </div>
                       )}
-                    </div>
-                  </ScrollArea>
+                  </div>
 
                   {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+                  {!isLoadingInterviews && totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -224,7 +384,7 @@ const DashboardV2 = () => {
               </div>
 
               {/* Right Column - Runs Detail */}
-              <div id="runs-detail" className="flex-1 flex flex-col min-w-0">
+              <div id="runs-detail" className="flex-1 min-w-0">
                 {/* Header with search and sentiment filter */}
                 <div className="flex flex-col gap-3 mb-4">
                   <div className="flex items-center gap-4">
@@ -237,8 +397,9 @@ const DashboardV2 = () => {
                         <Input
                           placeholder="Search participants..."
                           value={runSearch}
-                          onChange={(e) => setRunSearch(e.target.value)}
+                          onChange={(e) => handleRunSearchChange(e.target.value)}
                           className="pl-9"
+                          disabled={!selectedInterview}
                         />
                       </div>
                     </div>
@@ -250,8 +411,9 @@ const DashboardV2 = () => {
                         key={sentiment}
                         variant={sentimentFilter === sentiment ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setSentimentFilter(sentiment)}
+                        onClick={() => handleSentimentFilterChange(sentiment)}
                         className="h-8 capitalize"
+                        disabled={!selectedInterview}
                       >
                         {sentiment}
                       </Button>
@@ -259,27 +421,64 @@ const DashboardV2 = () => {
                   </div>
                 </div>
 
-                {/* Runs list - scrollable */}
-                <ScrollArea className="flex-1 -mx-1 px-1">
+                {/* Runs list - no scroll, pagination only */}
+                <div className="flex-1">
                   <AnimatePresence mode="wait">
-                    {selectedRuns.length > 0 ? (
+                    {isLoadingInterviews ? (
+                      <LoadingRunsState key="loading-interviews" />
+                    ) : allFilteredInterviews.length === 0 ? (
+                      <EmptyInterviewsState key="empty-interviews" />
+                    ) : isLoadingAttempts ? (
+                      <LoadingRunsState key="loading-attempts" />
+                    ) : selectedRuns.length > 0 ? (
                       <motion.div
-                        key={selectedInterview?.id}
+                        key={`${selectedInterview?.id}-${runsPage}`}
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-3 pb-4"
+                        className="space-y-3"
                       >
                         {selectedRuns.map((run, index) => (
                           <ConductedRunCard key={run.id} run={run} index={index} />
                         ))}
                       </motion.div>
+                    ) : attemptsError ? (
+                      <ErrorState key="error" message="Failed to load responses" />
                     ) : (
-                      <EmptyRunsState />
+                      <EmptyRunsState key="empty-runs" />
                     )}
                   </AnimatePresence>
-                </ScrollArea>
+                </div>
+
+                {/* Runs pagination */}
+                {!isLoadingAttempts && !isLoadingInterviews && allFilteredInterviews.length > 0 && runsTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handlePreviousRunsPage}
+                      disabled={runsPage === 1}
+                      className="h-8 px-2"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Prev
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      Page {runsPage} of {runsTotalPages}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleNextRunsPage}
+                      disabled={runsPage === runsTotalPages}
+                      className="h-8 px-2"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -305,6 +504,70 @@ const EmptyRunsState = () => (
     <p className="text-sm text-muted-foreground max-w-xs">
       When participants complete this interview, their responses will appear here.
     </p>
+  </motion.div>
+);
+
+// Empty state when no interviews with completed responses
+const EmptyInterviewsState = () => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.98 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="flex flex-col items-center justify-center py-16 text-center"
+  >
+    <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+      <Inbox className="w-7 h-7 text-muted-foreground" />
+    </div>
+    <h3 className="text-base font-medium text-foreground mb-1">No completed interviews</h3>
+    <p className="text-sm text-muted-foreground max-w-xs">
+      When participants complete your interviews, they will appear here.
+    </p>
+  </motion.div>
+);
+
+// Loading state for runs
+const LoadingRunsState = () => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="space-y-3 pb-4"
+  >
+    {Array.from({ length: 3 }).map((_, i) => (
+      <div key={i} className="p-4 bg-card border border-border rounded-xl">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-10 h-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          </div>
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <div className="space-y-2 mb-3">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-4/5" />
+          <Skeleton className="h-3 w-3/4" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+    ))}
+  </motion.div>
+);
+
+// Error state
+const ErrorState = ({ message }: { message: string }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.98 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="flex flex-col items-center justify-center py-16 text-center"
+  >
+    <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+      <AlertCircle className="w-7 h-7 text-destructive" />
+    </div>
+    <h3 className="text-base font-medium text-foreground mb-1">Something went wrong</h3>
+    <p className="text-sm text-muted-foreground max-w-xs">{message}</p>
   </motion.div>
 );
 

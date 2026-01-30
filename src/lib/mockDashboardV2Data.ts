@@ -1,4 +1,7 @@
 // Types for Dashboard v2 - Conducted Interviews master-detail layout
+import type { InterviewListItem } from "@/hooks/api/useInterviews";
+import type { Attempt } from "@/hooks/api/useAttempts";
+import { getSentimentLabel } from "@/hooks/api/useAttempts";
 
 export interface InterviewTemplate {
   id: string;
@@ -27,6 +30,28 @@ export const normalizeSentiment = (
   if (normalized === "negative") return "negative";
   return "neutral";
 };
+
+// Transform API InterviewListItem to UI InterviewTemplate
+export const transformInterviewToTemplate = (
+  interview: InterviewListItem
+): InterviewTemplate => ({
+  id: interview.id,
+  title: interview.title,
+  createdAt: interview.link?.created_at || new Date().toISOString(),
+  completedCount: interview.completed_count,
+});
+
+// Transform API Attempt to UI ConductedRun
+export const transformAttemptToRun = (attempt: Attempt): ConductedRun => ({
+  id: attempt.id,
+  interviewId: attempt.interview_id,
+  participantFirstName: attempt.participant_first_name || "Unknown",
+  participantLastName: attempt.participant_last_name || "",
+  participantEmail: attempt.participant_email || "",
+  conductedAt: attempt.started_at,
+  summary: attempt.transcript_summary || "No summary available.",
+  sentimentLabel: getSentimentLabel(attempt.analysis),
+});
 
 // Mock data: Interview templates (left column)
 export const mockInterviewTemplates: InterviewTemplate[] = [

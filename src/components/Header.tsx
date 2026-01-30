@@ -50,7 +50,7 @@ const Header = () => {
             </a>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-6">
               <button
                 onClick={() => scrollToSection("how-it-works")}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -68,6 +68,12 @@ const Header = () => {
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Dashboard
+              </a>
+              <a
+                href="/dashboard-v2"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard v2
               </a>
             </nav>
 
@@ -125,6 +131,12 @@ const Header = () => {
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Dashboard
+                </a>
+                <a
+                  href="/dashboard-v2"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Dashboard v2
                 </a>
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (

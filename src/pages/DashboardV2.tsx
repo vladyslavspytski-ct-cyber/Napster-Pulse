@@ -9,21 +9,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import InterviewListItem from "@/components/dashboard-v2/InterviewListItem";
 import ConductedRunCard from "@/components/dashboard-v2/ConductedRunCard";
 import MobileInterviewSelector from "@/components/dashboard-v2/MobileInterviewSelector";
-import {
-  mockInterviewTemplates,
-  getRunsForInterview,
-  InterviewTemplate,
-} from "@/lib/mockDashboardV2Data";
+import { mockInterviewTemplates, getRunsForInterview, InterviewTemplate } from "@/lib/mockDashboardV2Data";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const INTERVIEWS_PER_PAGE = 15;
 
 const DashboardV2 = () => {
   const isMobile = useIsMobile();
-  
+
   // State
   const [selectedInterview, setSelectedInterview] = useState<InterviewTemplate | null>(
-    mockInterviewTemplates[0] || null
+    mockInterviewTemplates[0] || null,
   );
   const [interviewSearch, setInterviewSearch] = useState("");
   const [runSearch, setRunSearch] = useState("");
@@ -33,9 +29,7 @@ const DashboardV2 = () => {
   const filteredInterviews = useMemo(() => {
     if (!interviewSearch.trim()) return mockInterviewTemplates;
     const query = interviewSearch.toLowerCase();
-    return mockInterviewTemplates.filter((interview) =>
-      interview.title.toLowerCase().includes(query)
-    );
+    return mockInterviewTemplates.filter((interview) => interview.title.toLowerCase().includes(query));
   }, [interviewSearch]);
 
   // Pagination for interviews
@@ -55,7 +49,7 @@ const DashboardV2 = () => {
       (run) =>
         run.participantFirstName.toLowerCase().includes(query) ||
         run.participantLastName.toLowerCase().includes(query) ||
-        run.participantEmail.toLowerCase().includes(query)
+        run.participantEmail.toLowerCase().includes(query),
     );
   }, [selectedInterview, runSearch]);
 
@@ -85,12 +79,8 @@ const DashboardV2 = () => {
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              Conducted Interviews
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              View responses from all your completed interview sessions
-            </p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Conducted Interviews</h1>
+            <p className="text-muted-foreground mt-1">View responses from all your completed interview sessions</p>
           </motion.div>
 
           {/* Mobile Layout */}
@@ -125,9 +115,7 @@ const DashboardV2 = () => {
               <div className="space-y-3">
                 <AnimatePresence mode="wait">
                   {selectedRuns.length > 0 ? (
-                    selectedRuns.map((run, index) => (
-                      <ConductedRunCard key={run.id} run={run} index={index} />
-                    ))
+                    selectedRuns.map((run, index) => <ConductedRunCard key={run.id} run={run} index={index} />)
                   ) : (
                     <EmptyRunsState />
                   )}
@@ -143,7 +131,7 @@ const DashboardV2 = () => {
               className="flex gap-6 min-h-[calc(100vh-220px)]"
             >
               {/* Left Column - Interview List */}
-              <div className="w-80 flex-shrink-0 flex flex-col">
+              <div className="w-85 flex-shrink-0 flex flex-col">
                 <div className="bg-card border border-border rounded-2xl p-4 flex flex-col h-full">
                   {/* Search */}
                   <div className="relative mb-4">
@@ -171,9 +159,7 @@ const DashboardV2 = () => {
                         />
                       ))}
                       {paginatedInterviews.length === 0 && (
-                        <div className="text-center py-8 text-sm text-muted-foreground">
-                          No interviews found
-                        </div>
+                        <div className="text-center py-8 text-sm text-muted-foreground">No interviews found</div>
                       )}
                     </div>
                   </ScrollArea>
@@ -269,9 +255,7 @@ const EmptyRunsState = () => (
     <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-4">
       <Inbox className="w-7 h-7 text-muted-foreground" />
     </div>
-    <h3 className="text-base font-medium text-foreground mb-1">
-      No responses yet
-    </h3>
+    <h3 className="text-base font-medium text-foreground mb-1">No responses yet</h3>
     <p className="text-sm text-muted-foreground max-w-xs">
       When participants complete this interview, their responses will appear here.
     </p>

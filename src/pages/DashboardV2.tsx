@@ -12,7 +12,7 @@ import MobileInterviewSelector from "@/components/dashboard-v2/MobileInterviewSe
 import { mockInterviewTemplates, getRunsForInterview, InterviewTemplate } from "@/lib/mockDashboardV2Data";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const INTERVIEWS_PER_PAGE = 15;
+const INTERVIEWS_PER_PAGE = 10;
 
 type SentimentFilter = "all" | "positive" | "neutral" | "negative";
 

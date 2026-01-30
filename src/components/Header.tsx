@@ -64,6 +64,12 @@ const Header = () => {
                 Features
               </button>
               <a
+                href="/saved-interviews"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Saved Interviews
+              </a>
+              <a
                 href="/dashboard"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -126,6 +132,12 @@ const Header = () => {
                 >
                   Features
                 </button>
+                <a
+                  href="/saved-interviews"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Saved Interviews
+                </a>
                 <a
                   href="/dashboard"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

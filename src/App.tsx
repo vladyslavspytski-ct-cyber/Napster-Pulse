@@ -8,6 +8,7 @@ import CreateInterview from "./pages/CreateInterview";
 import PublicInterview from "./pages/PublicInterview";
 import Dashboard from "./pages/Dashboard";
 import DashboardV2 from "./pages/DashboardV2";
+import SavedInterviews from "./pages/SavedInterviews";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/create-interview" element={<CreateInterview />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard-v2" element={<DashboardV2 />} />
+          <Route path="/saved-interviews" element={<SavedInterviews />} />
           <Route path="/i/:token" element={<PublicInterview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

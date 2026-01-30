@@ -74,6 +74,7 @@ const DashboardV2 = () => {
         <div className="section-container">
           {/* Page Header */}
           <motion.div
+            id="dashboard-header"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -131,7 +132,7 @@ const DashboardV2 = () => {
               className="flex gap-6 min-h-[calc(100vh-220px)]"
             >
               {/* Left Column - Interview List */}
-              <div className="w-[340px] flex-shrink-0 flex flex-col">
+              <div id="interview-list" className="w-[340px] flex-shrink-0 flex flex-col">
                 <div className="bg-card border border-border rounded-2xl p-4 flex flex-col h-full">
                   {/* Search */}
                   <div className="relative mb-4">
@@ -194,7 +195,7 @@ const DashboardV2 = () => {
               </div>
 
               {/* Right Column - Runs Detail */}
-              <div className="flex-1 flex flex-col min-w-0">
+              <div id="runs-detail" className="flex-1 flex flex-col min-w-0">
                 {/* Header with search */}
                 <div className="flex items-center gap-4 mb-4">
                   <h2 className="text-lg font-semibold text-foreground truncate">

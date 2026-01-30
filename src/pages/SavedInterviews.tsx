@@ -69,6 +69,7 @@ const SavedInterviews = () => {
         <div className="section-container">
           {/* Page Header */}
           <motion.div
+            id="saved-interviews-header"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -92,6 +93,7 @@ const SavedInterviews = () => {
 
           {/* Controls */}
           <motion.div
+            id="saved-interviews-controls"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
@@ -139,6 +141,7 @@ const SavedInterviews = () => {
 
           {/* Interviews List */}
           <motion.div
+            id="saved-interviews-list"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
@@ -176,6 +179,7 @@ const SavedInterviews = () => {
           {/* Pagination */}
           {filteredInterviews.length > ITEMS_PER_PAGE && (
             <motion.div
+              id="saved-interviews-pagination"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}

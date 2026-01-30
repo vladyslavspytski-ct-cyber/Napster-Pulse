@@ -131,7 +131,7 @@ const DashboardV2 = () => {
               className="flex gap-6 min-h-[calc(100vh-220px)]"
             >
               {/* Left Column - Interview List */}
-              <div className="w-85 flex-shrink-0 flex flex-col">
+              <div className="w-[340px] flex-shrink-0 flex flex-col">
                 <div className="bg-card border border-border rounded-2xl p-4 flex flex-col h-full">
                   {/* Search */}
                   <div className="relative mb-4">

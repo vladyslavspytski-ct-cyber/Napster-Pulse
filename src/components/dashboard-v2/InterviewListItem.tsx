@@ -19,9 +19,9 @@ const InterviewListItem = ({
       onClick={onClick}
       className={cn(
         "w-full text-left p-4 rounded-xl border transition-all duration-200",
-        "hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         isSelected
-          ? "bg-primary/5 border-primary/30 shadow-sm"
+          ? "bg-primary/5 border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.3)]"
           : "bg-card border-border hover:border-border/80"
       )}
       whileTap={{ scale: 0.98 }}

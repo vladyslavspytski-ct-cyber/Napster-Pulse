@@ -130,10 +130,10 @@ const SavedInterviewBlock = ({
           >
             <SecondaryButton
               size="lg"
-              className="flex-1 opacity-50 cursor-not-allowed"
-              disabled
+              className="flex-1"
+              asChild
             >
-              Go to Dashboard
+              <a href="/dashboard">Go to Dashboard</a>
             </SecondaryButton>
           </motion.div>
 
@@ -144,7 +144,7 @@ const SavedInterviewBlock = ({
             transition={{ delay: 0.6, duration: 0.3 }}
             className="text-xs text-muted-foreground text-center"
           >
-            This interview will appear in Dashboard → Created interviews (coming soon).
+            View responses in the Dashboard once participants complete interviews.
           </motion.p>
         </CardContent>
       </Card>

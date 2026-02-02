@@ -38,30 +38,31 @@ const DashboardV2 = () => {
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [runsPage, setRunsPage] = useState(1);
 
-  // Fetch interviews from API - we fetch more to filter client-side for completed_count > 0
+  // Fetch interviews from API with server-side pagination
+  const interviewsOffset = (currentPage - 1) * INTERVIEWS_PER_PAGE;
   const {
     interviews: rawInterviews,
+    total: interviewsTotal,
     isLoading: isLoadingInterviews,
     error: interviewsError,
   } = useInterviews({
-    limit: 100, // Fetch more to ensure we have enough after filtering
-    offset: 0,
+    limit: INTERVIEWS_PER_PAGE,
+    offset: interviewsOffset,
     search: interviewSearch,
   });
 
-  // Transform and filter interviews: only show those with completed_count > 0
+  // Transform interviews and filter for completed_count > 0
   const allFilteredInterviews = useMemo(() => {
     return rawInterviews
       .filter((interview) => interview.completed_count > 0)
       .map(transformInterviewToTemplate);
   }, [rawInterviews]);
 
-  // Pagination for interviews (client-side since we filter by completed_count)
-  const totalPages = Math.max(1, Math.ceil(allFilteredInterviews.length / INTERVIEWS_PER_PAGE));
-  const paginatedInterviews = useMemo(() => {
-    const start = (currentPage - 1) * INTERVIEWS_PER_PAGE;
-    return allFilteredInterviews.slice(start, start + INTERVIEWS_PER_PAGE);
-  }, [allFilteredInterviews, currentPage]);
+  // Calculate total pages from API response
+  const totalPages = Math.max(1, Math.ceil(interviewsTotal / INTERVIEWS_PER_PAGE));
+
+  // With server-side pagination, paginatedInterviews is the filtered list from current page
+  const paginatedInterviews = allFilteredInterviews;
 
   // Auto-select first interview on initial load or when list changes
   useEffect(() => {

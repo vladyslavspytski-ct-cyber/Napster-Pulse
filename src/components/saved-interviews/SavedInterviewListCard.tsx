@@ -88,7 +88,9 @@ const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedIntervi
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete?.(interview)}
-                className="h-8 px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                disabled={!onDelete}
+                className="h-8 px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
+                title={onDelete ? "Delete interview" : "Delete is not available"}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

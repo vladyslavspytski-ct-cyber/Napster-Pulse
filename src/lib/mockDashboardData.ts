@@ -63,6 +63,25 @@ export const getSummary = (response: InterviewResponse): string => {
   return summaryItem?.value || "No summary available.";
 };
 
+// Transform InterviewListItem from API to SavedInterview for UI
+export const transformToSavedInterview = (
+  interview: {
+    id: string;
+    title: string;
+    is_active: boolean;
+    link: { unique_key: string; created_at: string } | null;
+    questions: Array<{ text: string; order: number }>;
+  },
+  baseUrl: string = window.location.origin
+): SavedInterview => ({
+  id: interview.id,
+  title: interview.title,
+  questions_count: interview.questions.length,
+  is_active: interview.is_active,
+  public_url: interview.link ? `${baseUrl}/i/${interview.link.unique_key}` : "",
+  created_at: interview.link?.created_at || new Date().toISOString(),
+});
+
 // Mock data for Conducted Interviews
 export const mockInterviewResponses: InterviewResponse[] = [
   {

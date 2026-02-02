@@ -1,68 +1,59 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, FileText, ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import SavedInterviewListCard from "@/components/saved-interviews/SavedInterviewListCard";
-import { mockSavedInterviews, SavedInterview } from "@/lib/mockDashboardData";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { SavedInterview, transformToSavedInterview } from "@/lib/mockDashboardData";
+import { useInterviews } from "@/hooks/api/useInterviews";
 
 const ITEMS_PER_PAGE = 10;
 
 const SavedInterviews = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [interviews, setInterviews] = useState<SavedInterview[]>(mockSavedInterviews);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [interviewToDelete, setInterviewToDelete] = useState<SavedInterview | null>(null);
 
-  // Filter interviews by search only
-  const filteredInterviews = useMemo(() => {
-    if (!searchQuery.trim()) return interviews;
-    const query = searchQuery.toLowerCase();
-    return interviews.filter((i) => i.title.toLowerCase().includes(query));
-  }, [searchQuery, interviews]);
+  // Debounce search to avoid excessive API calls
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredInterviews.length / ITEMS_PER_PAGE));
-  const paginatedInterviews = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredInterviews.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredInterviews, currentPage]);
+  // Fetch interviews from API with server-side pagination
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+  const { interviews: rawInterviews, total, isLoading, error, refetch } = useInterviews({
+    limit: ITEMS_PER_PAGE,
+    offset,
+    search: debouncedSearch,
+  });
+
+  // Transform API data to SavedInterview format
+  const interviews: SavedInterview[] = useMemo(() => {
+    return rawInterviews.map((interview) => transformToSavedInterview(interview));
+  }, [rawInterviews]);
+
+  // Calculate total pages from API response
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
   // Reset page when search changes
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
-  };
 
-  const handleDeleteClick = (interview: SavedInterview) => {
-    setInterviewToDelete(interview);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (interviewToDelete) {
-      setInterviews((prev) => prev.filter((i) => i.id !== interviewToDelete.id));
-      setDeleteDialogOpen(false);
-      setInterviewToDelete(null);
+    // Debounce the API call
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
-  };
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(value);
+    }, 300);
+    debounceTimeoutRef.current = timeout;
+  }, []);
 
   const handleCreateInterview = () => {
-    // UI only - would navigate to create interview page
     window.location.href = "/create-interview";
   };
 
@@ -124,7 +115,41 @@ const SavedInterviews = () => {
             transition={{ delay: 0.15 }}
           >
             <AnimatePresence mode="wait">
-              {paginatedInterviews.length > 0 ? (
+              {isLoading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-3"
+                >
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <LoadingSkeleton key={i} />
+                  ))}
+                </motion.div>
+              ) : error ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="flex flex-col items-center justify-center py-16 text-center"
+                >
+                  <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+                    <AlertCircle className="w-7 h-7 text-destructive" />
+                  </div>
+                  <h3 className="text-base font-medium text-foreground mb-1">
+                    Failed to load interviews
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mb-4">
+                    {error.message}
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <Loader2 className="w-4 h-4 mr-2" />
+                    Try again
+                  </Button>
+                </motion.div>
+              ) : interviews.length > 0 ? (
                 <motion.div
                   key="list"
                   initial={{ opacity: 0 }}
@@ -132,12 +157,11 @@ const SavedInterviews = () => {
                   exit={{ opacity: 0 }}
                   className="space-y-3"
                 >
-                  {paginatedInterviews.map((interview, index) => (
+                  {interviews.map((interview, index) => (
                     <SavedInterviewListCard
                       key={interview.id}
                       interview={interview}
                       index={index}
-                      onDelete={handleDeleteClick}
                     />
                   ))}
                 </motion.div>
@@ -146,6 +170,7 @@ const SavedInterviews = () => {
                   hasFilters={searchQuery.trim() !== ""}
                   onClearFilters={() => {
                     setSearchQuery("");
+                    setDebouncedSearch("");
                   }}
                   onCreateInterview={handleCreateInterview}
                 />
@@ -154,7 +179,7 @@ const SavedInterviews = () => {
           </motion.div>
 
           {/* Pagination */}
-          {filteredInterviews.length > ITEMS_PER_PAGE && (
+          {!isLoading && totalPages > 1 && (
             <motion.div
               id="saved-interviews-pagination"
               initial={{ opacity: 0 }}
@@ -187,23 +212,6 @@ const SavedInterviews = () => {
           )}
         </div>
 
-        {/* Delete confirmation dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete interview?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete "{interviewToDelete?.title}"? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </main>
 
       <Footer />
@@ -248,6 +256,28 @@ const EmptyState = ({ hasFilters, onClearFilters, onCreateInterview }: EmptyStat
       </PrimaryButton>
     )}
   </motion.div>
+);
+
+// Loading skeleton component
+const LoadingSkeleton = () => (
+  <Card className="bg-card border border-border">
+    <CardContent className="p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex-1 min-w-0 space-y-2">
+          <Skeleton className="h-5 w-48" />
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-8 w-8" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
 );
 
 export default SavedInterviews;

@@ -67,8 +67,9 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
       const response = await callApi<AttemptsResponse>(
         API_ROUTES.interviewAttempts(interviewId, { limit, offset, search }),
       );
-      setAttempts(response.data);
-      setTotal(response.total);
+      // Defensive: ensure data is always an array and total is always a number
+      setAttempts(Array.isArray(response?.data) ? response.data : []);
+      setTotal(typeof response?.total === "number" ? response.total : 0);
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch attempts");
       setError(error);

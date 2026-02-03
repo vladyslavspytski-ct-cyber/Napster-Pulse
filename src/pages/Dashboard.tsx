@@ -51,15 +51,16 @@ const DashboardV2 = () => {
     search: interviewSearch,
   });
 
-  // Transform interviews and filter for completed_count > 0
+  // Transform interviews and filter for completed_count > 0 (defensive: ensure array)
   const allFilteredInterviews = useMemo(() => {
+    if (!rawInterviews || !Array.isArray(rawInterviews)) return [];
     return rawInterviews
       .filter((interview) => interview.completed_count > 0)
       .map(transformInterviewToTemplate);
   }, [rawInterviews]);
 
-  // Calculate total pages from API response
-  const totalPages = Math.max(1, Math.ceil(interviewsTotal / INTERVIEWS_PER_PAGE));
+  // Calculate total pages from API response (defensive: handle undefined/NaN)
+  const totalPages = Math.max(1, Math.ceil((interviewsTotal || 0) / INTERVIEWS_PER_PAGE));
 
   // With server-side pagination, paginatedInterviews is the filtered list from current page
   const paginatedInterviews = allFilteredInterviews;
@@ -97,11 +98,12 @@ const DashboardV2 = () => {
     enabled: !!selectedInterview,
   });
 
-  // Calculate total pages for runs
-  const runsTotalPages = Math.max(1, Math.ceil(runsTotal / RUNS_PER_PAGE));
+  // Calculate total pages for runs (defensive: handle undefined/NaN)
+  const runsTotalPages = Math.max(1, Math.ceil((runsTotal || 0) / RUNS_PER_PAGE));
 
-  // Transform attempts to runs and apply filters
+  // Transform attempts to runs and apply filters (defensive: ensure array)
   const selectedRuns = useMemo(() => {
+    if (!rawAttempts || !Array.isArray(rawAttempts)) return [];
     // Filter to only completed runs (status "done" or call_successful "success")
     let runs = rawAttempts
       .filter((attempt) => attempt.status === "done")

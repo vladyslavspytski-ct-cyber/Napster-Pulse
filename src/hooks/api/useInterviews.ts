@@ -58,8 +58,9 @@ export function useInterviews(options: UseInterviewsOptions = {}): UseInterviews
       const response = await callApi<InterviewsResponse>(
         API_ROUTES.interviewsList({ limit, offset, search }),
       );
-      setInterviews(response.data);
-      setTotal(response.total);
+      // Defensive: ensure data is always an array and total is always a number
+      setInterviews(Array.isArray(response?.data) ? response.data : []);
+      setTotal(typeof response?.total === "number" ? response.total : 0);
       hasFetchedRef.current = true;
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch interviews");

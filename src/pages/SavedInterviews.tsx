@@ -30,13 +30,14 @@ const SavedInterviews = () => {
     search: debouncedSearch,
   });
 
-  // Transform API data to SavedInterview format
+  // Transform API data to SavedInterview format (defensive: ensure array)
   const interviews: SavedInterview[] = useMemo(() => {
+    if (!rawInterviews || !Array.isArray(rawInterviews)) return [];
     return rawInterviews.map((interview) => transformToSavedInterview(interview));
   }, [rawInterviews]);
 
-  // Calculate total pages from API response
-  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+  // Calculate total pages from API response (defensive: handle undefined/NaN)
+  const totalPages = Math.max(1, Math.ceil((total || 0) / ITEMS_PER_PAGE));
 
   // Reset page when search changes
   const handleSearchChange = useCallback((value: string) => {

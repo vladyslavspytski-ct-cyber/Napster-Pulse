@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Calendar, Clock } from "lucide-react";
+import { User, Calendar, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConductedRun, formatDateTime } from "@/lib/mockDashboardV2Data";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,19 @@ interface ConductedRunCardProps {
 }
 
 const ConductedRunCard = ({ run, index }: ConductedRunCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  // Check if text is truncated
+  useEffect(() => {
+    const element = textRef.current;
+    if (element) {
+      // Compare scrollHeight with clientHeight to detect truncation
+      setIsTruncated(element.scrollHeight > element.clientHeight);
+    }
+  }, [run.summary]);
+
   const sentimentConfig = {
     positive: {
       variant: "default" as const,
@@ -55,9 +69,35 @@ const ConductedRunCard = ({ run, index }: ConductedRunCardProps) => {
       </div>
 
       {/* Summary */}
-      <p className="text-sm text-foreground/80 leading-relaxed mb-3 line-clamp-3">
+      <p
+        ref={textRef}
+        className={cn(
+          "text-sm text-foreground/80 leading-relaxed mb-2",
+          !isExpanded && "line-clamp-3"
+        )}
+      >
         {run.summary}
       </p>
+
+      {/* Show more/less button */}
+      {(isTruncated || isExpanded) && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 mb-3 transition-colors"
+        >
+          {isExpanded ? (
+            <>
+              Show less
+              <ChevronUp className="w-3 h-3" />
+            </>
+          ) : (
+            <>
+              Show more
+              <ChevronDown className="w-3 h-3" />
+            </>
+          )}
+        </button>
+      )}
 
       {/* Footer */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

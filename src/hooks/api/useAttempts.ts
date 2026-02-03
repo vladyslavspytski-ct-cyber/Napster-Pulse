@@ -35,6 +35,7 @@ interface UseAttemptsOptions {
   limit?: number;
   offset?: number;
   search?: string;
+  sentiment?: string;
   enabled?: boolean;
 }
 
@@ -47,17 +48,70 @@ interface UseAttemptsResult {
 }
 
 export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
-  const { interviewId, limit = 10, offset = 0, search = "", enabled = true } = options;
+  const { interviewId, limit = 10, offset = 0, search = "", sentiment = "all", enabled = true } = options;
 
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Track previous interviewId to clear data when it changes
+  // Track previous interviewId to detect changes
   const prevInterviewIdRef = useRef<string | undefined>(undefined);
 
-  const fetchAttempts = useCallback(async () => {
+  // Fetch attempts when dependencies change
+  useEffect(() => {
+    // Clear previous data when interview changes
+    const interviewChanged = prevInterviewIdRef.current !== interviewId;
+    if (interviewChanged) {
+      setAttempts([]);
+      setTotal(0);
+      setError(null);
+      prevInterviewIdRef.current = interviewId;
+    }
+
+    // Don't fetch if disabled or no interviewId
+    if (!enabled || !interviewId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await callApi<AttemptsResponse>(
+          API_ROUTES.interviewAttempts(interviewId, { limit, offset, search, sentiment }),
+        );
+
+        if (!cancelled) {
+          // Defensive: ensure data is always an array and total is always a number
+          setAttempts(Array.isArray(response?.data) ? response.data : []);
+          setTotal(typeof response?.total === "number" ? response.total : 0);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const error = err instanceof Error ? err : new Error("Failed to fetch attempts");
+          setError(error);
+          console.error("[useAttempts] Error:", error);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, interviewId, limit, offset, search, sentiment]);
+
+  // Refetch function for manual refresh
+  const refetch = useCallback(async () => {
     if (!interviewId) return;
 
     setIsLoading(true);
@@ -65,9 +119,8 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
 
     try {
       const response = await callApi<AttemptsResponse>(
-        API_ROUTES.interviewAttempts(interviewId, { limit, offset, search }),
+        API_ROUTES.interviewAttempts(interviewId, { limit, offset, search, sentiment }),
       );
-      // Defensive: ensure data is always an array and total is always a number
       setAttempts(Array.isArray(response?.data) ? response.data : []);
       setTotal(typeof response?.total === "number" ? response.total : 0);
     } catch (err) {
@@ -77,30 +130,14 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [interviewId, limit, offset, search]);
-
-  // Clear attempts when interview changes
-  useEffect(() => {
-    if (prevInterviewIdRef.current !== interviewId) {
-      setAttempts([]);
-      setTotal(0);
-      setError(null);
-      prevInterviewIdRef.current = interviewId;
-    }
-  }, [interviewId]);
-
-  useEffect(() => {
-    if (enabled && interviewId) {
-      fetchAttempts();
-    }
-  }, [enabled, interviewId, fetchAttempts]);
+  }, [interviewId, limit, offset, search, sentiment]);
 
   return {
     attempts,
     total,
     isLoading,
     error,
-    refetch: fetchAttempts,
+    refetch,
   };
 }
 

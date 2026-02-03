@@ -1,5 +1,6 @@
 // Types for Dashboard v2 - Conducted Interviews master-detail layout
 import type { InterviewListItem } from "@/hooks/api/useInterviews";
+import type { CompletedInterviewListItem } from "@/hooks/api/useCompletedInterviews";
 import type { Attempt } from "@/hooks/api/useAttempts";
 import { getSentimentLabel } from "@/hooks/api/useAttempts";
 
@@ -8,6 +9,7 @@ export interface InterviewTemplate {
   title: string;
   createdAt: string;
   completedCount: number;
+  questionsCount: number;
 }
 
 export interface ConductedRun {
@@ -31,7 +33,7 @@ export const normalizeSentiment = (
   return "neutral";
 };
 
-// Transform API InterviewListItem to UI InterviewTemplate
+// Transform API InterviewListItem to UI InterviewTemplate (legacy - for SavedInterviews)
 export const transformInterviewToTemplate = (
   interview: InterviewListItem
 ): InterviewTemplate => ({
@@ -39,7 +41,34 @@ export const transformInterviewToTemplate = (
   title: interview.title,
   createdAt: interview.link?.created_at || new Date().toISOString(),
   completedCount: interview.completed_count,
+  questionsCount: interview.questions?.length || 0,
 });
+
+// Transform API CompletedInterviewListItem to UI InterviewTemplate (for Dashboard)
+export const transformCompletedInterviewToTemplate = (
+  interview: CompletedInterviewListItem
+): InterviewTemplate => ({
+  id: interview.id,
+  title: interview.title,
+  createdAt: interview.link?.created_at || new Date().toISOString(),
+  completedCount: interview.completed_count,
+  questionsCount: interview.questions,
+});
+
+// Helper to extract summary_long from analysis, falling back to transcript_summary
+const getSummaryText = (attempt: Attempt): string => {
+  // First try to get summary_long from analysis
+  if (attempt.analysis?.data_collection_results_list) {
+    const summaryLong = attempt.analysis.data_collection_results_list.find(
+      (result) => result.data_collection_id === "summary_long"
+    );
+    if (summaryLong?.value) {
+      return summaryLong.value;
+    }
+  }
+  // Fall back to transcript_summary
+  return attempt.transcript_summary || "No summary available.";
+};
 
 // Transform API Attempt to UI ConductedRun
 export const transformAttemptToRun = (attempt: Attempt): ConductedRun => ({
@@ -49,7 +78,7 @@ export const transformAttemptToRun = (attempt: Attempt): ConductedRun => ({
   participantLastName: attempt.participant_last_name || "",
   participantEmail: attempt.participant_email || "",
   conductedAt: attempt.started_at,
-  summary: attempt.transcript_summary || "No summary available.",
+  summary: getSummaryText(attempt),
   sentimentLabel: getSentimentLabel(attempt.analysis),
 });
 
@@ -60,108 +89,126 @@ export const mockInterviewTemplates: InterviewTemplate[] = [
     title: "User Onboarding Experience",
     createdAt: "2025-01-20T12:00:00Z",
     completedCount: 4,
+    questionsCount: 8,
   },
   {
     id: "int_002",
     title: "Product Pricing Survey",
     createdAt: "2025-01-18T09:30:00Z",
     completedCount: 3,
+    questionsCount: 6,
   },
   {
     id: "int_003",
     title: "Feature Feedback Session",
     createdAt: "2025-01-15T14:00:00Z",
     completedCount: 2,
+    questionsCount: 5,
   },
   {
     id: "int_004",
     title: "Customer Satisfaction Check-in",
     createdAt: "2025-01-10T11:00:00Z",
     completedCount: 2,
+    questionsCount: 5,
   },
   {
     id: "int_005",
     title: "Beta Tester Feedback",
     createdAt: "2025-01-08T16:00:00Z",
     completedCount: 5,
+    questionsCount: 7,
   },
   {
     id: "int_006",
     title: "Post-Launch Survey",
     createdAt: "2025-01-05T10:00:00Z",
     completedCount: 8,
+    questionsCount: 10,
   },
   {
     id: "int_007",
     title: "Enterprise Client Interviews",
     createdAt: "2025-01-03T14:30:00Z",
     completedCount: 3,
+    questionsCount: 6,
   },
   {
     id: "int_008",
     title: "UX Research - Mobile App",
     createdAt: "2024-12-28T09:00:00Z",
     completedCount: 6,
+    questionsCount: 8,
   },
   {
     id: "int_009",
     title: "Competitor Analysis Feedback",
     createdAt: "2024-12-20T11:00:00Z",
     completedCount: 4,
+    questionsCount: 7,
   },
   {
     id: "int_010",
     title: "New Feature Discovery",
     createdAt: "2024-12-15T15:00:00Z",
     completedCount: 7,
+    questionsCount: 9,
   },
   {
     id: "int_011",
     title: "Quarterly User Check-in",
     createdAt: "2024-12-10T08:00:00Z",
     completedCount: 12,
+    questionsCount: 10,
   },
   {
     id: "int_012",
     title: "Churn Prevention Survey",
     createdAt: "2024-12-05T14:00:00Z",
     completedCount: 5,
+    questionsCount: 7,
   },
   {
     id: "int_013",
     title: "Product Market Fit Analysis",
     createdAt: "2024-12-01T10:00:00Z",
     completedCount: 9,
+    questionsCount: 11,
   },
   {
     id: "int_014",
     title: "Support Experience Feedback",
     createdAt: "2024-11-25T11:30:00Z",
     completedCount: 4,
+    questionsCount: 6,
   },
   {
     id: "int_015",
     title: "Onboarding V2 Test",
     createdAt: "2024-11-20T09:00:00Z",
     completedCount: 6,
+    questionsCount: 8,
   },
   {
     id: "int_016",
     title: "Integration Partners Feedback",
     createdAt: "2024-11-15T14:00:00Z",
     completedCount: 3,
+    questionsCount: 6,
   },
   {
     id: "int_017",
     title: "Annual User Survey 2024",
     createdAt: "2024-11-10T10:00:00Z",
     completedCount: 15,
+    questionsCount: 12,
   },
   {
     id: "int_018",
     title: "Dashboard Redesign Feedback",
     createdAt: "2024-11-05T16:00:00Z",
     completedCount: 8,
+    questionsCount: 10,
   },
 ];
 

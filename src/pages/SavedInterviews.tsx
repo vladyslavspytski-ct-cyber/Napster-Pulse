@@ -8,19 +8,36 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import SavedInterviewListCard from "@/components/saved-interviews/SavedInterviewListCard";
 import { SavedInterview, transformToSavedInterview } from "@/lib/mockDashboardData";
 import { useInterviews } from "@/hooks/api/useInterviews";
+import { useDeleteInterview } from "@/hooks/api/useDeleteInterview";
+import { useToast } from "@/hooks/use-toast";
 
 const ITEMS_PER_PAGE = 10;
 
 const SavedInterviews = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [interviewToDelete, setInterviewToDelete] = useState<SavedInterview | null>(null);
 
   // Debounce search to avoid excessive API calls
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Delete interview hook
+  const { deleteInterview, isDeleting } = useDeleteInterview();
 
   // Fetch interviews from API with server-side pagination
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -57,6 +74,36 @@ const SavedInterviews = () => {
   const handleCreateInterview = () => {
     window.location.href = "/create-interview";
   };
+
+  // Handle delete interview
+  const handleDeleteClick = useCallback((interview: SavedInterview) => {
+    setInterviewToDelete(interview);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!interviewToDelete) return;
+
+    try {
+      await deleteInterview(interviewToDelete.id);
+      toast({
+        title: "Interview deleted",
+        description: `"${interviewToDelete.title}" has been deleted.`,
+      });
+      setInterviewToDelete(null);
+      // Refetch the list
+      refetch();
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete",
+        description: "Could not delete the interview. Please try again.",
+      });
+    }
+  }, [interviewToDelete, deleteInterview, toast, refetch]);
+
+  const handleCancelDelete = useCallback(() => {
+    setInterviewToDelete(null);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -163,6 +210,7 @@ const SavedInterviews = () => {
                       key={interview.id}
                       interview={interview}
                       index={index}
+                      onDelete={handleDeleteClick}
                     />
                   ))}
                 </motion.div>
@@ -216,6 +264,28 @@ const SavedInterviews = () => {
       </main>
 
       <Footer />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!interviewToDelete} onOpenChange={(open) => !open && handleCancelDelete()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Interview</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{interviewToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

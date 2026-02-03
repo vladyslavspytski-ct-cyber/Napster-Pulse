@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
@@ -11,10 +11,10 @@ import ConductedRunCard from "@/components/dashboard-v2/ConductedRunCard";
 import MobileInterviewSelector from "@/components/dashboard-v2/MobileInterviewSelector";
 import {
   InterviewTemplate,
-  transformInterviewToTemplate,
+  transformCompletedInterviewToTemplate,
   transformAttemptToRun,
 } from "@/lib/mockDashboardV2Data";
-import { useInterviews } from "@/hooks/api/useInterviews";
+import { useCompletedInterviews } from "@/hooks/api/useCompletedInterviews";
 import { useAttempts } from "@/hooks/api/useAttempts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
@@ -38,25 +38,23 @@ const DashboardV2 = () => {
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [runsPage, setRunsPage] = useState(1);
 
-  // Fetch interviews from API with server-side pagination
+  // Fetch completed interviews from API with server-side pagination
   const interviewsOffset = (currentPage - 1) * INTERVIEWS_PER_PAGE;
   const {
     interviews: rawInterviews,
     total: interviewsTotal,
     isLoading: isLoadingInterviews,
     error: interviewsError,
-  } = useInterviews({
+  } = useCompletedInterviews({
     limit: INTERVIEWS_PER_PAGE,
     offset: interviewsOffset,
     search: interviewSearch,
   });
 
-  // Transform interviews and filter for completed_count > 0 (defensive: ensure array)
+  // Transform interviews (already filtered by backend - only completed_count > 0)
   const allFilteredInterviews = useMemo(() => {
     if (!rawInterviews || !Array.isArray(rawInterviews)) return [];
-    return rawInterviews
-      .filter((interview) => interview.completed_count > 0)
-      .map(transformInterviewToTemplate);
+    return rawInterviews.map(transformCompletedInterviewToTemplate);
   }, [rawInterviews]);
 
   // Calculate total pages from API response (defensive: handle undefined/NaN)
@@ -65,25 +63,37 @@ const DashboardV2 = () => {
   // With server-side pagination, paginatedInterviews is the filtered list from current page
   const paginatedInterviews = allFilteredInterviews;
 
+  // Track previous page to detect page changes
+  const prevPageRef = useRef(currentPage);
+
+  // Clear selection when page changes to avoid showing stale data
+  useEffect(() => {
+    if (prevPageRef.current !== currentPage) {
+      prevPageRef.current = currentPage;
+      // Clear selection immediately when page changes - will be re-selected when new data arrives
+      setSelectedInterview(null);
+      setRunSearch("");
+      setSentimentFilter("all");
+      setRunsPage(1);
+    }
+  }, [currentPage]);
+
   // Auto-select first interview on initial load or when list changes
   useEffect(() => {
-    if (!selectedInterview && paginatedInterviews.length > 0) {
+    // Select first interview if none selected and list is not empty
+    if (!selectedInterview && paginatedInterviews.length > 0 && !isLoadingInterviews) {
       setSelectedInterview(paginatedInterviews[0]);
-    }
-    // If currently selected interview is no longer in the list, select first one
-    if (selectedInterview && allFilteredInterviews.length > 0) {
-      const stillExists = allFilteredInterviews.some((i) => i.id === selectedInterview.id);
-      if (!stillExists) {
-        setSelectedInterview(paginatedInterviews[0] || null);
-      }
+      setRunSearch("");
+      setSentimentFilter("all");
+      setRunsPage(1);
     }
     // If list becomes empty, clear selection
-    if (allFilteredInterviews.length === 0) {
+    if (allFilteredInterviews.length === 0 && !isLoadingInterviews) {
       setSelectedInterview(null);
     }
-  }, [paginatedInterviews, allFilteredInterviews, selectedInterview]);
+  }, [paginatedInterviews, allFilteredInterviews, selectedInterview, isLoadingInterviews]);
 
-  // Fetch attempts for selected interview with pagination
+  // Fetch attempts for selected interview with pagination and sentiment filter
   const runsOffset = (runsPage - 1) * RUNS_PER_PAGE;
   const {
     attempts: rawAttempts,
@@ -95,38 +105,23 @@ const DashboardV2 = () => {
     limit: RUNS_PER_PAGE,
     offset: runsOffset,
     search: runSearch,
+    sentiment: sentimentFilter,
     enabled: !!selectedInterview,
   });
 
   // Calculate total pages for runs (defensive: handle undefined/NaN)
   const runsTotalPages = Math.max(1, Math.ceil((runsTotal || 0) / RUNS_PER_PAGE));
 
-  // Transform attempts to runs and apply filters (defensive: ensure array)
+  // Transform attempts to runs (defensive: ensure array)
   const selectedRuns = useMemo(() => {
     if (!rawAttempts || !Array.isArray(rawAttempts)) return [];
-    // Filter to only completed runs (status "done" or call_successful "success")
-    let runs = rawAttempts
+    // Filter to only completed runs (status "done")
+    const runs = rawAttempts
       .filter((attempt) => attempt.status === "done")
       .map(transformAttemptToRun);
 
-    // Filter by sentiment (client-side)
-    if (sentimentFilter !== "all") {
-      runs = runs.filter((run) => run.sentimentLabel === sentimentFilter);
-    }
-
-    // Filter by search (client-side, in addition to server-side search)
-    if (runSearch.trim()) {
-      const query = runSearch.toLowerCase();
-      runs = runs.filter(
-        (run) =>
-          run.participantFirstName.toLowerCase().includes(query) ||
-          run.participantLastName.toLowerCase().includes(query) ||
-          run.participantEmail.toLowerCase().includes(query),
-      );
-    }
-
     return runs;
-  }, [rawAttempts, runSearch, sentimentFilter]);
+  }, [rawAttempts]);
 
   // Show toast on errors
   useEffect(() => {

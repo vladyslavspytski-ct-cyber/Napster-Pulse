@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -12,6 +12,7 @@ import { usePublicInterview } from "@/hooks/api/usePublicInterview";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PublicInterviewVoiceAgentCard from "@/components/PublicInterviewVoiceAgentCard";
+import PublicInterviewError from "@/components/public-interview/PublicInterviewError";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
 
 type Step = "details" | "interview" | "completed";
@@ -31,6 +32,7 @@ interface FormErrors {
 
 const PublicInterview = () => {
   const { token: key } = useParams<{ token: string }>();
+  const navigate = useNavigate();
 
   const { toast } = useToast();
   const {
@@ -505,14 +507,13 @@ const PublicInterview = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <Card className="glass-card border-destructive/50">
-                  <CardContent className="p-8 text-center">
-                    <p className="text-destructive font-medium mb-2">Failed to load interview</p>
-                    <p className="text-muted-foreground text-sm">
-                      Please check the link and try again.
-                    </p>
-                  </CardContent>
-                </Card>
+                <PublicInterviewError
+                  type={interviewError.message?.toLowerCase().includes("not found") ? "not-found" : "generic"}
+                  interviewKey={key}
+                  onGoHome={() => navigate("/")}
+                  onRetry={() => key && fetchInterviewByKey(key)}
+                  onCloseTab={() => window.close()}
+                />
               </motion.div>
             )}
 

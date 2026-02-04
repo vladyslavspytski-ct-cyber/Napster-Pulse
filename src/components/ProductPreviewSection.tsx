@@ -59,10 +59,12 @@ const ProductPreviewSection = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}
         >
-          <div className="glass-card rounded-3xl p-4 md:p-6 shadow-lg overflow-hidden">
-            {/* Dashboard Header */}
-            <div className="mb-6 pb-4 border-b border-border">
-              <h3 className="text-xl font-semibold text-foreground">Conducted Interviews</h3>
+          {/* Cropped container with fade-out */}
+          <div className="relative max-h-[400px] md:max-h-[480px] lg:max-h-[520px] overflow-hidden rounded-3xl">
+            <div className="glass-card rounded-3xl p-4 md:p-6 shadow-lg overflow-hidden">
+              {/* Dashboard Header */}
+              <div className="mb-6 pb-4 border-b border-border">
+                <h3 className="text-xl font-semibold text-foreground">Conducted Interviews</h3>
               <p className="text-sm text-muted-foreground">View responses from all your completed interview sessions</p>
             </div>
 
@@ -258,6 +260,15 @@ const ProductPreviewSection = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+            {/* Bottom fade-out gradient overlay */}
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-32 md:h-40 pointer-events-none rounded-b-3xl"
+              style={{
+                background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.9) 30%, hsl(var(--background) / 0.5) 60%, transparent 100%)'
+              }}
+            />
           </div>
 
           {/* Decorative Elements */}

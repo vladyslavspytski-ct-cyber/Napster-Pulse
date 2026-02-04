@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import InterviewListItem from "@/components/dashboard-v2/InterviewListItem";
 import ConductedRunCard from "@/components/dashboard-v2/ConductedRunCard";
+import SentimentDistribution from "@/components/dashboard-v2/SentimentDistribution";
 import MobileInterviewSelector from "@/components/dashboard-v2/MobileInterviewSelector";
 import {
   InterviewTemplate,
@@ -417,7 +418,12 @@ const DashboardV2 = () => {
                       </Button>
                     ))}
                   </div>
-                </div>
+                  </div>
+
+                {/* Sentiment Distribution - UI only with test values */}
+                {selectedInterview && !isLoadingAttempts && selectedRuns.length > 0 && (
+                  <SentimentDistribution className="mb-4" />
+                )}
 
                 {/* Runs list - no scroll, pagination only */}
                 <div className="flex-1">

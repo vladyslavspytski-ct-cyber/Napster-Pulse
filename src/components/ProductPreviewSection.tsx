@@ -1,28 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Mic, 
-  BarChart3, 
-  Users, 
-  Clock, 
-  CheckCircle2, 
+  Search,
+  FileText,
+  Users,
+  User,
+  Calendar,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
   TrendingUp,
   MessageSquare,
-  Sparkles,
-  Share2,
-  Copy,
-  ExternalLink,
-  FileText,
-  Calendar,
-  ChevronRight
+  BarChart3
 } from "lucide-react";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const ProductPreviewSection = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [activePreview, setActivePreview] = useState<"dashboard" | "saved">("dashboard");
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,43 +53,212 @@ const ProductPreviewSection = () => {
           </p>
         </div>
 
-        {/* Preview Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex rounded-full bg-muted/50 p-1 border border-border">
-            <button
-              onClick={() => setActivePreview("dashboard")}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                activePreview === "dashboard" 
-                  ? "bg-card text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActivePreview("saved")}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                activePreview === "saved" 
-                  ? "bg-card text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Saved Interviews
-            </button>
-          </div>
-        </div>
-
-        {/* Main Dashboard Preview */}
+        {/* Main Dashboard Preview - Master-Detail Layout */}
         <motion.div
-          className={`relative max-w-5xl mx-auto transition-all duration-1000 ${
+          className={`relative max-w-6xl mx-auto transition-all duration-1000 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}
         >
-          {activePreview === "dashboard" ? (
-            <DashboardPreview isVisible={isVisible} />
-          ) : (
-            <SavedInterviewsPreview isVisible={isVisible} />
-          )}
+          <div className="glass-card rounded-3xl p-4 md:p-6 shadow-lg overflow-hidden">
+            {/* Dashboard Header */}
+            <div className="mb-6 pb-4 border-b border-border">
+              <h3 className="text-xl font-semibold text-foreground">Conducted Interviews</h3>
+              <p className="text-sm text-muted-foreground">View responses from all your completed interview sessions</p>
+            </div>
+
+            {/* Master-Detail Layout */}
+            <div className="flex gap-6">
+              {/* Left Column - Interview List */}
+              <div className="w-[280px] lg:w-[320px] flex-shrink-0 hidden md:block">
+                <div className="bg-card border border-border rounded-2xl p-4">
+                  {/* Search */}
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <div className="h-9 rounded-lg bg-muted/50 border border-border pl-9 flex items-center">
+                      <span className="text-sm text-muted-foreground">Search interviews...</span>
+                    </div>
+                  </div>
+
+                  {/* Interview List */}
+                  <div className="space-y-2">
+                    {[
+                      { title: "Product Manager Interview — Q1 2026", responses: 24, date: "Jan 15", selected: true },
+                      { title: "UX Designer Screening", responses: 12, date: "Jan 12", selected: false },
+                      { title: "Customer Feedback Survey", responses: 156, date: "Jan 8", selected: false },
+                      { title: "Engineering Lead Assessment", responses: 8, date: "Jan 5", selected: false },
+                    ].map((interview, index) => (
+                      <motion.div
+                        key={index}
+                        className={`p-3 rounded-xl border transition-all ${
+                          interview.selected 
+                            ? "bg-primary/5 border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.3)]" 
+                            : "bg-card border-border"
+                        }`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -10 }}
+                        transition={{ duration: 0.4, delay: index * 0.08 + 0.2 }}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            interview.selected ? "bg-primary/10" : "bg-muted"
+                          }`}>
+                            <FileText className={`w-4 h-4 ${interview.selected ? "text-primary" : "text-muted-foreground"}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className={`text-sm font-medium truncate ${interview.selected ? "text-primary" : "text-foreground"}`}>
+                              {interview.title}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-muted-foreground">{interview.date}</span>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Users className="w-3 h-3" />
+                                <span>{interview.responses}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+                    <Button variant="ghost" size="sm" className="h-7 px-2" disabled>
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground">1 / 3</span>
+                    <Button variant="ghost" size="sm" className="h-7 px-2">
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Detail View */}
+              <div className="flex-1 min-w-0">
+                {/* Detail Header */}
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <h4 className="text-lg font-semibold text-foreground">Product Manager Interview — Q1 2026</h4>
+                    <div className="flex-1 max-w-[200px] ml-auto hidden sm:block">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <div className="h-9 rounded-lg bg-muted/50 border border-border pl-9 flex items-center">
+                          <span className="text-sm text-muted-foreground">Search participants...</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sentiment Filter Pills */}
+                  <div className="flex gap-2 flex-wrap">
+                    {["All", "Positive", "Neutral", "Negative"].map((sentiment, index) => (
+                      <Button
+                        key={sentiment}
+                        variant={index === 0 ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 capitalize"
+                      >
+                        {sentiment}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sentiment Distribution Cards */}
+                <motion.div 
+                  className="grid grid-cols-3 gap-3 mb-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                >
+                  {[
+                    { label: "Positive", value: 78, icon: TrendingUp, bg: "bg-emerald-50 dark:bg-emerald-950/30", iconColor: "text-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400" },
+                    { label: "Neutral", value: 18, icon: MessageSquare, bg: "bg-slate-100 dark:bg-slate-800/50", iconColor: "text-slate-500", textColor: "text-slate-600 dark:text-slate-400" },
+                    { label: "Negative", value: 4, icon: BarChart3, bg: "bg-rose-50 dark:bg-rose-950/30", iconColor: "text-rose-500", textColor: "text-rose-600 dark:text-rose-400" },
+                  ].map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={index} className={`rounded-xl p-3 lg:p-4 ${item.bg}`}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Icon className={`w-3.5 h-3.5 ${item.iconColor}`} />
+                          <span className={`text-xs font-medium ${item.textColor}`}>{item.label}</span>
+                        </div>
+                        <div className="text-xl lg:text-2xl font-semibold text-foreground">{item.value}%</div>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+
+                {/* Conducted Run Cards */}
+                <div className="space-y-3">
+                  {[
+                    { name: "Sarah Mitchell", email: "sarah.m@company.com", sentiment: "positive", summary: "Excellent candidate with strong product vision. Demonstrated clear understanding of user-centric design principles and data-driven decision making.", date: "Jan 15, 2026", time: "2:30 PM" },
+                    { name: "James Kim", email: "james.k@startup.io", sentiment: "positive", summary: "Great communication skills and technical background. Showed impressive experience in cross-functional team leadership.", date: "Jan 15, 2026", time: "11:15 AM" },
+                    { name: "Emily Roberts", email: "emily.r@tech.co", sentiment: "neutral", summary: "Good foundational knowledge but could benefit from more hands-on experience with agile methodologies.", date: "Jan 14, 2026", time: "4:45 PM" },
+                  ].map((run, index) => (
+                    <motion.div
+                      key={index}
+                      className="p-4 bg-card border border-border rounded-xl"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 + 0.5 }}
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <User className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <h5 className="font-medium text-foreground truncate">{run.name}</h5>
+                            <p className="text-sm text-muted-foreground truncate">{run.email}</p>
+                          </div>
+                        </div>
+                        <Badge 
+                          variant={run.sentiment === "positive" ? "default" : "secondary"}
+                          className={
+                            run.sentiment === "positive" 
+                              ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-100" 
+                              : "bg-muted text-muted-foreground border-border hover:bg-muted"
+                          }
+                        >
+                          {run.sentiment}
+                        </Badge>
+                      </div>
+
+                      {/* Summary */}
+                      <p className="text-sm text-foreground/80 leading-relaxed mb-3 line-clamp-2">
+                        {run.summary}
+                      </p>
+
+                      {/* Footer */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{run.date}</span>
+                        <span className="text-muted-foreground/50">•</span>
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{run.time}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Runs Pagination */}
+                <div className="flex items-center justify-center gap-4 pt-4 mt-4 border-t border-border">
+                  <Button variant="outline" size="sm" className="h-8 px-3" disabled>
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Prev
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page 1 of 6</span>
+                  <Button variant="outline" size="sm" className="h-8 px-3">
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Decorative Elements */}
           <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-r from-interu-blue/10 via-transparent to-interu-coral/10 rounded-full blur-3xl" />
@@ -117,228 +281,5 @@ const ProductPreviewSection = () => {
     </section>
   );
 };
-
-// Dashboard Preview Component
-const DashboardPreview = ({ isVisible }: { isVisible: boolean }) => (
-  <div className="glass-card rounded-3xl p-4 md:p-8 shadow-lg">
-    {/* Dashboard Header */}
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-border">
-      <div>
-        <h3 className="text-xl md:text-2xl font-semibold text-foreground">Interview Dashboard</h3>
-        <p className="text-sm text-muted-foreground">Product Manager Interview — Q1 2026</p>
-      </div>
-      <div className="flex gap-3">
-        <SecondaryButton size="sm" className="gap-2">
-          <Share2 className="w-4 h-4" />
-          Share
-        </SecondaryButton>
-        <PrimaryButton size="sm" className="gap-2">
-          <Mic className="w-4 h-4" />
-          New Interview
-        </PrimaryButton>
-      </div>
-    </div>
-
-    {/* Stats Row */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      {[
-        { icon: Users, label: "Total Participants", value: "24", color: "text-primary", bg: "bg-interu-blue-light" },
-        { icon: CheckCircle2, label: "Completed", value: "18", color: "text-interu-mint", bg: "bg-interu-mint-light" },
-        { icon: Clock, label: "In Progress", value: "4", color: "text-interu-coral", bg: "bg-interu-coral-light" },
-        { icon: BarChart3, label: "Avg. Score", value: "8.4", color: "text-interu-purple", bg: "bg-interu-purple-light" },
-      ].map((stat, index) => (
-        <div
-          key={index}
-          className={`p-4 rounded-2xl ${stat.bg} transition-all duration-500`}
-          style={{ transitionDelay: `${index * 100 + 200}ms` }}
-        >
-          <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
-          <p className="text-2xl md:text-3xl font-bold text-foreground">{stat.value}</p>
-          <p className="text-xs md:text-sm text-muted-foreground">{stat.label}</p>
-        </div>
-      ))}
-    </div>
-
-    {/* Content Grid */}
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Sentiment Analysis Card */}
-      <div className="bg-muted/50 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h4 className="font-semibold text-foreground flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-interu-coral" />
-            Sentiment Analysis
-          </h4>
-          <span className="text-xs text-muted-foreground">Last 7 days</span>
-        </div>
-        
-        <div className="space-y-4">
-          {[
-            { label: "Positive", value: 72, color: "bg-interu-mint" },
-            { label: "Neutral", value: 20, color: "bg-interu-gray" },
-            { label: "Negative", value: 8, color: "bg-interu-coral" },
-          ].map((item, index) => (
-            <div key={index}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">{item.label}</span>
-                <span className="font-medium text-foreground">{item.value}%</span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full ${item.color} rounded-full`}
-                  initial={{ width: 0 }}
-                  animate={{ width: isVisible ? `${item.value}%` : "0%" }}
-                  transition={{ duration: 0.8, delay: index * 0.15 + 0.5 }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Responses Card */}
-      <div className="bg-muted/50 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h4 className="font-semibold text-foreground flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-primary" />
-            Recent Responses
-          </h4>
-          <Button variant="ghost" size="sm" className="text-xs">
-            View All
-          </Button>
-        </div>
-        
-        <div className="space-y-3">
-          {[
-            { name: "Sarah Mitchell", time: "2 min ago", score: 9.2 },
-            { name: "James Kim", time: "15 min ago", score: 7.8 },
-            { name: "Emily Roberts", time: "1 hr ago", score: 8.5 },
-          ].map((response, index) => (
-            <motion.div
-              key={index}
-              className="flex items-center justify-between p-3 rounded-xl bg-card border border-border"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -10 }}
-              transition={{ duration: 0.4, delay: index * 0.1 + 0.6 }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-sm font-medium text-primary-foreground">
-                  {response.name.split(" ").map(n => n[0]).join("")}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{response.name}</p>
-                  <p className="text-xs text-muted-foreground">{response.time}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-interu-mint" />
-                <span className="font-semibold text-foreground">{response.score}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-// Saved Interviews Preview Component
-const SavedInterviewsPreview = ({ isVisible }: { isVisible: boolean }) => (
-  <div className="glass-card rounded-3xl p-4 md:p-8 shadow-lg">
-    {/* Header */}
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-border">
-      <div>
-        <h3 className="text-xl md:text-2xl font-semibold text-foreground">Saved Interviews</h3>
-        <p className="text-sm text-muted-foreground">Manage your interview templates and share links</p>
-      </div>
-      <PrimaryButton size="sm" className="gap-2">
-        <Mic className="w-4 h-4" />
-        Create Interview
-      </PrimaryButton>
-    </div>
-
-    {/* Search Bar */}
-    <div className="mb-6">
-      <div className="relative max-w-md">
-        <div className="h-10 rounded-lg bg-muted/50 border border-border px-4 flex items-center gap-2">
-          <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <span className="text-sm text-muted-foreground">Search by title...</span>
-        </div>
-      </div>
-    </div>
-
-    {/* Interview List */}
-    <div className="space-y-3">
-      {[
-        { title: "Product Manager Interview — Q1 2026", questions: 8, responses: 24, date: "Jan 15, 2026", active: true },
-        { title: "UX Designer Screening", questions: 6, responses: 12, date: "Jan 12, 2026", active: true },
-        { title: "Customer Feedback Survey", questions: 10, responses: 156, date: "Jan 8, 2026", active: false },
-        { title: "Engineering Lead Assessment", questions: 12, responses: 8, date: "Jan 5, 2026", active: true },
-      ].map((interview, index) => (
-        <motion.div
-          key={index}
-          className="p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 10 }}
-          transition={{ duration: 0.4, delay: index * 0.1 + 0.3 }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-interu-blue-light flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground">{interview.title}</h4>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" />
-                    {interview.questions} questions
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    {interview.responses} responses
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {interview.date}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {interview.active && (
-                <span className="px-2 py-0.5 rounded-full bg-interu-mint-light text-interu-mint text-xs font-medium">
-                  Active
-                </span>
-              )}
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <ExternalLink className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 px-2">
-                <span className="text-xs">View</span>
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-
-    {/* Pagination Preview */}
-    <div className="flex items-center justify-between mt-6 pt-6 border-t border-border">
-      <Button variant="outline" size="sm" disabled>
-        Previous
-      </Button>
-      <span className="text-sm text-muted-foreground">Page 1 of 3</span>
-      <Button variant="outline" size="sm">
-        Next
-      </Button>
-    </div>
-  </div>
-);
 
 export default ProductPreviewSection;

@@ -1,7 +1,8 @@
-import { ArrowRight, Play, Mic, BarChart3, Users, TrendingUp, MessageSquare } from "lucide-react";
+import { ArrowRight, Play, Mic, BarChart3, Users, TrendingUp, MessageSquare, Check, User, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { SecondaryButton } from "@/components/ui/SecondaryButton";
+import { motion } from "framer-motion";
 
 interface HeroSectionProps {
   onCreateInterview?: () => void;
@@ -68,89 +69,121 @@ const HeroSection = ({ onCreateInterview }: HeroSectionProps) => {
             </div>
           </div>
 
-          {/* Right Content - Mock Dashboard */}
-          <div className="relative animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          {/* Right Content - Create Interview Preview */}
+          <motion.div 
+            className="relative animate-fade-up" 
+            style={{ animationDelay: "0.2s" }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             <div className="relative">
-              {/* Main Dashboard Card */}
+              {/* Main Card - Create Interview Preview */}
               <div className="glass-card rounded-3xl p-6 shadow-card-hover">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Interview Results</h3>
-                    <p className="text-sm text-muted-foreground">Product Manager Position</p>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-interu-mint-light">
-                    <div className="w-2 h-2 rounded-full bg-interu-mint" />
-                    <span className="text-xs font-medium text-interu-mint">Completed</span>
+                {/* Header */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-foreground">Create Interview</h3>
+                  <p className="text-sm text-muted-foreground">Set up your voice interview in minutes</p>
+                </div>
+
+                {/* Interview Name Input Preview */}
+                <div className="mb-5">
+                  <label className="text-sm font-medium text-foreground mb-2 block">Interview Name</label>
+                  <div className="h-10 rounded-lg bg-muted/50 border border-border px-3 flex items-center">
+                    <span className="text-sm text-muted-foreground">Product Manager Interview — Q1 2026</span>
                   </div>
                 </div>
 
-                {/* Sentiment Analysis Preview */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="p-4 rounded-2xl bg-interu-blue-light">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-medium text-primary">Positive</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">78%</p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-muted">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs font-medium text-muted-foreground">Neutral</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">18%</p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-interu-coral-light">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BarChart3 className="w-4 h-4 text-accent" />
-                      <span className="text-xs font-medium text-accent">Negative</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">4%</p>
-                  </div>
-                </div>
-
-                {/* Participants Preview */}
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-muted">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary">
-                      <Users className="w-5 h-5 text-primary-foreground" />
+                {/* Voice Assistant Preview */}
+                <div className="mb-5 p-4 rounded-2xl bg-interu-blue-light/50 border border-primary/10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                      <Mic className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">12 Participants</p>
-                      <p className="text-xs text-muted-foreground">8 completed, 4 pending</p>
+                      <p className="text-sm font-medium text-foreground">Voice Assistant</p>
+                      <p className="text-xs text-primary">Ready to record</p>
                     </div>
                   </div>
-                  <Button size="sm" variant="secondary">
-                    View All
-                  </Button>
+                  <div className="flex gap-1 h-6 items-end justify-center">
+                    {[0.4, 0.7, 1, 0.6, 0.9, 0.5, 0.8, 0.3, 0.7, 0.5].map((h, i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1 bg-primary/60 rounded-full"
+                        initial={{ height: 4 }}
+                        animate={{ height: h * 24 }}
+                        transition={{ 
+                          duration: 0.5, 
+                          repeat: Infinity, 
+                          repeatType: "reverse",
+                          delay: i * 0.1 
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Questions Preview */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Questions</label>
+                  {[
+                    "What is your experience with product management?",
+                    "Describe a challenging project you led.",
+                    "How do you prioritize features?"
+                  ].map((q, i) => (
+                    <div 
+                      key={i}
+                      className="p-3 rounded-xl bg-muted/30 border border-border flex items-center gap-3"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-interu-mint-light flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5 text-interu-mint" />
+                      </div>
+                      <span className="text-sm text-foreground truncate">{q}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Floating Cards */}
-              <div className="absolute -top-4 -right-4 glass-card rounded-2xl p-4 shadow-card animate-float hidden lg:block">
+              {/* Floating Card - Participant Form Preview */}
+              <motion.div 
+                className="absolute -top-4 -right-4 glass-card rounded-2xl p-4 shadow-card hidden lg:block"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-interu-coral-light flex items-center justify-center">
+                    <User className="w-4 h-4 text-accent" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">Participant</span>
+                </div>
+                <div className="space-y-2 w-36">
+                  <div className="h-6 rounded bg-muted/60 px-2 flex items-center">
+                    <span className="text-xs text-muted-foreground">John Doe</span>
+                  </div>
+                  <div className="h-6 rounded bg-muted/60 px-2 flex items-center">
+                    <span className="text-xs text-muted-foreground">john@company.com</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Floating Card - Interview Active */}
+              <motion.div 
+                className="absolute -bottom-4 -left-4 glass-card rounded-2xl p-4 shadow-card hidden lg:block"
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-interu-mint-light flex items-center justify-center">
                     <Mic className="w-5 h-5 text-interu-mint" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Voice Active</p>
-                    <p className="text-xs text-muted-foreground">Recording...</p>
+                    <p className="text-sm font-medium text-foreground">Interview Active</p>
+                    <p className="text-xs text-interu-mint">Recording in progress...</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="absolute -bottom-4 -left-4 glass-card rounded-2xl p-4 shadow-card animate-float hidden lg:block" style={{ animationDelay: "2s" }}>
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-interu-blue flex items-center justify-center text-xs font-medium text-primary-foreground">JD</div>
-                    <div className="w-8 h-8 rounded-full bg-interu-coral flex items-center justify-center text-xs font-medium text-primary-foreground">SK</div>
-                    <div className="w-8 h-8 rounded-full bg-interu-purple flex items-center justify-center text-xs font-medium text-primary-foreground">AM</div>
-                  </div>
-                  <span className="text-sm text-muted-foreground">+9 more</span>
-                </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

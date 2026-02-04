@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Mic, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "signup">("login");
+
+  // Track pending redirect after login
+  const pendingRedirectRef = useRef<string | null>(null);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -18,20 +22,42 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
-  const openAuthModal = (tab: "login" | "signup") => {
+  const openAuthModal = (tab: "login" | "signup", redirectAfterLogin?: string) => {
     setAuthModalTab(tab);
+    pendingRedirectRef.current = redirectAfterLogin || null;
     setIsAuthModalOpen(true);
     setIsMenuOpen(false);
   };
 
   const handleAuthSuccess = () => {
-    setIsLoggedIn(true);
-    console.log("Auth successful - user logged in");
+    // If there's a pending redirect, navigate there
+    if (pendingRedirectRef.current) {
+      window.location.href = pendingRedirectRef.current;
+      pendingRedirectRef.current = null;
+    }
   };
 
+  // Protected pages that require redirect to home on logout
+  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/saved-interviews"];
+
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    console.log("User logged out");
+    logout();
+    setIsMenuOpen(false);
+
+    // Redirect to home if on a protected page
+    const currentPath = window.location.pathname;
+    if (PROTECTED_PATHS.some((path) => currentPath.startsWith(path))) {
+      window.location.href = "/";
+    }
+  };
+
+  // Handle Dashboard click - if logged out, open login modal and redirect after
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      openAuthModal("login", "/dashboard");
+    }
+    setIsMenuOpen(false);
   };
 
   return (
@@ -63,14 +89,19 @@ const Header = () => {
               >
                 Features
               </button>
-              <a
-                href="/saved-interviews"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Saved Interviews
-              </a>
+              {/* Saved Interviews - only visible when logged in */}
+              {isLoggedIn && (
+                <a
+                  href="/saved-interviews"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Saved Interviews
+                </a>
+              )}
+              {/* Dashboard - gated with login modal */}
               <a
                 href="/dashboard"
+                onClick={handleDashboardClick}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Dashboard
@@ -80,14 +111,9 @@ const Header = () => {
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-3">
               {isLoggedIn ? (
-                <>
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href="/dashboard">Dashboard</a>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleLogout}>
-                    Log out
-                  </Button>
-                </>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Log out
+                </Button>
               ) : (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => openAuthModal("login")}>
@@ -126,28 +152,28 @@ const Header = () => {
                 >
                   Features
                 </button>
-                <a
-                  href="/saved-interviews"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Saved Interviews
-                </a>
+                {/* Saved Interviews - only visible when logged in */}
+                {isLoggedIn && (
+                  <a
+                    href="/saved-interviews"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Saved Interviews
+                  </a>
+                )}
+                {/* Dashboard - gated with login modal */}
                 <a
                   href="/dashboard"
+                  onClick={handleDashboardClick}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Dashboard
                 </a>
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (
-                    <>
-                      <Button variant="ghost" size="sm" className="flex-1" asChild>
-                        <a href="/dashboard">Dashboard</a>
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
-                        Log out
-                      </Button>
-                    </>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
+                      Log out
+                    </Button>
                   ) : (
                     <>
                       <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login")}>
@@ -168,7 +194,10 @@ const Header = () => {
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          pendingRedirectRef.current = null;
+        }}
         defaultTab={authModalTab}
         onSuccess={handleAuthSuccess}
       />

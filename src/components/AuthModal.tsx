@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mic } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,13 +19,9 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthModalProps) => {
+  const { login, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "signup">(defaultTab);
-  const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
-
-  // Test credentials
-  const TEST_EMAIL = "testuser@example.com";
-  const TEST_PASSWORD = "password123";
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -34,34 +31,40 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupLoading, setSignupLoading] = useState(false);
+
+  // Reset to defaultTab when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(defaultTab);
+    }
+  }, [isOpen, defaultTab]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setLoginError("");
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Validate against test credentials
-    if (loginEmail === TEST_EMAIL && loginPassword === TEST_PASSWORD) {
-      setIsLoading(false);
+
+    try {
+      await login(loginEmail, loginPassword);
       onSuccess?.();
       onClose();
-    } else {
-      setIsLoading(false);
-      setLoginError("Invalid email or password");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed";
+      // Clean up error message (remove "API error 401:" prefix if present)
+      const cleanMessage = message.replace(/^API error \d+:\s*/, "");
+      setLoginError(cleanMessage || "Invalid email or password");
     }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate signup - replace with actual auth logic later
+    setSignupLoading(true);
+
+    // TODO: Implement signup when backend supports it
+    // For now, simulate signup and then log in
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsLoading(false);
+
+    setSignupLoading(false);
     onSuccess?.();
     onClose();
   };
@@ -223,10 +226,10 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
               </div>
               <PrimaryButton
                 type="submit"
-                disabled={isLoading}
+                disabled={signupLoading}
                 className="w-full h-11 font-medium"
               >
-                {isLoading ? "Creating account..." : "Create account"}
+                {signupLoading ? "Creating account..." : "Create account"}
               </PrimaryButton>
             </form>
           )}

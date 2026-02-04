@@ -6,15 +6,20 @@ import ProductPreviewSection from "@/components/ProductPreviewSection";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
+  const { isLoggedIn } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalTab, setAuthModalTab] = useState<"login" | "signup">("signup");
 
   const handleCreateInterview = () => {
-    // For now, open signup modal - Header manages its own auth state
-    setAuthModalTab("signup");
-    setIsAuthModalOpen(true);
+    if (isLoggedIn) {
+      // Already logged in - navigate directly
+      window.location.href = "/create-interview";
+    } else {
+      // Not logged in - open login modal (will redirect after success)
+      setIsAuthModalOpen(true);
+    }
   };
 
   const handleAuthSuccess = () => {
@@ -33,11 +38,11 @@ const Index = () => {
       </main>
       <Footer />
 
-      {/* Auth Modal for CTA buttons */}
+      {/* Auth Modal for CTA buttons - defaults to login mode */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        defaultTab={authModalTab}
+        defaultTab="login"
         onSuccess={handleAuthSuccess}
       />
     </div>

@@ -1,4 +1,6 @@
 export const API_ROUTES = {
+  login: "/login",
+  logout: "/logout",
   health: "/health",
   signedUrl: "/elevenlabs/signed-url",
   signedUrlByKey: (key: string, interviewId: string) =>

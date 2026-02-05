@@ -18,10 +18,13 @@ interface AuthModalProps {
   onSuccess?: () => void;
 }
 
+const MIN_PASSWORD_LENGTH = 6;
+
 const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthModalProps) => {
-  const { login, isLoading } = useAuth();
+  const { login, register, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "signup">(defaultTab);
   const [loginError, setLoginError] = useState("");
+  const [signupError, setSignupError] = useState("");
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -31,7 +34,6 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-  const [signupLoading, setSignupLoading] = useState(false);
 
   // Reset to defaultTab when modal opens
   useEffect(() => {
@@ -58,15 +60,24 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignupLoading(true);
+    setSignupError("");
 
-    // TODO: Implement signup when backend supports it
-    // For now, simulate signup and then log in
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Client-side validation: password must be at least 6 characters
+    if (signupPassword.length < MIN_PASSWORD_LENGTH) {
+      setSignupError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
 
-    setSignupLoading(false);
-    onSuccess?.();
-    onClose();
+    try {
+      await register(signupEmail, signupPassword, signupName || undefined);
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed";
+      // Clean up error message (remove "API error XXX:" prefix if present)
+      const cleanMessage = message.replace(/^API error \d+:\s*/, "");
+      setSignupError(cleanMessage || "Registration failed. Please try again.");
+    }
   };
 
   const resetForms = () => {
@@ -76,6 +87,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
     setSignupEmail("");
     setSignupPassword("");
     setLoginError("");
+    setSignupError("");
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -182,6 +194,11 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
             </form>
           ) : (
             <form onSubmit={handleSignup} className="space-y-4">
+              {signupError && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                  {signupError}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="signup-name" className="text-sm font-medium">
                   Name
@@ -191,8 +208,10 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   type="text"
                   placeholder="John Doe"
                   value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setSignupName(e.target.value);
+                    setSignupError("");
+                  }}
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
               </div>
@@ -205,7 +224,10 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   type="email"
                   placeholder="name@example.com"
                   value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
+                  onChange={(e) => {
+                    setSignupEmail(e.target.value);
+                    setSignupError("");
+                  }}
                   required
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
@@ -219,17 +241,24 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   type="password"
                   placeholder="••••••••"
                   value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
+                  onChange={(e) => {
+                    setSignupPassword(e.target.value);
+                    setSignupError("");
+                  }}
                   required
+                  minLength={MIN_PASSWORD_LENGTH}
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Must be at least {MIN_PASSWORD_LENGTH} characters
+                </p>
               </div>
               <PrimaryButton
                 type="submit"
-                disabled={signupLoading}
+                disabled={isLoading}
                 className="w-full h-11 font-medium"
               >
-                {signupLoading ? "Creating account..." : "Create account"}
+                {isLoading ? "Creating account..." : "Create account"}
               </PrimaryButton>
             </form>
           )}

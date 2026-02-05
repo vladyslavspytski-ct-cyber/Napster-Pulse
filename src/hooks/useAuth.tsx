@@ -12,10 +12,10 @@ const FALLBACK_TOKEN_LIFETIME_MS = 24 * 60 * 60 * 1000;
 // This prevents edge cases where token expires mid-request
 const EXPIRY_BUFFER_MS = 30 * 1000;
 
-// Login response from backend
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
+// Login/Register response from backend
+interface AuthResponse {
+  access_token?: string;
+  token_type?: string;
 }
 
 interface AuthContextValue {
@@ -23,6 +23,7 @@ interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void; // Returns void (not Promise) since local logout is immediate
 }
 
@@ -160,7 +161,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(errorText || "Invalid email or password");
       }
 
-      const data: LoginResponse = await response.json();
+      const data: AuthResponse = await response.json();
 
       if (!data.access_token) {
         throw new Error("Invalid response from server");
@@ -169,6 +170,58 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Store token (will parse JWT exp) and update state
       storeToken(data.access_token);
       setToken(data.access_token);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const register = useCallback(async (email: string, password: string, name?: string): Promise<void> => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${BACKEND_BASE_URL}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Registration failed");
+        throw new Error(errorText || "Registration failed");
+      }
+
+      const data: AuthResponse = await response.json();
+
+      // If register returns access_token, use it directly
+      if (data.access_token) {
+        storeToken(data.access_token);
+        setToken(data.access_token);
+      } else {
+        // Otherwise, call login to get the token
+        // Note: We need to call login without triggering isLoading again
+        const loginResponse = await fetch(`${BACKEND_BASE_URL}/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!loginResponse.ok) {
+          throw new Error("Registration successful but login failed. Please try logging in.");
+        }
+
+        const loginData: AuthResponse = await loginResponse.json();
+
+        if (!loginData.access_token) {
+          throw new Error("Registration successful but login failed. Please try logging in.");
+        }
+
+        storeToken(loginData.access_token);
+        setToken(loginData.access_token);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -201,6 +254,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     token,
     isLoading,
     login,
+    register,
     logout,
   };
 

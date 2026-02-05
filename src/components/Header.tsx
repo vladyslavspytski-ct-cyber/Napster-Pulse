@@ -65,8 +65,8 @@ const Header = () => {
       <header className="fixed top-0 left-0 right-0 z-50 glass-card">
         <div className="section-container">
           <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
-            <a href="/" className="flex items-center gap-2 group">
+            {/* Logo - fixed width for balance */}
+            <a href="/" className="flex items-center gap-2 group md:min-w-[140px]">
               <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary transition-all duration-300 group-hover:shadow-glow">
                 <Mic className="w-5 h-5 text-primary-foreground" />
               </div>
@@ -75,8 +75,8 @@ const Header = () => {
               </span>
             </a>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            {/* Desktop Navigation - centered */}
+            <nav className="hidden md:flex items-center justify-center gap-6 flex-1">
               {/* How it works & Features - only visible on home page */}
               {window.location.pathname === "/" && (
                 <>
@@ -113,8 +113,8 @@ const Header = () => {
               </a>
             </nav>
 
-            {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center gap-3">
+            {/* Desktop Auth Buttons - fixed width for balance */}
+            <div className="hidden md:flex items-center justify-end gap-3 md:min-w-[140px]">
               {isLoggedIn ? (
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   Log out

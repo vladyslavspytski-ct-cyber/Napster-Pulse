@@ -77,18 +77,23 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
-              <button
-                onClick={() => scrollToSection("how-it-works")}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                How it works
-              </button>
-              <button
-                onClick={() => scrollToSection("product-preview")}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Features
-              </button>
+              {/* How it works & Features - only visible on home page */}
+              {window.location.pathname === "/" && (
+                <>
+                  <button
+                    onClick={() => scrollToSection("how-it-works")}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    How it works
+                  </button>
+                  <button
+                    onClick={() => scrollToSection("product-preview")}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Features
+                  </button>
+                </>
+              )}
               {/* Saved Interviews - only visible when logged in */}
               {isLoggedIn && (
                 <a
@@ -116,10 +121,10 @@ const Header = () => {
                 </Button>
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login")}>
+                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/create-interview")}>
                     Log in
                   </Button>
-                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup")}>
+                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/create-interview")}>
                     Sign up
                   </PrimaryButton>
                 </>
@@ -140,18 +145,23 @@ const Header = () => {
           {isMenuOpen && (
             <div className="md:hidden py-4 border-t border-border animate-fade-in">
               <nav className="flex flex-col gap-4">
-                <button
-                  onClick={() => scrollToSection("how-it-works")}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
-                >
-                  How it works
-                </button>
-                <button
-                  onClick={() => scrollToSection("product-preview")}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
-                >
-                  Features
-                </button>
+                {/* How it works & Features - only visible on home page */}
+                {window.location.pathname === "/" && (
+                  <>
+                    <button
+                      onClick={() => scrollToSection("how-it-works")}
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
+                    >
+                      How it works
+                    </button>
+                    <button
+                      onClick={() => scrollToSection("product-preview")}
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
+                    >
+                      Features
+                    </button>
+                  </>
+                )}
                 {/* Saved Interviews - only visible when logged in */}
                 {isLoggedIn && (
                   <a
@@ -176,10 +186,10 @@ const Header = () => {
                     </Button>
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login")}>
+                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/create-interview")}>
                         Log in
                       </Button>
-                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup")}>
+                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/create-interview")}>
                         Sign up
                       </PrimaryButton>
                     </>

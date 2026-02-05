@@ -23,11 +23,21 @@ export interface Attempt {
   analysis: AttemptAnalysis | null;
 }
 
+export interface SentimentStats {
+  positive: number;
+  negative: number;
+  neutral: number;
+  positive_percent: number;
+  negative_percent: number;
+  neutral_percent: number;
+}
+
 interface AttemptsResponse {
   data: Attempt[];
   total: number;
   limit: number;
   offset: number;
+  sentiment_stats?: SentimentStats;
 }
 
 interface UseAttemptsOptions {
@@ -42,6 +52,7 @@ interface UseAttemptsOptions {
 interface UseAttemptsResult {
   attempts: Attempt[];
   total: number;
+  sentimentStats: SentimentStats | null;
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
@@ -52,6 +63,7 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
 
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [total, setTotal] = useState(0);
+  const [sentimentStats, setSentimentStats] = useState<SentimentStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -65,6 +77,7 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
     if (interviewChanged) {
       setAttempts([]);
       setTotal(0);
+      setSentimentStats(null);
       setError(null);
       prevInterviewIdRef.current = interviewId;
     }
@@ -89,6 +102,7 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
           // Defensive: ensure data is always an array and total is always a number
           setAttempts(Array.isArray(response?.data) ? response.data : []);
           setTotal(typeof response?.total === "number" ? response.total : 0);
+          setSentimentStats(response?.sentiment_stats ?? null);
         }
       } catch (err) {
         if (!cancelled) {
@@ -123,6 +137,7 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
       );
       setAttempts(Array.isArray(response?.data) ? response.data : []);
       setTotal(typeof response?.total === "number" ? response.total : 0);
+      setSentimentStats(response?.sentiment_stats ?? null);
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch attempts");
       setError(error);
@@ -135,6 +150,7 @@ export function useAttempts(options: UseAttemptsOptions): UseAttemptsResult {
   return {
     attempts,
     total,
+    sentimentStats,
     isLoading,
     error,
     refetch,

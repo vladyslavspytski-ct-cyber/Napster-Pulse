@@ -99,6 +99,7 @@ const DashboardV2 = () => {
   const {
     attempts: rawAttempts,
     total: runsTotal,
+    sentimentStats,
     isLoading: isLoadingAttempts,
     error: attemptsError,
   } = useAttempts({
@@ -244,6 +245,18 @@ const DashboardV2 = () => {
                   </Button>
                 ))}
               </div>
+
+              {/* Sentiment Distribution - Mobile */}
+              {/* Hidden when sentiment filter is active */}
+              {selectedInterview && !isLoadingAttempts && selectedRuns.length > 0 && sentimentFilter === "all" && sentimentStats && (
+                <SentimentDistribution
+                  data={{
+                    positive: Math.round(sentimentStats.positive_percent),
+                    neutral: Math.round(sentimentStats.neutral_percent),
+                    negative: Math.round(sentimentStats.negative_percent),
+                  }}
+                />
+              )}
 
               {/* Runs list */}
               <div className="space-y-3">
@@ -420,9 +433,17 @@ const DashboardV2 = () => {
                   </div>
                   </div>
 
-                {/* Sentiment Distribution - UI only with test values */}
-                {selectedInterview && !isLoadingAttempts && selectedRuns.length > 0 && (
-                  <SentimentDistribution className="mb-4" />
+                {/* Sentiment Distribution - shows actual data from backend */}
+                {/* Hidden when sentiment filter is active */}
+                {selectedInterview && !isLoadingAttempts && selectedRuns.length > 0 && sentimentFilter === "all" && sentimentStats && (
+                  <SentimentDistribution
+                    className="mb-4"
+                    data={{
+                      positive: Math.round(sentimentStats.positive_percent),
+                      neutral: Math.round(sentimentStats.neutral_percent),
+                      negative: Math.round(sentimentStats.negative_percent),
+                    }}
+                  />
                 )}
 
                 {/* Runs list - no scroll, pagination only */}

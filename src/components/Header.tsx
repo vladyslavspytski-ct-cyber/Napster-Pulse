@@ -121,10 +121,10 @@ const Header = () => {
                 </Button>
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/create-interview")}>
+                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/saved-interviews")}>
                     Log in
                   </Button>
-                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/create-interview")}>
+                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/saved-interviews")}>
                     Sign up
                   </PrimaryButton>
                 </>
@@ -186,10 +186,10 @@ const Header = () => {
                     </Button>
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/create-interview")}>
+                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/saved-interviews")}>
                         Log in
                       </Button>
-                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/create-interview")}>
+                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/saved-interviews")}>
                         Sign up
                       </PrimaryButton>
                     </>

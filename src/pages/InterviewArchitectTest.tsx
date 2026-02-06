@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import { Sparkles, RotateCcw, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import ArchitectPhaseIndicator, { ArchitectPhase } from "@/components/interview-architect/ArchitectPhaseIndicator";
-import VoiceSessionPanel, { VoiceState } from "@/components/interview-architect/VoiceSessionPanel";
+import ArchitectAgentCard, { AgentState } from "@/components/interview-architect/ArchitectAgentCard";
 import InterviewContextBadges, { InterviewContext } from "@/components/interview-architect/InterviewContextBadges";
 import DemoPresetsPanel from "@/components/interview-architect/DemoPresetsPanel";
 import StructuredQuestionCard, { StructuredQuestion } from "@/components/interview-architect/StructuredQuestionCard";
@@ -239,55 +239,86 @@ const mockDataByPreset: Record<string, {
 const InterviewArchitectTest = () => {
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [phase, setPhase] = useState<ArchitectPhase>("context");
-  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [agentState, setAgentState] = useState<AgentState>("disconnected");
+  const [mockInputLevel, setMockInputLevel] = useState(0);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [questions, setQuestions] = useState<StructuredQuestion[]>([]);
   const [interviewContext, setInterviewContext] = useState<InterviewContext>({});
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
 
+  const mockLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const currentData = selectedPresetId ? mockDataByPreset[selectedPresetId] : null;
   const currentPrompt = currentData?.prompts[currentPromptIndex] || "Describe the interview you want to create. I'll help design the perfect questions.";
+
+  // Start mock audio level simulation
+  const startMockLevelPolling = () => {
+    if (mockLevelIntervalRef.current) clearInterval(mockLevelIntervalRef.current);
+    mockLevelIntervalRef.current = setInterval(() => {
+      setMockInputLevel(Math.random() * 0.7 + 0.1);
+    }, 100);
+  };
+
+  // Stop mock audio level simulation
+  const stopMockLevelPolling = () => {
+    if (mockLevelIntervalRef.current) {
+      clearInterval(mockLevelIntervalRef.current);
+      mockLevelIntervalRef.current = null;
+    }
+    setMockInputLevel(0);
+  };
 
   // Handle preset selection
   const handleSelectPreset = (presetId: string) => {
     setSelectedPresetId(presetId);
     setPhase("context");
-    setVoiceState("idle");
+    setAgentState("disconnected");
     setCurrentPromptIndex(0);
     setQuestions([]);
     setInterviewContext({});
     setDemoStep(0);
+    stopMockLevelPolling();
   };
 
   // Simulate voice interaction progression
-  const handleVoiceToggle = () => {
-    if (voiceState === "thinking" || voiceState === "suggesting") return;
+  const handleAgentToggle = () => {
+    if (agentState === "connecting" || agentState === "disconnecting") return;
 
-    if (voiceState === "idle") {
-      setVoiceState("listening");
+    if (agentState === "disconnected") {
+      // Start connecting
+      setAgentState("connecting");
       
-      // Simulate listening for 2 seconds
+      // Simulate connection delay
       setTimeout(() => {
-        setVoiceState("thinking");
+        setAgentState("connected");
+        startMockLevelPolling();
         
-        // Simulate thinking for 1.5 seconds
+        // Simulate listening for 2.5 seconds then process
         setTimeout(() => {
-          advanceDemo();
-        }, 1500);
-      }, 2000);
-    } else if (voiceState === "listening") {
-      // User stopped speaking early
-      setVoiceState("thinking");
+          setAgentState("disconnecting");
+          stopMockLevelPolling();
+          
+          // Simulate processing for 1.5 seconds
+          setTimeout(() => {
+            advanceDemo();
+            setAgentState("disconnected");
+          }, 1500);
+        }, 2500);
+      }, 400);
+    } else if (agentState === "connected") {
+      // User stopped speaking early - disconnect and process
+      setAgentState("disconnecting");
+      stopMockLevelPolling();
       setTimeout(() => {
         advanceDemo();
+        setAgentState("disconnected");
       }, 1500);
     }
   };
 
   const advanceDemo = () => {
     if (!currentData) {
-      setVoiceState("idle");
       return;
     }
 
@@ -299,28 +330,22 @@ const InterviewArchitectTest = () => {
       setInterviewContext(currentData.context);
       setPhase("context");
       setCurrentPromptIndex(1);
-      setVoiceState("idle");
     } else if (newStep === 2) {
-      // After second interaction, show structure phase and start suggesting
+      // After second interaction, show structure phase and add questions
       setPhase("structure");
-      setVoiceState("suggesting");
       setCurrentPromptIndex(2);
-      
-      // Add questions one by one
+
+      // Add questions one by one with staggered animation
       currentData.questions.forEach((q, i) => {
         setTimeout(() => {
           setQuestions((prev) => [...prev, { ...q, id: `${Date.now()}-${i}` }]);
           if (i === currentData.questions.length - 1) {
             setTimeout(() => {
-              setVoiceState("idle");
               setPhase("refine");
             }, 500);
           }
         }, i * 400);
       });
-    } else {
-      // Subsequent interactions just cycle the prompt
-      setVoiceState("idle");
     }
   };
 
@@ -343,18 +368,22 @@ const InterviewArchitectTest = () => {
   const handleReset = () => {
     setSelectedPresetId(null);
     setPhase("context");
-    setVoiceState("idle");
+    setAgentState("disconnected");
     setCurrentPromptIndex(0);
     setQuestions([]);
     setInterviewContext({});
     setDemoStep(0);
+    stopMockLevelPolling();
   };
 
   const getHelperText = () => {
-    if (demoStep === 0) return "Tell me about your interview goals and constraints";
-    if (demoStep === 1) return "Share more details to refine the questions";
+    if (agentState === "connected") return "Listening... Tap to stop and process.";
+    if (agentState === "connecting") return "Connecting to assistant...";
+    if (agentState === "disconnecting") return "Processing your input...";
+    if (demoStep === 0) return "Tap to start speaking. Questions will appear as we talk.";
+    if (demoStep === 1) return "Tap to share more details";
     if (questions.length > 0) return "Review the questions, or speak to refine them";
-    return undefined;
+    return "Tap to start speaking. Questions will appear as we talk.";
   };
 
   return (
@@ -385,13 +414,15 @@ const InterviewArchitectTest = () => {
 
           {/* Main Content - Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
-            {/* Left Column: Voice Session */}
+            {/* Left Column: Agent Card */}
             <div className="lg:col-span-4 space-y-4">
-              <VoiceSessionPanel
-                voiceState={voiceState}
-                currentPrompt={currentPrompt}
+              <ArchitectAgentCard
+                agentName="Interview Architect"
+                agentDescription="I'll help you design structured, expert-level interview questions."
+                state={agentState}
                 helperText={getHelperText()}
-                onToggleVoice={handleVoiceToggle}
+                inputLevel={mockInputLevel}
+                onToggle={handleAgentToggle}
               />
 
               {/* Reset button */}

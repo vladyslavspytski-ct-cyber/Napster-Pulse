@@ -94,6 +94,13 @@ const Header = () => {
                   </button>
                 </>
               )}
+              {/* Create Interview Test - prototype page */}
+              <a
+                href="/create-interview-test"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Create Interview Test
+              </a>
               {/* Saved Interviews - only visible when logged in */}
               {isLoggedIn && (
                 <a
@@ -162,6 +169,13 @@ const Header = () => {
                     </button>
                   </>
                 )}
+                {/* Create Interview Test - prototype page */}
+                <a
+                  href="/create-interview-test"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Create Interview Test
+                </a>
                 {/* Saved Interviews - only visible when logged in */}
                 {isLoggedIn && (
                   <a

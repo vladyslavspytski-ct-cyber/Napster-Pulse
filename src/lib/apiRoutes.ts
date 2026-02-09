@@ -6,6 +6,8 @@ export const API_ROUTES = {
   signedUrl: "/elevenlabs/signed-url",
   // Interview Architect agent signed URL (uses agentKey "interview-architect")
   interviewArchitectSignedUrl: "/elevenlabs/signed-url?agentKey=interview-architect",
+  // Interview Architect questions sync endpoint (POST to update questions)
+  architectQuestionsSync: "/ws/questions",
   signedUrlByKey: (key: string, interviewId: string) =>
     `/elevenlabs/signed-url/key/${key}/interview-id/${interviewId}`,
   interviews: "/interviews",

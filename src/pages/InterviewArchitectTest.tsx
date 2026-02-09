@@ -19,10 +19,11 @@ import StructuredQuestionCard, {
   StructuredQuestion,
 } from "@/components/interview-architect/StructuredQuestionCard";
 import ArchitectFinalizeModal from "@/components/interview-architect/ArchitectFinalizeModal";
-import { useInterviewArchitectWs } from "@/hooks/api/useInterviewArchitectWs";
+import {
+  useInterviewArchitectWs,
+  ActualQuestion,
+} from "@/hooks/api/useInterviewArchitectWs";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
-import { callApi } from "@/lib/api";
-import { API_ROUTES } from "@/lib/apiRoutes";
 import { useSignedUrl } from "@/hooks/api";
 
 // Interview Architect agent ID (for signed URL requests)
@@ -284,16 +285,24 @@ function generateRoomId(): string {
 }
 
 /**
- * Convert a string question to a StructuredQuestion object
+ * Convert a backend ActualQuestion to a StructuredQuestion object
+ * Uses backend-provided ID as stable key
  */
-function stringToStructuredQuestion(
-  text: string,
-  index: number,
-): StructuredQuestion {
+function actualQuestionToStructured(q: ActualQuestion): StructuredQuestion {
   return {
-    id: `ws-${Date.now()}-${index}`,
-    text,
+    id: q.id,
+    text: q.question,
     phase: "core", // Default phase for WS questions
+  };
+}
+
+/**
+ * Convert StructuredQuestion back to ActualQuestion for backend sync
+ */
+function structuredToActualQuestion(q: StructuredQuestion): ActualQuestion {
+  return {
+    id: q.id,
+    question: q.text,
   };
 }
 
@@ -328,6 +337,7 @@ const InterviewArchitectTest = () => {
     isConnected: isWsConnected,
     error: wsError,
     disconnect: disconnectWs,
+    syncQuestions,
   } = useInterviewArchitectWs(roomId, !!roomId);
 
   const currentData = selectedPresetId
@@ -381,10 +391,8 @@ const InterviewArchitectTest = () => {
         questionsFromWs.length,
       );
 
-      // Convert string questions to StructuredQuestion objects
-      const structuredQuestions = questionsFromWs.map((q, i) =>
-        stringToStructuredQuestion(q, i),
-      );
+      // Convert ActualQuestion objects to StructuredQuestion objects (using backend IDs)
+      const structuredQuestions = questionsFromWs.map(actualQuestionToStructured);
 
       setQuestions(structuredQuestions);
       console.log(
@@ -608,32 +616,44 @@ const InterviewArchitectTest = () => {
 
   // === Question handlers ===
   const handleEditQuestion = (id: string, newText: string) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, text: newText } : q)),
-    );
-    // TODO: When backend tool/endpoint is available, sync edit back to backend
-    console.log(
-      "[InterviewArchitectTest] TODO: Sync question edit to backend:",
-      { id, newText },
-    );
+    setQuestions((prev) => {
+      const updated = prev.map((q) => (q.id === id ? { ...q, text: newText } : q));
+
+      // Sync to backend if in real mode
+      if (isRealMode && roomId) {
+        console.log("[InterviewArchitectTest] Syncing question edit to backend:", { id, newText });
+        syncQuestions(updated.map(structuredToActualQuestion));
+      }
+
+      return updated;
+    });
   };
 
   const handleDeleteQuestion = (id: string) => {
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
-    // TODO: When backend tool/endpoint is available, sync delete back to backend
-    console.log(
-      "[InterviewArchitectTest] TODO: Sync question delete to backend:",
-      { id },
-    );
+    setQuestions((prev) => {
+      const updated = prev.filter((q) => q.id !== id);
+
+      // Sync to backend if in real mode
+      if (isRealMode && roomId) {
+        console.log("[InterviewArchitectTest] Syncing question delete to backend:", { id });
+        syncQuestions(updated.map(structuredToActualQuestion));
+      }
+
+      return updated;
+    });
   };
 
   const handleReorder = (newOrder: StructuredQuestion[]) => {
     setQuestions(newOrder);
-    // TODO: When backend tool/endpoint is available, sync reorder back to backend
-    console.log(
-      "[InterviewArchitectTest] TODO: Sync question reorder to backend:",
-      newOrder.map((q) => q.id),
-    );
+
+    // Sync to backend if in real mode
+    if (isRealMode && roomId) {
+      console.log(
+        "[InterviewArchitectTest] Syncing question reorder to backend:",
+        newOrder.map((q) => q.id),
+      );
+      syncQuestions(newOrder.map(structuredToActualQuestion));
+    }
   };
 
   const handleFinalize = () => {

@@ -1,23 +1,42 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import { Sparkles, RotateCcw, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import ArchitectPhaseIndicator, { ArchitectPhase } from "@/components/interview-architect/ArchitectPhaseIndicator";
-import ArchitectAgentCard, { AgentState } from "@/components/interview-architect/ArchitectAgentCard";
-import InterviewContextBadges, { InterviewContext } from "@/components/interview-architect/InterviewContextBadges";
+import ArchitectPhaseIndicator, {
+  ArchitectPhase,
+} from "@/components/interview-architect/ArchitectPhaseIndicator";
+import ArchitectAgentCard, {
+  AgentState,
+} from "@/components/interview-architect/ArchitectAgentCard";
+import InterviewContextBadges, {
+  InterviewContext,
+} from "@/components/interview-architect/InterviewContextBadges";
 import DemoPresetsPanel from "@/components/interview-architect/DemoPresetsPanel";
-import StructuredQuestionCard, { StructuredQuestion } from "@/components/interview-architect/StructuredQuestionCard";
+import StructuredQuestionCard, {
+  StructuredQuestion,
+} from "@/components/interview-architect/StructuredQuestionCard";
 import ArchitectFinalizeModal from "@/components/interview-architect/ArchitectFinalizeModal";
+import { useInterviewArchitectWs } from "@/hooks/api/useInterviewArchitectWs";
+import { ElevenLabsConversation } from "@/lib/elevenlabs";
+import { callApi } from "@/lib/api";
+import { API_ROUTES } from "@/lib/apiRoutes";
+import { useSignedUrl } from "@/hooks/api";
 
-// Mock data by preset
-const mockDataByPreset: Record<string, {
-  context: InterviewContext;
-  prompts: string[];
-  questions: StructuredQuestion[];
-}> = {
+// Interview Architect agent ID (for signed URL requests)
+const INTERVIEW_ARCHITECT_AGENT_KEY = "interview-architect";
+
+// Mock data by preset (kept unchanged for demo purposes)
+const mockDataByPreset: Record<
+  string,
+  {
+    context: InterviewContext;
+    prompts: string[];
+    questions: StructuredQuestion[];
+  }
+> = {
   "hr-exit": {
     context: {
       type: "HR Exit Interview",
@@ -35,22 +54,32 @@ const mockDataByPreset: Record<string, {
         id: "1",
         text: "Before we begin, I want you to know this conversation is confidential. How are you feeling about your transition?",
         phase: "opening",
-        rationale: "Establishes psychological safety and acknowledges the emotional weight of leaving.",
-        sensitivityNote: "Some employees may be emotional; give space for processing.",
+        rationale:
+          "Establishes psychological safety and acknowledges the emotional weight of leaving.",
+        sensitivityNote:
+          "Some employees may be emotional; give space for processing.",
       },
       {
         id: "2",
         text: "What initially attracted you to this role, and how did your experience compare to those expectations?",
         phase: "warmup",
-        rationale: "Surfaces the gap between expectations and reality without being confrontational.",
-        alternatives: ["What drew you to join us originally?", "How did the role match what you imagined?"],
+        rationale:
+          "Surfaces the gap between expectations and reality without being confrontational.",
+        alternatives: [
+          "What drew you to join us originally?",
+          "How did the role match what you imagined?",
+        ],
       },
       {
         id: "3",
         text: "If you could change one thing about your day-to-day experience here, what would it be?",
         phase: "core",
-        rationale: "Focuses on actionable, specific feedback rather than vague dissatisfaction.",
-        probes: ["Can you give me a specific example?", "How did that affect your motivation?"],
+        rationale:
+          "Focuses on actionable, specific feedback rather than vague dissatisfaction.",
+        probes: [
+          "Can you give me a specific example?",
+          "How did that affect your motivation?",
+        ],
       },
       {
         id: "4",
@@ -63,8 +92,11 @@ const mockDataByPreset: Record<string, {
         id: "5",
         text: "What could we have done differently to keep you on the team?",
         phase: "deepdive",
-        rationale: "Direct question that often yields the most actionable insight.",
-        alternatives: ["Was there a specific moment when you decided to leave?"],
+        rationale:
+          "Direct question that often yields the most actionable insight.",
+        alternatives: [
+          "Was there a specific moment when you decided to leave?",
+        ],
       },
       {
         id: "6",
@@ -92,26 +124,30 @@ const mockDataByPreset: Record<string, {
         text: "Thank you for agreeing to speak with me. Can you start by telling me about your background and how you came to have knowledge of this situation?",
         phase: "opening",
         rationale: "Establishes credibility and context for their knowledge.",
-        sensitivityNote: "Source may be nervous; reassure about confidentiality.",
+        sensitivityNote:
+          "Source may be nervous; reassure about confidentiality.",
       },
       {
         id: "2",
         text: "In your own words, what happened?",
         phase: "warmup",
-        rationale: "Open-ended prompt allows source to tell their story without leading.",
+        rationale:
+          "Open-ended prompt allows source to tell their story without leading.",
         probes: ["When did this occur?", "Who else was present?"],
       },
       {
         id: "3",
         text: "Do you have any documentation, emails, or records that support what you've described?",
         phase: "core",
-        rationale: "Verification is essential; tangible evidence strengthens the story.",
+        rationale:
+          "Verification is essential; tangible evidence strengthens the story.",
       },
       {
         id: "4",
         text: "Who else can corroborate this account?",
         phase: "core",
-        rationale: "Multiple sources strengthen credibility and reduce legal risk.",
+        rationale:
+          "Multiple sources strengthen credibility and reduce legal risk.",
       },
       {
         id: "5",
@@ -151,7 +187,8 @@ const mockDataByPreset: Record<string, {
         id: "2",
         text: "In your own words, what is the main idea of what we learned this week?",
         phase: "warmup",
-        rationale: "Assesses comprehension at a conceptual level before details.",
+        rationale:
+          "Assesses comprehension at a conceptual level before details.",
         alternatives: ["Can you summarize what we studied?"],
       },
       {
@@ -204,7 +241,8 @@ const mockDataByPreset: Record<string, {
         id: "2",
         text: "What's been your biggest win since we last talked?",
         phase: "warmup",
-        rationale: "Starts positive and builds confidence before harder topics.",
+        rationale:
+          "Starts positive and builds confidence before harder topics.",
       },
       {
         id: "3",
@@ -218,13 +256,15 @@ const mockDataByPreset: Record<string, {
         text: "How are you feeling about your career trajectory here?",
         phase: "core",
         rationale: "Addresses long-term engagement and growth.",
-        sensitivityNote: "Employee may not feel safe being honest; create space.",
+        sensitivityNote:
+          "Employee may not feel safe being honest; create space.",
       },
       {
         id: "5",
         text: "Is there anything I'm doing—or not doing—that's making your job harder?",
         phase: "deepdive",
-        rationale: "Models vulnerability and invites honest feedback on management.",
+        rationale:
+          "Models vulnerability and invites honest feedback on management.",
       },
       {
         id: "6",
@@ -236,31 +276,76 @@ const mockDataByPreset: Record<string, {
   },
 };
 
+/**
+ * Generate a simple UUID for room ID
+ */
+function generateRoomId(): string {
+  return `room-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
+ * Convert a string question to a StructuredQuestion object
+ */
+function stringToStructuredQuestion(
+  text: string,
+  index: number,
+): StructuredQuestion {
+  return {
+    id: `ws-${Date.now()}-${index}`,
+    text,
+    phase: "core", // Default phase for WS questions
+  };
+}
+
 const InterviewArchitectTest = () => {
+  const { fetchSignedUrl } = useSignedUrl(undefined, { enabled: false });
+
+  // === Preset demo state (unchanged) ===
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [phase, setPhase] = useState<ArchitectPhase>("context");
   const [agentState, setAgentState] = useState<AgentState>("disconnected");
   const [mockInputLevel, setMockInputLevel] = useState(0);
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [questions, setQuestions] = useState<StructuredQuestion[]>([]);
-  const [interviewContext, setInterviewContext] = useState<InterviewContext>({});
+  const [interviewContext, setInterviewContext] = useState<InterviewContext>(
+    {},
+  );
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
 
+  // === Real agent state (non-preset mode) ===
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [realInputLevel, setRealInputLevel] = useState(0);
+
+  // Refs for real agent session
+  const conversationRef = useRef<ElevenLabsConversation | null>(null);
+  const volumeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mockLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  const currentData = selectedPresetId ? mockDataByPreset[selectedPresetId] : null;
-  const currentPrompt = currentData?.prompts[currentPromptIndex] || "Describe the interview you want to create. I'll help design the perfect questions.";
+  // WebSocket hook for real-time questions (only active when roomId is set)
+  const {
+    questionsFromWs,
+    isConnected: isWsConnected,
+    error: wsError,
+    disconnect: disconnectWs,
+  } = useInterviewArchitectWs(roomId, !!roomId);
 
-  // Start mock audio level simulation
+  const currentData = selectedPresetId
+    ? mockDataByPreset[selectedPresetId]
+    : null;
+
+  // Determine if we're in real mode (no preset selected)
+  const isRealMode = !selectedPresetId;
+
+  // === Mock level simulation for preset demos ===
   const startMockLevelPolling = () => {
-    if (mockLevelIntervalRef.current) clearInterval(mockLevelIntervalRef.current);
+    if (mockLevelIntervalRef.current)
+      clearInterval(mockLevelIntervalRef.current);
     mockLevelIntervalRef.current = setInterval(() => {
       setMockInputLevel(Math.random() * 0.7 + 0.1);
     }, 100);
   };
 
-  // Stop mock audio level simulation
   const stopMockLevelPolling = () => {
     if (mockLevelIntervalRef.current) {
       clearInterval(mockLevelIntervalRef.current);
@@ -269,52 +354,188 @@ const InterviewArchitectTest = () => {
     setMockInputLevel(0);
   };
 
-  // Handle preset selection
+  // === Real volume polling ===
+  const startRealVolumePolling = useCallback(() => {
+    if (volumeIntervalRef.current) clearInterval(volumeIntervalRef.current);
+    volumeIntervalRef.current = setInterval(() => {
+      if (conversationRef.current) {
+        const inputVol = conversationRef.current.getInputVolume() || 0;
+        setRealInputLevel(inputVol);
+      }
+    }, 80);
+  }, []);
+
+  const stopRealVolumePolling = useCallback(() => {
+    if (volumeIntervalRef.current) {
+      clearInterval(volumeIntervalRef.current);
+      volumeIntervalRef.current = null;
+    }
+    setRealInputLevel(0);
+  }, []);
+
+  // === Convert WS questions to StructuredQuestion objects ===
+  useEffect(() => {
+    if (isRealMode && questionsFromWs.length > 0) {
+      console.log(
+        "[InterviewArchitectTest] Converting WS questions to cards:",
+        questionsFromWs.length,
+      );
+
+      // Convert string questions to StructuredQuestion objects
+      const structuredQuestions = questionsFromWs.map((q, i) =>
+        stringToStructuredQuestion(q, i),
+      );
+
+      setQuestions(structuredQuestions);
+      console.log(
+        "[InterviewArchitectTest] Final rendered questions list length:",
+        structuredQuestions.length,
+      );
+
+      // Update phase when questions arrive
+      if (structuredQuestions.length > 0 && phase === "context") {
+        setPhase("structure");
+      }
+    }
+  }, [questionsFromWs, isRealMode, phase]);
+
+  // === Real agent session management ===
+  const startRealAgentSession = async () => {
+    console.log("[InterviewArchitectTest] Starting real agent session...");
+    setAgentState("connecting");
+
+    try {
+      // 1. Generate room ID
+      const newRoomId = generateRoomId();
+      console.log("[InterviewArchitectTest] Generated roomId:", newRoomId);
+      setRoomId(newRoomId);
+
+      // 2. Request microphone access
+      console.log("[InterviewArchitectTest] Requesting microphone access...");
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      mediaStreamRef.current = mediaStream;
+      console.log("[InterviewArchitectTest] Microphone access granted");
+
+      // 3. Fetch signed URL for Interview Architect agent
+      console.log("[InterviewArchitectTest] Fetching signed URL...");
+      const signedUrl = await fetchSignedUrl();
+      console.log(
+        "[InterviewArchitectTest] Signed URL fetch success:",
+        signedUrl,
+      );
+
+      // 4. Create and start ElevenLabs conversation
+      console.log(
+        "[InterviewArchitectTest] Starting ElevenLabs conversation...",
+      );
+      const conversation = new ElevenLabsConversation({
+        onStatusChange: (status) => {
+          console.log(
+            "[InterviewArchitectTest] ElevenLabs status change:",
+            status,
+          );
+          if (status === "connected") {
+            setAgentState("connected");
+            startRealVolumePolling();
+          } else if (status === "disconnected") {
+            setAgentState("disconnected");
+            stopRealVolumePolling();
+          } else if (status === "error") {
+            setAgentState("disconnected");
+            stopRealVolumePolling();
+          }
+        },
+        onError: (error) => {
+          console.error("[InterviewArchitectTest] ElevenLabs error:", error);
+        },
+        onAssistantMessage: (message) => {
+          console.log("[InterviewArchitectTest] Agent message:", message);
+        },
+        onUserMessage: (message) => {
+          console.log("[InterviewArchitectTest] User message:", message);
+        },
+      });
+
+      conversationRef.current = conversation;
+
+      // Start session with dynamic variables including ConversationId
+      await conversation.startSession(signedUrl, mediaStream, {
+        dynamicVariables: {
+          ConversationId: newRoomId,
+        },
+      });
+
+      console.log(
+        "[InterviewArchitectTest] ElevenLabs session started with ConversationId:",
+        newRoomId,
+      );
+    } catch (error) {
+      console.error(
+        "[InterviewArchitectTest] Failed to start real agent session:",
+        error,
+      );
+      setAgentState("disconnected");
+      setRoomId(null);
+
+      // Cleanup media stream if acquired
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+    }
+  };
+
+  const stopRealAgentSession = async () => {
+    console.log("[InterviewArchitectTest] Stopping real agent session...");
+    setAgentState("disconnecting");
+
+    try {
+      // End ElevenLabs session
+      if (conversationRef.current) {
+        await conversationRef.current.endSession();
+        conversationRef.current = null;
+      }
+
+      // Stop volume polling
+      stopRealVolumePolling();
+
+      // Disconnect WebSocket
+      disconnectWs();
+
+      // Cleanup media stream
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+
+      console.log("[InterviewArchitectTest] Real agent session stopped");
+    } catch (error) {
+      console.error(
+        "[InterviewArchitectTest] Error stopping real agent session:",
+        error,
+      );
+    } finally {
+      setAgentState("disconnected");
+    }
+  };
+
+  // === Preset demo handlers (unchanged) ===
   const handleSelectPreset = (presetId: string) => {
+    // If we were in real mode, cleanup first
+    if (roomId) {
+      stopRealAgentSession();
+      setRoomId(null);
+    }
+
     setSelectedPresetId(presetId);
     setPhase("context");
     setAgentState("disconnected");
-    setCurrentPromptIndex(0);
     setQuestions([]);
     setInterviewContext({});
     setDemoStep(0);
     stopMockLevelPolling();
-  };
-
-  // Simulate voice interaction progression
-  const handleAgentToggle = () => {
-    if (agentState === "connecting" || agentState === "disconnecting") return;
-
-    if (agentState === "disconnected") {
-      // Start connecting
-      setAgentState("connecting");
-      
-      // Simulate connection delay
-      setTimeout(() => {
-        setAgentState("connected");
-        startMockLevelPolling();
-        
-        // Simulate listening for 2.5 seconds then process
-        setTimeout(() => {
-          setAgentState("disconnecting");
-          stopMockLevelPolling();
-          
-          // Simulate processing for 1.5 seconds
-          setTimeout(() => {
-            advanceDemo();
-            setAgentState("disconnected");
-          }, 1500);
-        }, 2500);
-      }, 400);
-    } else if (agentState === "connected") {
-      // User stopped speaking early - disconnect and process
-      setAgentState("disconnecting");
-      stopMockLevelPolling();
-      setTimeout(() => {
-        advanceDemo();
-        setAgentState("disconnected");
-      }, 1500);
-    }
   };
 
   const advanceDemo = () => {
@@ -326,16 +547,11 @@ const InterviewArchitectTest = () => {
     setDemoStep(newStep);
 
     if (newStep === 1) {
-      // After first interaction, show context
       setInterviewContext(currentData.context);
       setPhase("context");
-      setCurrentPromptIndex(1);
     } else if (newStep === 2) {
-      // After second interaction, show structure phase and add questions
       setPhase("structure");
-      setCurrentPromptIndex(2);
 
-      // Add questions one by one with staggered animation
       currentData.questions.forEach((q, i) => {
         setTimeout(() => {
           setQuestions((prev) => [...prev, { ...q, id: `${Date.now()}-${i}` }]);
@@ -349,15 +565,75 @@ const InterviewArchitectTest = () => {
     }
   };
 
-  // Question handlers
+  // === Unified agent toggle handler ===
+  const handleAgentToggle = () => {
+    if (agentState === "connecting" || agentState === "disconnecting") return;
+
+    if (isRealMode) {
+      // Real mode: start/stop actual ElevenLabs session
+      if (agentState === "disconnected") {
+        startRealAgentSession();
+      } else if (agentState === "connected") {
+        stopRealAgentSession();
+      }
+    } else {
+      // Preset demo mode: simulate voice interaction
+      if (agentState === "disconnected") {
+        setAgentState("connecting");
+
+        setTimeout(() => {
+          setAgentState("connected");
+          startMockLevelPolling();
+
+          setTimeout(() => {
+            setAgentState("disconnecting");
+            stopMockLevelPolling();
+
+            setTimeout(() => {
+              advanceDemo();
+              setAgentState("disconnected");
+            }, 1500);
+          }, 2500);
+        }, 400);
+      } else if (agentState === "connected") {
+        setAgentState("disconnecting");
+        stopMockLevelPolling();
+        setTimeout(() => {
+          advanceDemo();
+          setAgentState("disconnected");
+        }, 1500);
+      }
+    }
+  };
+
+  // === Question handlers ===
   const handleEditQuestion = (id: string, newText: string) => {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, text: newText } : q))
+      prev.map((q) => (q.id === id ? { ...q, text: newText } : q)),
+    );
+    // TODO: When backend tool/endpoint is available, sync edit back to backend
+    console.log(
+      "[InterviewArchitectTest] TODO: Sync question edit to backend:",
+      { id, newText },
     );
   };
 
   const handleDeleteQuestion = (id: string) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
+    // TODO: When backend tool/endpoint is available, sync delete back to backend
+    console.log(
+      "[InterviewArchitectTest] TODO: Sync question delete to backend:",
+      { id },
+    );
+  };
+
+  const handleReorder = (newOrder: StructuredQuestion[]) => {
+    setQuestions(newOrder);
+    // TODO: When backend tool/endpoint is available, sync reorder back to backend
+    console.log(
+      "[InterviewArchitectTest] TODO: Sync question reorder to backend:",
+      newOrder.map((q) => q.id),
+    );
   };
 
   const handleFinalize = () => {
@@ -366,25 +642,67 @@ const InterviewArchitectTest = () => {
   };
 
   const handleReset = () => {
+    // Cleanup real agent session if active
+    if (roomId) {
+      stopRealAgentSession();
+    }
+
     setSelectedPresetId(null);
+    setRoomId(null);
     setPhase("context");
     setAgentState("disconnected");
-    setCurrentPromptIndex(0);
     setQuestions([]);
     setInterviewContext({});
     setDemoStep(0);
     stopMockLevelPolling();
+    stopRealVolumePolling();
   };
 
   const getHelperText = () => {
-    if (agentState === "connected") return "Listening... Tap to stop and process.";
+    if (agentState === "connected")
+      return "Listening... Tap to stop and process.";
     if (agentState === "connecting") return "Connecting to assistant...";
     if (agentState === "disconnecting") return "Processing your input...";
-    if (demoStep === 0) return "Tap to start speaking. Questions will appear as we talk.";
+
+    if (isRealMode) {
+      if (questions.length > 0)
+        return "Review the questions, or speak to add more";
+      return "Tap to start speaking. Questions will appear as we talk.";
+    }
+
+    // Preset demo mode
+    if (demoStep === 0)
+      return "Tap to start speaking. Questions will appear as we talk.";
     if (demoStep === 1) return "Tap to share more details";
-    if (questions.length > 0) return "Review the questions, or speak to refine them";
+    if (questions.length > 0)
+      return "Review the questions, or speak to refine them";
     return "Tap to start speaking. Questions will appear as we talk.";
   };
+
+  // Determine which input level to use
+  const inputLevel = isRealMode ? realInputLevel : mockInputLevel;
+
+  // Log WS connection status
+  useEffect(() => {
+    if (roomId) {
+      console.log("[InterviewArchitectTest] WS connection status:", {
+        isWsConnected,
+        wsError,
+      });
+    }
+  }, [isWsConnected, wsError, roomId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (conversationRef.current) {
+        conversationRef.current.endSession();
+      }
+      stopMockLevelPolling();
+      stopRealVolumePolling();
+      disconnectWs();
+    };
+  }, [stopRealVolumePolling, disconnectWs]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -396,13 +714,16 @@ const InterviewArchitectTest = () => {
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
               <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Interview Architect</span>
+              <span className="text-sm font-medium text-primary">
+                Interview Architect
+              </span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
               Voice-First Question Builder
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto text-sm">
-              Speak naturally to design structured, expert-level interview questions
+              Speak naturally to design structured, expert-level interview
+              questions
             </p>
           </div>
 
@@ -410,7 +731,10 @@ const InterviewArchitectTest = () => {
           <ArchitectPhaseIndicator currentPhase={phase} className="mb-6" />
 
           {/* Interview Context Badges */}
-          <InterviewContextBadges context={interviewContext} className="justify-center mb-8" />
+          <InterviewContextBadges
+            context={interviewContext}
+            className="justify-center mb-8"
+          />
 
           {/* Main Content - Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
@@ -421,12 +745,12 @@ const InterviewArchitectTest = () => {
                 agentDescription="I'll help you design structured, expert-level interview questions."
                 state={agentState}
                 helperText={getHelperText()}
-                inputLevel={mockInputLevel}
+                inputLevel={inputLevel}
                 onToggle={handleAgentToggle}
               />
 
               {/* Reset button */}
-              {(questions.length > 0 || selectedPresetId) && (
+              {(questions.length > 0 || selectedPresetId || roomId) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -455,7 +779,8 @@ const InterviewArchitectTest = () => {
                   </h3>
                   {questions.length > 0 && (
                     <span className="text-xs text-muted-foreground">
-                      {questions.length} question{questions.length !== 1 ? "s" : ""}
+                      {questions.length} question
+                      {questions.length !== 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
@@ -477,10 +802,9 @@ const InterviewArchitectTest = () => {
                         Questions will appear here as you speak
                       </p>
                       <p className="text-muted-foreground/60 text-xs max-w-xs">
-                        {selectedPresetId 
+                        {selectedPresetId
                           ? "Tap the microphone to start the conversation"
-                          : "Select a demo preset below or start speaking to create your interview"
-                        }
+                          : "Select a demo preset below or start speaking to create your interview"}
                       </p>
                     </motion.div>
                   ) : (
@@ -492,7 +816,7 @@ const InterviewArchitectTest = () => {
                       <Reorder.Group
                         axis="y"
                         values={questions}
-                        onReorder={setQuestions}
+                        onReorder={handleReorder}
                         className="space-y-3"
                       >
                         {questions.map((question, index) => (
@@ -518,7 +842,10 @@ const InterviewArchitectTest = () => {
                         transition={{ delay: 0.3 }}
                         className="mt-6 flex justify-center"
                       >
-                        <PrimaryButton onClick={handleFinalize} className="px-8">
+                        <PrimaryButton
+                          onClick={handleFinalize}
+                          className="px-8"
+                        >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Finalize Questions
                         </PrimaryButton>

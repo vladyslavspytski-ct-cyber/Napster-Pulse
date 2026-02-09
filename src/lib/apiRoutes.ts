@@ -4,6 +4,8 @@ export const API_ROUTES = {
   register: "/register",
   health: "/health",
   signedUrl: "/elevenlabs/signed-url",
+  // Interview Architect agent signed URL (uses agentKey "interview-architect")
+  interviewArchitectSignedUrl: "/elevenlabs/signed-url?agentKey=interview-architect",
   signedUrlByKey: (key: string, interviewId: string) =>
     `/elevenlabs/signed-url/key/${key}/interview-id/${interviewId}`,
   interviews: "/interviews",

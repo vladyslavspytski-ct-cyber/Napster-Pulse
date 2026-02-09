@@ -11,36 +11,37 @@ interface UseSignedUrlResult {
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<string | null>;
-  fetchSignedUrl: () => Promise<string>;
+  fetchSignedUrl: (agentIdOverride?: string | null) => Promise<string>;
 }
 
-/**
- * Parse signed URL from API response (supports both JSON and text formats)
- */
 function parseSignedUrlResponse(data: string | Record<string, unknown>): string {
-  // Handle plain text response
   if (typeof data === "string") {
-    if (!data.trim()) {
-      throw new Error("Empty signed URL received from backend");
-    }
-    return data.trim();
+    const trimmed = data.trim();
+    if (!trimmed) throw new Error("Empty signed URL received from backend");
+    return trimmed;
   }
 
-  // Handle JSON response - support both signed_url and signedUrl
   if (typeof data === "object" && data) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyData = data as any;
     const signed =
-      (typeof data.signedUrl === "string" && data.signedUrl) ||
-      (typeof data.signed_url === "string" && data.signed_url) ||
-      (typeof data.url === "string" && data.url);
+      (typeof anyData.signedUrl === "string" && anyData.signedUrl) ||
+      (typeof anyData.signed_url === "string" && anyData.signed_url) ||
+      (typeof anyData.url === "string" && anyData.url);
 
-    if (signed) return signed.trim();
+    if (signed) return String(signed).trim();
   }
 
   throw new Error("Invalid response: missing signedUrl field");
 }
 
+function buildSignedUrlPath(agentId?: string | null): string {
+  if (!agentId) return API_ROUTES.signedUrl;
+  return `${API_ROUTES.signedUrl}?agentId=${encodeURIComponent(agentId)}`;
+}
+
 export function useSignedUrl(
-  agentId: string | null,
+  agentId?: string | null,
   options: UseSignedUrlOptions = {},
 ): UseSignedUrlResult {
   const { enabled = true } = options;
@@ -49,70 +50,57 @@ export function useSignedUrl(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  /**
-   * Fetch signed URL and update state. Returns the URL or null on error.
-   */
   const refetch = useCallback(async (): Promise<string | null> => {
-    if (!agentId) return null;
-
     setIsLoading(true);
     setError(null);
 
     try {
-      const path = `${API_ROUTES.signedUrl}?agentId=${encodeURIComponent(agentId)}`;
+      const path = buildSignedUrlPath(agentId);
       const data = await callApi<string | Record<string, unknown>>(path);
       const url = parseSignedUrlResponse(data);
       setSignedUrl(url);
       return url;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to fetch signed URL");
-      setError(error);
-      console.error("[useSignedUrl] Error:", error);
+      const e = err instanceof Error ? err : new Error("Failed to fetch signed URL");
+      setError(e);
+      console.error("[useSignedUrl] Error:", e);
       return null;
     } finally {
       setIsLoading(false);
     }
   }, [agentId]);
 
-  /**
-   * Fetch signed URL imperatively. Throws on error.
-   * Use this when you need the URL immediately and want to handle errors yourself.
-   */
-  const fetchSignedUrl = useCallback(async (): Promise<string> => {
-    if (!agentId) {
-      throw new Error("No agent ID provided");
-    }
+  const fetchSignedUrl = useCallback(
+    async (agentIdOverride?: string | null): Promise<string> => {
+      setIsLoading(true);
+      setError(null);
 
-    setIsLoading(true);
-    setError(null);
+      try {
+        const finalAgentId =
+          typeof agentIdOverride !== "undefined" ? agentIdOverride : agentId;
 
-    try {
-      const path = `${API_ROUTES.signedUrl}?agentId=${encodeURIComponent(agentId)}`;
-      const data = await callApi<string | Record<string, unknown>>(path);
-      const url = parseSignedUrlResponse(data);
-      setSignedUrl(url);
-      return url;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to fetch signed URL");
-      setError(error);
-      console.error("[useSignedUrl] Error:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [agentId]);
+        const path = buildSignedUrlPath(finalAgentId);
+        const data = await callApi<string | Record<string, unknown>>(path);
+        const url = parseSignedUrlResponse(data);
+        setSignedUrl(url);
+        return url;
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error("Failed to fetch signed URL");
+        setError(e);
+        console.error("[useSignedUrl] Error:", e);
+        throw e;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [agentId],
+  );
 
   useEffect(() => {
-    if (enabled && agentId) {
+    if (enabled) {
       refetch();
     }
-  }, [enabled, agentId, refetch]);
+  }, [enabled, refetch]);
 
-  return {
-    signedUrl,
-    isLoading,
-    error,
-    refetch,
-    fetchSignedUrl,
-  };
+  return { signedUrl, isLoading, error, refetch, fetchSignedUrl };
 }

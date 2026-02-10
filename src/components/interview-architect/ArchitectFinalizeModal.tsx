@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Copy, X, FileText, Loader2, ExternalLink, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StructuredQuestion } from "./StructuredQuestionCard";
@@ -58,7 +59,6 @@ const ArchitectFinalizeModal = ({
   const handleCreateInterview = async () => {
     const trimmedTitle = interviewTitle.trim();
 
-    // Validate
     if (!trimmedTitle) {
       toast({
         title: "Title required",
@@ -77,12 +77,6 @@ const ArchitectFinalizeModal = ({
       return;
     }
 
-    console.log("[ArchitectFinalizeModal] Creating interview:", {
-      title: trimmedTitle,
-      questionsCount: questions.length,
-    });
-
-    // Create interview
     const response = await createInterview({
       title: trimmedTitle,
       questions: questions.map((q) => q.text),
@@ -97,17 +91,12 @@ const ArchitectFinalizeModal = ({
       return;
     }
 
-    console.log("[ArchitectFinalizeModal] Interview created:", response.id);
-
-    // Activate the interview
     try {
-      console.log("[ArchitectFinalizeModal] Activating interview:", response.id);
       await callApi(API_ROUTES.activateInterview(response.id), {
         method: "PUT",
       });
-      console.log("[ArchitectFinalizeModal] Interview activated successfully");
     } catch (activateError) {
-      console.error("[ArchitectFinalizeModal] Failed to activate interview:", activateError);
+      console.error("[ArchitectFinalizeModal] Failed to activate:", activateError);
       toast({
         title: "Error",
         description: "Interview created but activation failed. Please try again.",
@@ -116,7 +105,6 @@ const ArchitectFinalizeModal = ({
       return;
     }
 
-    // Build public URL
     const origin = window.location.origin;
     const uniqueKey = response.link?.unique_key;
     const publicUrl = `${origin}/i/${uniqueKey}`;
@@ -134,19 +122,17 @@ const ArchitectFinalizeModal = ({
   };
 
   const handleClose = () => {
-    // Reset state on close
     setSavedData(null);
     setInterviewTitle(defaultTitle || "");
     onClose();
   };
 
-  // Show success view after interview is created
+  // Success view
   if (savedData) {
     return (
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -154,16 +140,13 @@ const ArchitectFinalizeModal = ({
               className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
               onClick={handleClose}
             />
-
-            {/* Modal */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-50"
+              className="fixed inset-x-4 top-[50%] -translate-y-1/2 mx-auto max-w-md z-50 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2"
             >
-              <div className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
-                {/* Header */}
+              <div className="glass-card rounded-2xl shadow-card overflow-hidden">
                 <div className="p-6 text-center">
                   <div className="w-16 h-16 rounded-full bg-interu-mint-light flex items-center justify-center mx-auto mb-4">
                     <Check className="w-8 h-8 text-interu-mint" />
@@ -175,8 +158,6 @@ const ArchitectFinalizeModal = ({
                     "{savedData.title}" with {savedData.questionsCount} questions
                   </p>
                 </div>
-
-                {/* Link section */}
                 <div className="px-6 pb-6">
                   <Label className="text-sm text-muted-foreground mb-2 block">
                     Share this link with candidates
@@ -199,12 +180,10 @@ const ArchitectFinalizeModal = ({
                     </Button>
                   </div>
                 </div>
-
-                {/* Footer */}
                 <div className="p-6 border-t border-border">
-                  <Button className="w-full" onClick={handleClose}>
+                  <PrimaryButton className="w-full" onClick={handleClose}>
                     Done
-                  </Button>
+                  </PrimaryButton>
                 </div>
               </div>
             </motion.div>
@@ -218,7 +197,6 @@ const ArchitectFinalizeModal = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -227,19 +205,18 @@ const ArchitectFinalizeModal = ({
             onClick={handleClose}
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[85vh] overflow-hidden z-50"
+            className="fixed inset-x-4 top-4 bottom-4 mx-auto max-w-2xl z-50 flex flex-col sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-[5vh] sm:bottom-[5vh]"
           >
-            <div className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-border">
+            <div className="glass-card rounded-2xl shadow-card overflow-hidden flex flex-col max-h-full">
+              {/* Header - fixed */}
+              <div className="flex items-center justify-between p-5 border-b border-border flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-interu-mint-light flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-interu-mint" />
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">
@@ -247,17 +224,17 @@ const ArchitectFinalizeModal = ({
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       {questions.length} question{questions.length !== 1 ? "s" : ""}
-                      {interviewType && ` \u2022 ${interviewType}`}
+                      {interviewType && ` · ${interviewType}`}
                     </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleClose}>
+                <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-xl">
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
-              {/* Title input */}
-              <div className="p-5 border-b border-border">
+              {/* Title input - fixed */}
+              <div className="p-5 border-b border-border flex-shrink-0">
                 <Label htmlFor="interview-title" className="text-sm font-medium">
                   Interview Title
                 </Label>
@@ -266,16 +243,16 @@ const ArchitectFinalizeModal = ({
                   placeholder="e.g., Senior Developer Interview"
                   value={interviewTitle}
                   onChange={(e) => setInterviewTitle(e.target.value)}
-                  className="mt-2"
+                  className="mt-2 rounded-xl"
                   autoFocus
                 />
               </div>
 
-              {/* Questions list */}
-              <div className="p-5 max-h-[40vh] overflow-y-auto">
+              {/* Questions list - scrollable */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 min-h-0">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-foreground">Questions</h3>
-                  <Button variant="ghost" size="sm" onClick={handleCopy}>
+                  <Button variant="ghost" size="sm" onClick={handleCopy} className="text-xs">
                     {copied ? (
                       <>
                         <Check className="w-3 h-3 mr-1" />
@@ -301,15 +278,15 @@ const ArchitectFinalizeModal = ({
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
                         {index + 1}
                       </span>
-                      <p className="text-sm text-foreground">{question.text}</p>
+                      <p className="text-sm text-foreground leading-relaxed">{question.text}</p>
                     </motion.div>
                   ))}
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="p-5 border-t border-border flex flex-col sm:flex-row gap-3">
-                <Button
+              {/* Footer - fixed / sticky CTA */}
+              <div className="p-5 border-t border-border flex-shrink-0 flex flex-col sm:flex-row gap-3">
+                <PrimaryButton
                   className="flex-1"
                   onClick={handleCreateInterview}
                   disabled={isCreating || questions.length === 0}
@@ -325,7 +302,7 @@ const ArchitectFinalizeModal = ({
                       Create Interview
                     </>
                   )}
-                </Button>
+                </PrimaryButton>
                 <Button variant="ghost" className="sm:flex-none" onClick={handleClose}>
                   Cancel
                 </Button>

@@ -14,7 +14,6 @@ import ArchitectAgentCard, {
 import InterviewContextBadges, {
   InterviewContext,
 } from "@/components/interview-architect/InterviewContextBadges";
-import DemoPresetsPanel from "@/components/interview-architect/DemoPresetsPanel";
 import TemplatesPanel from "@/components/interview-architect/TemplatesPanel";
 import StructuredQuestionCard, {
   StructuredQuestion,
@@ -827,12 +826,6 @@ const InterviewArchitectTest = () => {
                   </Button>
                 </motion.div>
               )}
-
-              {/* Demo Presets - Secondary Area */}
-              <DemoPresetsPanel
-                onSelectPreset={handleSelectPreset}
-                selectedPresetId={selectedPresetId || undefined}
-              />
 
               {/* Templates from backend */}
               <TemplatesPanel

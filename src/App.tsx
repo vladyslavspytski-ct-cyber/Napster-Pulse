@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import CreateInterview from "./pages/CreateInterview";
-import CreateInterviewTest from "./pages/CreateInterviewTest";
+
 import InterviewArchitectTest from "./pages/InterviewArchitectTest";
 import PublicInterview from "./pages/PublicInterview";
 import Dashboard from "./pages/Dashboard";
@@ -49,7 +49,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/create-interview" element={<CreateInterview />} />
-            <Route path="/create-interview-test" element={<CreateInterviewTest />} />
+            
             <Route path="/interview-architect-test" element={<InterviewArchitectTest />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/saved-interviews" element={<SavedInterviews />} />

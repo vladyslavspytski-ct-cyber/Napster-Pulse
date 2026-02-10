@@ -917,10 +917,11 @@ const InterviewArchitectTest = () => {
 
             </div>
 
-            {/* Right Column: Question Cards */}
+            {/* Right Column: Question Cards - fixed height matching left column */}
             <div className="lg:col-span-8">
-              <div className="glass-card rounded-2xl p-5 min-h-[400px]">
-                <div className="flex items-center justify-between mb-4">
+              <div className="glass-card rounded-2xl flex flex-col h-[420px] lg:h-[480px] overflow-hidden">
+                {/* Sticky header */}
+                <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
                   <h3 className="text-sm font-medium text-foreground">
                     Question Sequence
                   </h3>
@@ -932,74 +933,85 @@ const InterviewArchitectTest = () => {
                   )}
                 </div>
 
-                {/* Empty State */}
-                <AnimatePresence mode="wait">
-                  {questions.length === 0 ? (
-                    <motion.div
-                      key="empty"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center py-16 text-center"
-                    >
-                      <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                        <Sparkles className="w-8 h-8 text-muted-foreground/50" />
-                      </div>
-                      <p className="text-muted-foreground text-sm mb-2">
-                        Questions will appear here as you speak
-                      </p>
-                      <p className="text-muted-foreground/60 text-xs max-w-xs">
-                        {selectedPresetId
-                          ? "Tap the microphone to start the conversation"
-                          : "Select a template below or start speaking to create your interview"}
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="questions"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      <Reorder.Group
-                        axis="y"
-                        values={questions}
-                        onReorder={handleReorder}
-                        className="space-y-3"
-                      >
-                        {questions.map((question, index) => (
-                          <Reorder.Item
-                            key={question.id}
-                            value={question}
-                            className="cursor-grab active:cursor-grabbing"
-                          >
-                            <StructuredQuestionCard
-                              question={question}
-                              index={index}
-                              onEdit={handleEditQuestion}
-                              onDelete={handleDeleteQuestion}
-                            />
-                          </Reorder.Item>
-                        ))}
-                      </Reorder.Group>
-
-                      {/* Finalize CTA */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="mt-6 flex justify-center"
-                      >
-                        <PrimaryButton
-                          onClick={handleFinalize}
-                          className="px-8"
+                {/* Scrollable content area */}
+                <div className="flex-1 min-h-0 relative">
+                  <div className="h-full overflow-y-auto custom-scrollbar px-5">
+                    <AnimatePresence mode="wait">
+                      {questions.length === 0 ? (
+                        <motion.div
+                          key="empty"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex flex-col items-center justify-center py-16 text-center"
                         >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Finalize Questions
-                        </PrimaryButton>
-                      </motion.div>
-                    </motion.div>
+                          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                            <Sparkles className="w-8 h-8 text-muted-foreground/50" />
+                          </div>
+                          <p className="text-muted-foreground text-sm mb-2">
+                            Questions will appear here as you speak
+                          </p>
+                          <p className="text-muted-foreground/60 text-xs max-w-xs">
+                            {selectedPresetId
+                              ? "Tap the microphone to start the conversation"
+                              : "Select a template below or start speaking to create your interview"}
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="questions"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="pb-2"
+                        >
+                          <Reorder.Group
+                            axis="y"
+                            values={questions}
+                            onReorder={handleReorder}
+                            className="space-y-3"
+                          >
+                            {questions.map((question, index) => (
+                              <Reorder.Item
+                                key={question.id}
+                                value={question}
+                                className="cursor-grab active:cursor-grabbing"
+                              >
+                                <StructuredQuestionCard
+                                  question={question}
+                                  index={index}
+                                  onEdit={handleEditQuestion}
+                                  onDelete={handleDeleteQuestion}
+                                />
+                              </Reorder.Item>
+                            ))}
+                          </Reorder.Group>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {/* Bottom fade overlay - scroll affordance */}
+                  {questions.length > 3 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/90 to-transparent pointer-events-none rounded-b-2xl" />
                   )}
-                </AnimatePresence>
+                </div>
+
+                {/* Sticky footer CTA */}
+                {questions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex-shrink-0 p-4 pt-3 border-t border-border/50 flex justify-center"
+                  >
+                    <PrimaryButton
+                      onClick={handleFinalize}
+                      className="px-8"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Finalize Questions
+                    </PrimaryButton>
+                  </motion.div>
+                )}
               </div>
             </div>
           </div>

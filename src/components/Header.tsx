@@ -94,13 +94,6 @@ const Header = () => {
                   </button>
                 </>
               )}
-              {/* Create Interview Test - prototype page */}
-              <a
-                href="/create-interview-test"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Create Interview Test
-              </a>
               {/* Interview Architect Test - new prototype page */}
               <a
                 href="/interview-architect-test"
@@ -176,13 +169,6 @@ const Header = () => {
                     </button>
                   </>
                 )}
-                {/* Create Interview Test - prototype page */}
-                <a
-                  href="/create-interview-test"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Create Interview Test
-                </a>
                 {/* Interview Architect Test - new prototype page */}
                 <a
                   href="/interview-architect-test"

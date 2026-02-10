@@ -15,6 +15,7 @@ import InterviewContextBadges, {
   InterviewContext,
 } from "@/components/interview-architect/InterviewContextBadges";
 import DemoPresetsPanel from "@/components/interview-architect/DemoPresetsPanel";
+import TemplatesPanel from "@/components/interview-architect/TemplatesPanel";
 import StructuredQuestionCard, {
   StructuredQuestion,
 } from "@/components/interview-architect/StructuredQuestionCard";
@@ -23,11 +24,9 @@ import {
   useInterviewArchitectWs,
   ActualQuestion,
 } from "@/hooks/api/useInterviewArchitectWs";
+import { useTemplates, Template } from "@/hooks/api/useTemplates";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
 import { useSignedUrl } from "@/hooks/api";
-
-// Interview Architect agent ID (for signed URL requests)
-const INTERVIEW_ARCHITECT_AGENT_KEY = "interview-architect";
 
 // Mock data by preset (kept unchanged for demo purposes)
 const mockDataByPreset: Record<
@@ -309,6 +308,10 @@ function structuredToActualQuestion(q: StructuredQuestion): ActualQuestion {
 const InterviewArchitectTest = () => {
   const { fetchSignedUrl } = useSignedUrl(undefined, { enabled: false });
 
+  // === Templates state ===
+  const { templates, isLoading: templatesLoading, error: templatesError } = useTemplates();
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+
   // === Preset demo state (unchanged) ===
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [phase, setPhase] = useState<ArchitectPhase>("context");
@@ -529,6 +532,44 @@ const InterviewArchitectTest = () => {
     }
   };
 
+  // === Template selection handler ===
+  const handleSelectTemplate = (template: Template) => {
+    // If we were in real mode, cleanup first
+    if (roomId) {
+      stopRealAgentSession();
+      setRoomId(null);
+    }
+
+    // Clear preset selection
+    setSelectedPresetId(null);
+    setDemoStep(0);
+    stopMockLevelPolling();
+
+    // Set selected template
+    setSelectedTemplate(template);
+
+    // Convert template questions to StructuredQuestion format
+    // Sort by order field first
+    const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
+    const structuredQuestions: StructuredQuestion[] = sortedQuestions.map((q) => ({
+      id: q.id,
+      text: q.text,
+      phase: "core" as const,
+    }));
+
+    setQuestions(structuredQuestions);
+    setPhase("structure");
+    setAgentState("disconnected");
+
+    // Set context from template
+    setInterviewContext({
+      type: template.title,
+      goal: template.scenario || undefined,
+    });
+
+    console.log("[InterviewArchitectTest] Template selected:", template.title, "with", structuredQuestions.length, "questions");
+  };
+
   // === Preset demo handlers (unchanged) ===
   const handleSelectPreset = (presetId: string) => {
     // If we were in real mode, cleanup first
@@ -536,6 +577,9 @@ const InterviewArchitectTest = () => {
       stopRealAgentSession();
       setRoomId(null);
     }
+
+    // Clear template selection
+    setSelectedTemplate(null);
 
     setSelectedPresetId(presetId);
     setPhase("context");
@@ -668,6 +712,7 @@ const InterviewArchitectTest = () => {
     }
 
     setSelectedPresetId(null);
+    setSelectedTemplate(null);
     setRoomId(null);
     setPhase("context");
     setAgentState("disconnected");
@@ -770,7 +815,7 @@ const InterviewArchitectTest = () => {
               />
 
               {/* Reset button */}
-              {(questions.length > 0 || selectedPresetId || roomId) && (
+              {(questions.length > 0 || selectedPresetId || selectedTemplate || roomId) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -787,6 +832,15 @@ const InterviewArchitectTest = () => {
               <DemoPresetsPanel
                 onSelectPreset={handleSelectPreset}
                 selectedPresetId={selectedPresetId || undefined}
+              />
+
+              {/* Templates from backend */}
+              <TemplatesPanel
+                templates={templates}
+                isLoading={templatesLoading}
+                error={templatesError}
+                onSelectTemplate={handleSelectTemplate}
+                selectedTemplateId={selectedTemplate?.id}
               />
             </div>
 
@@ -887,6 +941,7 @@ const InterviewArchitectTest = () => {
         onClose={() => setShowFinalizeModal(false)}
         questions={questions}
         interviewType={interviewContext.type}
+        defaultTitle={selectedTemplate?.title}
       />
     </div>
   );

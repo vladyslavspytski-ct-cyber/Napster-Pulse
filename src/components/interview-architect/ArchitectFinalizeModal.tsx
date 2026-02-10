@@ -1,51 +1,218 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Copy, X, Download, FileText } from "lucide-react";
+import { Check, Copy, X, FileText, Loader2, ExternalLink, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { StructuredQuestion, QuestionPhase } from "./StructuredQuestionCard";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { StructuredQuestion } from "./StructuredQuestionCard";
+import { useCreateInterview } from "@/hooks/api/useCreateInterview";
+import { callApi } from "@/lib/api";
+import { API_ROUTES } from "@/lib/apiRoutes";
+import { useToast } from "@/hooks/use-toast";
 
 interface ArchitectFinalizeModalProps {
   isOpen: boolean;
   onClose: () => void;
   questions: StructuredQuestion[];
   interviewType?: string;
+  defaultTitle?: string;
 }
 
-const phaseConfig: Record<QuestionPhase, { label: string; color: string }> = {
-  opening: { label: "Opening", color: "bg-blue-100 text-blue-700" },
-  warmup: { label: "Warm-up", color: "bg-amber-100 text-amber-700" },
-  core: { label: "Core", color: "bg-emerald-100 text-emerald-700" },
-  deepdive: { label: "Deep Dive", color: "bg-purple-100 text-purple-700" },
-  closing: { label: "Closing", color: "bg-slate-100 text-slate-700" },
-};
+interface SavedInterviewData {
+  title: string;
+  questionsCount: number;
+  publicUrl: string;
+}
 
 const ArchitectFinalizeModal = ({
   isOpen,
   onClose,
   questions,
   interviewType,
+  defaultTitle,
 }: ArchitectFinalizeModalProps) => {
   const [copied, setCopied] = useState(false);
+  const [interviewTitle, setInterviewTitle] = useState(defaultTitle || "");
+  const [savedData, setSavedData] = useState<SavedInterviewData | null>(null);
+
+  const { createInterview, isLoading: isCreating } = useCreateInterview();
+  const { toast } = useToast();
 
   const handleCopy = () => {
-    const text = questions
-      .map((q, i) => `${i + 1}. [${phaseConfig[q.phase].label}] ${q.text}`)
-      .join("\n");
+    const text = questions.map((q, i) => `${i + 1}. ${q.text}`).join("\n");
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Group questions by phase
-  const groupedQuestions = questions.reduce((acc, q) => {
-    if (!acc[q.phase]) acc[q.phase] = [];
-    acc[q.phase].push(q);
-    return acc;
-  }, {} as Record<QuestionPhase, StructuredQuestion[]>);
+  const handleCopyLink = () => {
+    if (savedData?.publicUrl) {
+      navigator.clipboard.writeText(savedData.publicUrl);
+      toast({
+        title: "Link copied",
+        description: "Interview link copied to clipboard",
+      });
+    }
+  };
 
-  const phaseOrder: QuestionPhase[] = ["opening", "warmup", "core", "deepdive", "closing"];
+  const handleCreateInterview = async () => {
+    const trimmedTitle = interviewTitle.trim();
+
+    // Validate
+    if (!trimmedTitle) {
+      toast({
+        title: "Title required",
+        description: "Please enter a title for your interview",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (questions.length === 0) {
+      toast({
+        title: "No questions",
+        description: "Please add at least one question",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("[ArchitectFinalizeModal] Creating interview:", {
+      title: trimmedTitle,
+      questionsCount: questions.length,
+    });
+
+    // Create interview
+    const response = await createInterview({
+      title: trimmedTitle,
+      questions: questions.map((q) => q.text),
+    });
+
+    if (!response) {
+      toast({
+        title: "Error",
+        description: "Failed to create interview. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("[ArchitectFinalizeModal] Interview created:", response.id);
+
+    // Activate the interview
+    try {
+      console.log("[ArchitectFinalizeModal] Activating interview:", response.id);
+      await callApi(API_ROUTES.activateInterview(response.id), {
+        method: "PUT",
+      });
+      console.log("[ArchitectFinalizeModal] Interview activated successfully");
+    } catch (activateError) {
+      console.error("[ArchitectFinalizeModal] Failed to activate interview:", activateError);
+      toast({
+        title: "Error",
+        description: "Interview created but activation failed. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Build public URL
+    const origin = window.location.origin;
+    const uniqueKey = response.link?.unique_key;
+    const publicUrl = `${origin}/i/${uniqueKey}`;
+
+    setSavedData({
+      title: trimmedTitle,
+      questionsCount: questions.length,
+      publicUrl,
+    });
+
+    toast({
+      title: "Interview created",
+      description: "Your interview is ready to share",
+    });
+  };
+
+  const handleClose = () => {
+    // Reset state on close
+    setSavedData(null);
+    setInterviewTitle(defaultTitle || "");
+    onClose();
+  };
+
+  // Show success view after interview is created
+  if (savedData) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+              onClick={handleClose}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-50"
+            >
+              <div className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
+                {/* Header */}
+                <div className="p-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-interu-mint-light flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-interu-mint" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-foreground mb-2">
+                    Interview Created!
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    "{savedData.title}" with {savedData.questionsCount} questions
+                  </p>
+                </div>
+
+                {/* Link section */}
+                <div className="px-6 pb-6">
+                  <Label className="text-sm text-muted-foreground mb-2 block">
+                    Share this link with candidates
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={savedData.publicUrl}
+                      readOnly
+                      className="flex-1 text-sm"
+                    />
+                    <Button size="icon" variant="outline" onClick={handleCopyLink}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => window.open(savedData.publicUrl, "_blank")}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-border">
+                  <Button className="w-full" onClick={handleClose}>
+                    Done
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -57,7 +224,7 @@ const ArchitectFinalizeModal = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
-            onClick={onClose}
+            onClick={handleClose}
           />
 
           {/* Modal */}
@@ -76,76 +243,91 @@ const ArchitectFinalizeModal = ({
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">
-                      Interview Ready!
+                      Finalize Interview
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {questions.length} questions • {interviewType || "Custom Interview"}
+                      {questions.length} question{questions.length !== 1 ? "s" : ""}
+                      {interviewType && ` \u2022 ${interviewType}`}
                     </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={onClose}>
+                <Button variant="ghost" size="sm" onClick={handleClose}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
-              {/* Questions list by phase */}
-              <div className="p-5 max-h-[50vh] overflow-y-auto space-y-6">
-                {phaseOrder.map((phase) => {
-                  const phaseQuestions = groupedQuestions[phase];
-                  if (!phaseQuestions?.length) return null;
+              {/* Title input */}
+              <div className="p-5 border-b border-border">
+                <Label htmlFor="interview-title" className="text-sm font-medium">
+                  Interview Title
+                </Label>
+                <Input
+                  id="interview-title"
+                  placeholder="e.g., Senior Developer Interview"
+                  value={interviewTitle}
+                  onChange={(e) => setInterviewTitle(e.target.value)}
+                  className="mt-2"
+                  autoFocus
+                />
+              </div>
 
-                  return (
-                    <div key={phase}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge variant="outline" className={cn("text-xs", phaseConfig[phase].color)}>
-                          {phaseConfig[phase].label}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {phaseQuestions.length} question{phaseQuestions.length > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {phaseQuestions.map((question, index) => (
-                          <motion.div
-                            key={question.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="flex items-start gap-3 p-3 rounded-xl bg-muted/50"
-                          >
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                              {questions.findIndex((q) => q.id === question.id) + 1}
-                            </span>
-                            <p className="text-sm text-foreground">{question.text}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Questions list */}
+              <div className="p-5 max-h-[40vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-foreground">Questions</h3>
+                  <Button variant="ghost" size="sm" onClick={handleCopy}>
+                    {copied ? (
+                      <>
+                        <Check className="w-3 h-3 mr-1" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy All
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {questions.map((question, index) => (
+                    <motion.div
+                      key={question.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-muted/50"
+                    >
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                        {index + 1}
+                      </span>
+                      <p className="text-sm text-foreground">{question.text}</p>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
 
               {/* Footer */}
               <div className="p-5 border-t border-border flex flex-col sm:flex-row gap-3">
-                <Button className="flex-1" onClick={handleCopy}>
-                  {copied ? (
+                <Button
+                  className="flex-1"
+                  onClick={handleCreateInterview}
+                  disabled={isCreating || questions.length === 0}
+                >
+                  {isCreating ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied!
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy All
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Create Interview
                     </>
                   )}
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
-                <Button variant="ghost" className="sm:flex-none" onClick={onClose}>
-                  Close
+                <Button variant="ghost" className="sm:flex-none" onClick={handleClose}>
+                  Cancel
                 </Button>
               </div>
             </div>

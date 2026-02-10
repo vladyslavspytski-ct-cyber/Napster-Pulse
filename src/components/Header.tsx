@@ -94,13 +94,6 @@ const Header = () => {
                   </button>
                 </>
               )}
-              {/* Interview Architect Test - new prototype page */}
-              <a
-                href="/interview-architect-test"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Interview Architect
-              </a>
               {/* Saved Interviews - only visible when logged in */}
               {isLoggedIn && (
                 <a
@@ -169,13 +162,6 @@ const Header = () => {
                     </button>
                   </>
                 )}
-                {/* Interview Architect Test - new prototype page */}
-                <a
-                  href="/interview-architect-test"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Interview Architect
-                </a>
                 {/* Saved Interviews - only visible when logged in */}
                 {isLoggedIn && (
                   <a

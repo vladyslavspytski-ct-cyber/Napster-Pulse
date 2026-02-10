@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import { Sparkles, RotateCcw, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import ArchitectPhaseIndicator, {
@@ -334,7 +336,16 @@ async function syncQuestionsToBackend(
 }
 
 const InterviewArchitectTest = () => {
+  const navigate = useNavigate();
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
   const { fetchSignedUrl } = useSignedUrl(undefined, { enabled: false });
+
+  // Redirect to home if not logged in
+  useEffect(() => {
+    if (!authLoading && !isLoggedIn) {
+      navigate("/", { replace: true });
+    }
+  }, [authLoading, isLoggedIn, navigate]);
 
   // === Templates state ===
   const { templates, isLoading: templatesLoading, error: templatesError } = useTemplates();
@@ -855,6 +866,11 @@ const InterviewArchitectTest = () => {
       disconnectWs();
     };
   }, [stopRealVolumePolling, disconnectWs]);
+
+  // Show nothing while checking auth (prevents flash before redirect)
+  if (authLoading || !isLoggedIn) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

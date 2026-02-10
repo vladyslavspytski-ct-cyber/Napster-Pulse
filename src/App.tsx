@@ -7,8 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
-import CreateInterview from "./pages/CreateInterview";
-
 import InterviewArchitectTest from "./pages/InterviewArchitectTest";
 import PublicInterview from "./pages/PublicInterview";
 import Dashboard from "./pages/Dashboard";
@@ -48,8 +46,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/create-interview" element={<CreateInterview />} />
-            
+            {/* /create-interview now uses InterviewArchitectTest (CreateInterview temporarily hidden) */}
+            <Route path="/create-interview" element={<InterviewArchitectTest />} />
+            {/* Keep old path for backwards compatibility */}
             <Route path="/interview-architect-test" element={<InterviewArchitectTest />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/saved-interviews" element={<SavedInterviews />} />

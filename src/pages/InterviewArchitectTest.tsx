@@ -915,14 +915,6 @@ const InterviewArchitectTest = () => {
                 </motion.div>
               )}
 
-              {/* Templates from backend */}
-              <TemplatesPanel
-                templates={templates}
-                isLoading={templatesLoading}
-                error={templatesError}
-                onSelectTemplate={handleSelectTemplate}
-                selectedTemplateId={selectedTemplate?.id}
-              />
             </div>
 
             {/* Right Column: Question Cards */}
@@ -959,7 +951,7 @@ const InterviewArchitectTest = () => {
                       <p className="text-muted-foreground/60 text-xs max-w-xs">
                         {selectedPresetId
                           ? "Tap the microphone to start the conversation"
-                          : "Select a demo preset below or start speaking to create your interview"}
+                          : "Select a template below or start speaking to create your interview"}
                       </p>
                     </motion.div>
                   ) : (
@@ -1010,6 +1002,17 @@ const InterviewArchitectTest = () => {
                 </AnimatePresence>
               </div>
             </div>
+          </div>
+
+          {/* Templates Section - Full Width Below */}
+          <div className="max-w-6xl mx-auto mt-8">
+            <TemplatesPanel
+              templates={templates}
+              isLoading={templatesLoading}
+              error={templatesError}
+              onSelectTemplate={handleSelectTemplate}
+              selectedTemplateId={selectedTemplate?.id}
+            />
           </div>
         </div>
       </main>

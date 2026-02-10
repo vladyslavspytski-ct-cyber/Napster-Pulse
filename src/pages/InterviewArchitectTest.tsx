@@ -26,6 +26,8 @@ import {
 import { useTemplates, Template } from "@/hooks/api/useTemplates";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
 import { useSignedUrl } from "@/hooks/api";
+import { callApi } from "@/lib/api";
+import { API_ROUTES } from "@/lib/apiRoutes";
 
 // Mock data by preset (kept unchanged for demo purposes)
 const mockDataByPreset: Record<
@@ -276,10 +278,11 @@ const mockDataByPreset: Record<
 };
 
 /**
- * Generate a simple UUID for room ID
+ * Generate a stable conversationId for the session
+ * Used for both backend question sync and ElevenLabs agent binding
  */
-function generateRoomId(): string {
-  return `room-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+function generateConversationId(): string {
+  return `conv-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**
@@ -304,6 +307,32 @@ function structuredToActualQuestion(q: StructuredQuestion): ActualQuestion {
   };
 }
 
+/**
+ * Sync questions to backend with explicit conversationId
+ * Used for initial template sync when the hook's ref isn't updated yet
+ */
+async function syncQuestionsToBackend(
+  convId: string,
+  questions: ActualQuestion[]
+): Promise<void> {
+  const url = `${API_ROUTES.architectQuestionsSync}?room_id=${encodeURIComponent(convId)}`;
+  const payload = {
+    questions: questions.map((q) => ({ id: q.id, question: q.question })),
+  };
+
+  console.log("[syncQuestionsToBackend] POST", url, "| conversationId:", convId, "| questions:", questions.length);
+
+  try {
+    await callApi<unknown>(url, {
+      method: "POST",
+      body: payload as unknown as BodyInit,
+    });
+    console.log("[syncQuestionsToBackend] POST success");
+  } catch (err) {
+    console.error("[syncQuestionsToBackend] POST error:", err);
+  }
+}
+
 const InterviewArchitectTest = () => {
   const { fetchSignedUrl } = useSignedUrl(undefined, { enabled: false });
 
@@ -323,8 +352,13 @@ const InterviewArchitectTest = () => {
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
 
-  // === Real agent state (non-preset mode) ===
-  const [roomId, setRoomId] = useState<string | null>(null);
+  // === Conversation state (stable ID for session) ===
+  // conversationId is generated on template selection or first agent start
+  // and persists throughout the editing session until explicit reset
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  // Flag to control WS subscription - only true when agent session is active
+  // Template selection sets conversationId but NOT this flag
+  const [isAgentSessionActive, setIsAgentSessionActive] = useState(false);
   const [realInputLevel, setRealInputLevel] = useState(0);
 
   // Refs for real agent session
@@ -333,14 +367,18 @@ const InterviewArchitectTest = () => {
   const mockLevelIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  // WebSocket hook for real-time questions (only active when roomId is set)
+  // Debounce ref for question sync
+  const syncDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // WebSocket hook for real-time questions
+  // Only connects when agent session is active (not on template selection)
   const {
     questionsFromWs,
     isConnected: isWsConnected,
     error: wsError,
     disconnect: disconnectWs,
     syncQuestions,
-  } = useInterviewArchitectWs(roomId, !!roomId);
+  } = useInterviewArchitectWs(conversationId, isAgentSessionActive);
 
   const currentData = selectedPresetId
     ? mockDataByPreset[selectedPresetId]
@@ -415,10 +453,16 @@ const InterviewArchitectTest = () => {
     setAgentState("connecting");
 
     try {
-      // 1. Generate room ID
-      const newRoomId = generateRoomId();
-      console.log("[InterviewArchitectTest] Generated roomId:", newRoomId);
-      setRoomId(newRoomId);
+      // 1. Use existing conversationId or generate new one
+      // This ensures the same conversationId is used for template questions and agent session
+      let activeConversationId = conversationId;
+      if (!activeConversationId) {
+        activeConversationId = generateConversationId();
+        console.log("[InterviewArchitectTest] Generated new conversationId:", activeConversationId);
+        setConversationId(activeConversationId);
+      } else {
+        console.log("[InterviewArchitectTest] Reusing existing conversationId:", activeConversationId);
+      }
 
       // 2. Request microphone access
       console.log("[InterviewArchitectTest] Requesting microphone access...");
@@ -473,13 +517,16 @@ const InterviewArchitectTest = () => {
       // Start session with dynamic variables including ConversationId
       await conversation.startSession(signedUrl, mediaStream, {
         dynamicVariables: {
-          ConversationId: newRoomId,
+          ConversationId: activeConversationId,
         },
       });
 
+      // Enable WS subscription now that agent session is active
+      setIsAgentSessionActive(true);
+
       console.log(
         "[InterviewArchitectTest] ElevenLabs session started with ConversationId:",
-        newRoomId,
+        activeConversationId,
       );
     } catch (error) {
       console.error(
@@ -487,7 +534,8 @@ const InterviewArchitectTest = () => {
         error,
       );
       setAgentState("disconnected");
-      setRoomId(null);
+      setIsAgentSessionActive(false);
+      // Note: We do NOT clear conversationId on error - it persists for the session
 
       // Cleanup media stream if acquired
       if (mediaStreamRef.current) {
@@ -528,15 +576,15 @@ const InterviewArchitectTest = () => {
       );
     } finally {
       setAgentState("disconnected");
+      setIsAgentSessionActive(false);
     }
   };
 
   // === Template selection handler ===
   const handleSelectTemplate = (template: Template) => {
-    // If we were in real mode, cleanup first
-    if (roomId) {
+    // Cleanup any active agent session first (but keep editing flow intact)
+    if (conversationRef.current) {
       stopRealAgentSession();
-      setRoomId(null);
     }
 
     // Clear preset selection
@@ -546,6 +594,10 @@ const InterviewArchitectTest = () => {
 
     // Set selected template
     setSelectedTemplate(template);
+
+    // Generate a new conversationId for this template session
+    const newConversationId = generateConversationId();
+    setConversationId(newConversationId);
 
     // Convert template questions to StructuredQuestion format
     // Sort by order field first
@@ -566,19 +618,27 @@ const InterviewArchitectTest = () => {
       goal: template.scenario || undefined,
     });
 
-    console.log("[InterviewArchitectTest] Template selected:", template.title, "with", structuredQuestions.length, "questions");
+    // Sync questions to backend immediately using explicit conversationId
+    // (can't use hook's syncQuestions as the ref isn't updated yet after setState)
+    const actualQuestions = structuredQuestions.map(structuredToActualQuestion);
+    console.log("[InterviewArchitectTest] Template selected:", template.title);
+    console.log("[InterviewArchitectTest] conversationId:", newConversationId);
+    console.log("[InterviewArchitectTest] Syncing", actualQuestions.length, "questions to backend");
+
+    syncQuestionsToBackend(newConversationId, actualQuestions);
   };
 
   // === Preset demo handlers (unchanged) ===
   const handleSelectPreset = (presetId: string) => {
     // If we were in real mode, cleanup first
-    if (roomId) {
+    if (conversationId) {
       stopRealAgentSession();
-      setRoomId(null);
+      setConversationId(null);
     }
 
-    // Clear template selection
+    // Clear template selection and agent session flag
     setSelectedTemplate(null);
+    setIsAgentSessionActive(false);
 
     setSelectedPresetId(presetId);
     setPhase("context");
@@ -657,15 +717,32 @@ const InterviewArchitectTest = () => {
     }
   };
 
+  // === Debounced sync helper ===
+  const debouncedSync = useCallback((questionsToSync: StructuredQuestion[]) => {
+    // Clear any pending sync
+    if (syncDebounceRef.current) {
+      clearTimeout(syncDebounceRef.current);
+    }
+
+    // Debounce for 300ms to avoid spamming backend on rapid edits
+    syncDebounceRef.current = setTimeout(() => {
+      if (conversationId) {
+        const actualQuestions = questionsToSync.map(structuredToActualQuestion);
+        console.log("[InterviewArchitectTest] Debounced sync | conversationId:", conversationId, "| questions:", actualQuestions.length);
+        syncQuestions(actualQuestions);
+      }
+    }, 300);
+  }, [conversationId, syncQuestions]);
+
   // === Question handlers ===
   const handleEditQuestion = (id: string, newText: string) => {
     setQuestions((prev) => {
       const updated = prev.map((q) => (q.id === id ? { ...q, text: newText } : q));
 
-      // Sync to backend if in real mode
-      if (isRealMode && roomId) {
-        console.log("[InterviewArchitectTest] Syncing question edit to backend:", { id, newText });
-        syncQuestions(updated.map(structuredToActualQuestion));
+      // Sync to backend if conversationId exists (template or real agent mode)
+      if (conversationId) {
+        console.log("[InterviewArchitectTest] Question edited:", { id, conversationId });
+        debouncedSync(updated);
       }
 
       return updated;
@@ -676,10 +753,10 @@ const InterviewArchitectTest = () => {
     setQuestions((prev) => {
       const updated = prev.filter((q) => q.id !== id);
 
-      // Sync to backend if in real mode
-      if (isRealMode && roomId) {
-        console.log("[InterviewArchitectTest] Syncing question delete to backend:", { id });
-        syncQuestions(updated.map(structuredToActualQuestion));
+      // Sync to backend if conversationId exists
+      if (conversationId) {
+        console.log("[InterviewArchitectTest] Question deleted:", { id, conversationId });
+        debouncedSync(updated);
       }
 
       return updated;
@@ -689,13 +766,10 @@ const InterviewArchitectTest = () => {
   const handleReorder = (newOrder: StructuredQuestion[]) => {
     setQuestions(newOrder);
 
-    // Sync to backend if in real mode
-    if (isRealMode && roomId) {
-      console.log(
-        "[InterviewArchitectTest] Syncing question reorder to backend:",
-        newOrder.map((q) => q.id),
-      );
-      syncQuestions(newOrder.map(structuredToActualQuestion));
+    // Sync to backend if conversationId exists
+    if (conversationId) {
+      console.log("[InterviewArchitectTest] Questions reordered | conversationId:", conversationId);
+      debouncedSync(newOrder);
     }
   };
 
@@ -705,14 +779,22 @@ const InterviewArchitectTest = () => {
   };
 
   const handleReset = () => {
+    // Clear any pending sync
+    if (syncDebounceRef.current) {
+      clearTimeout(syncDebounceRef.current);
+      syncDebounceRef.current = null;
+    }
+
     // Cleanup real agent session if active
-    if (roomId) {
+    if (conversationRef.current) {
       stopRealAgentSession();
     }
 
+    // Reset all state - this clears conversationId for a fresh start
     setSelectedPresetId(null);
     setSelectedTemplate(null);
-    setRoomId(null);
+    setConversationId(null);
+    setIsAgentSessionActive(false);
     setPhase("context");
     setAgentState("disconnected");
     setQuestions([]);
@@ -720,6 +802,8 @@ const InterviewArchitectTest = () => {
     setDemoStep(0);
     stopMockLevelPolling();
     stopRealVolumePolling();
+
+    console.log("[InterviewArchitectTest] Reset complete - conversationId cleared");
   };
 
   const getHelperText = () => {
@@ -748,17 +832,21 @@ const InterviewArchitectTest = () => {
 
   // Log WS connection status
   useEffect(() => {
-    if (roomId) {
+    if (conversationId) {
       console.log("[InterviewArchitectTest] WS connection status:", {
         isWsConnected,
         wsError,
       });
     }
-  }, [isWsConnected, wsError, roomId]);
+  }, [isWsConnected, wsError, conversationId]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Clear debounce timer
+      if (syncDebounceRef.current) {
+        clearTimeout(syncDebounceRef.current);
+      }
       if (conversationRef.current) {
         conversationRef.current.endSession();
       }
@@ -814,7 +902,7 @@ const InterviewArchitectTest = () => {
               />
 
               {/* Reset button */}
-              {(questions.length > 0 || selectedPresetId || selectedTemplate || roomId) && (
+              {(questions.length > 0 || selectedPresetId || selectedTemplate || conversationId) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

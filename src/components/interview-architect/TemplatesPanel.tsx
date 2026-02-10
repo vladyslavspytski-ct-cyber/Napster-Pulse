@@ -118,7 +118,7 @@ const TemplatesPanel = ({
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="pt-4 space-y-4 py-1">
+            <div className="pt-4 space-y-4 px-1">
               {/* Search */}
               {templates.length > 3 && (
                 <div className="relative max-w-md">

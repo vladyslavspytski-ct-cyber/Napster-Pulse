@@ -71,9 +71,7 @@ const TemplatesPanel = ({
     if (!search.trim()) return templates;
     const q = search.toLowerCase();
     return templates.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        (t.scenario && t.scenario.toLowerCase().includes(q))
+      (t) => t.title.toLowerCase().includes(q) || (t.scenario && t.scenario.toLowerCase().includes(q)),
     );
   }, [templates, search]);
 
@@ -102,15 +100,10 @@ const TemplatesPanel = ({
           </div>
           <div className="text-left">
             <h3 className="text-sm font-semibold text-foreground">Templates</h3>
-            <p className="text-[11px] text-muted-foreground">
-              {templates.length} available
-            </p>
+            <p className="text-[11px] text-muted-foreground">{templates.length} available</p>
           </div>
         </div>
-        <motion.div
-          animate={{ rotate: isExpanded ? 180 : 0 }}
-          transition={{ duration: 0.25 }}
-        >
+        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
           <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
         </motion.div>
       </button>
@@ -125,7 +118,7 @@ const TemplatesPanel = ({
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="pt-4 space-y-4">
+            <div className="pt-4 space-y-4 py-1">
               {/* Search */}
               {templates.length > 3 && (
                 <div className="relative max-w-md">
@@ -148,11 +141,7 @@ const TemplatesPanel = ({
               )}
 
               {/* Error */}
-              {error && (
-                <div className="text-center py-12 text-sm text-destructive">
-                  Failed to load templates
-                </div>
-              )}
+              {error && <div className="text-center py-12 text-sm text-destructive">Failed to load templates</div>}
 
               {/* Empty */}
               {!isLoading && !error && filtered.length === 0 && (
@@ -180,9 +169,7 @@ const TemplatesPanel = ({
                           className={cn(
                             "w-full text-left rounded-xl p-4 transition-all duration-200",
                             "glass-card",
-                            isSelected
-                              ? "ring-2 ring-primary/30 shadow-md"
-                              : "hover:shadow-sm hover:border-border"
+                            isSelected ? "ring-2 ring-primary/30 shadow-md" : "hover:shadow-sm hover:border-border",
                           )}
                         >
                           <div className="flex items-start gap-3">
@@ -190,7 +177,7 @@ const TemplatesPanel = ({
                             <div
                               className={cn(
                                 "w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0",
-                                visual.accent
+                                visual.accent,
                               )}
                             >
                               <IconComp className={cn("w-4 h-4", visual.text)} />
@@ -201,14 +188,12 @@ const TemplatesPanel = ({
                                 <p
                                   className={cn(
                                     "text-sm font-medium truncate",
-                                    isSelected ? "text-primary" : "text-foreground"
+                                    isSelected ? "text-primary" : "text-foreground",
                                   )}
                                 >
                                   {template.title}
                                 </p>
-                                {isSelected && (
-                                  <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                                )}
+                                {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
                               </div>
                               {template.scenario && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">

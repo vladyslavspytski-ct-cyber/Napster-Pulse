@@ -1,293 +1,281 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Pencil } from "lucide-react";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { SecondaryButton } from "@/components/ui/SecondaryButton";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, Reorder, AnimatePresence } from "framer-motion";
+import { Sparkles, RotateCcw, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SavedInterviewBlock from "@/components/SavedInterviewBlock";
-import CreateInterviewVoiceAgentCard from "@/components/CreateInterviewVoiceAgentCard";
-
-type AgentUIState = "disconnected" | "connecting" | "connected" | "disconnecting";
-
-interface Question {
-  id: string;
-  text: string;
-  isEditing: boolean;
-}
+import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import ArchitectPhaseIndicator, {
+  ArchitectPhase,
+} from "@/components/interview-architect/ArchitectPhaseIndicator";
+import ArchitectAgentCard, {
+  AgentState,
+} from "@/components/interview-architect/ArchitectAgentCard";
+import InterviewContextBadges, {
+  InterviewContext,
+} from "@/components/interview-architect/InterviewContextBadges";
+import TemplatesPanel from "@/components/interview-architect/TemplatesPanel";
+import StructuredQuestionCard, {
+  StructuredQuestion,
+} from "@/components/interview-architect/StructuredQuestionCard";
+import ArchitectFinalizeModal from "@/components/interview-architect/ArchitectFinalizeModal";
 
 /**
- * UI-only test version of CreateInterview.
- * No backend calls, no voice logic — purely static placeholders.
+ * UI-only test version of the Interview Architect page.
+ * Mirrors InterviewArchitectTest layout and design — no backend, no voice logic.
  */
 const CreateInterviewTest = () => {
-  const [interviewName, setInterviewName] = useState("");
-  const [agentState, setAgentState] = useState<AgentUIState>("disconnected");
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [isSaved, setIsSaved] = useState(false);
-  const [savedData, setSavedData] = useState<{
-    title: string;
-    questionsCount: number;
-    publicUrl: string;
-  } | null>(null);
+  const [phase, setPhase] = useState<ArchitectPhase>("context");
+  const [agentState, setAgentState] = useState<AgentState>("disconnected");
+  const [mockInputLevel, setMockInputLevel] = useState(0);
+  const [questions, setQuestions] = useState<StructuredQuestion[]>([]);
+  const [interviewContext, setInterviewContext] = useState<InterviewContext>({});
+  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
 
-  // Simulated toggle — cycles through states visually only
+  // Simulated agent toggle — cycles through states visually only
   const handleAgentToggle = () => {
+    if (agentState === "connecting" || agentState === "disconnecting") return;
+
     if (agentState === "disconnected") {
       setAgentState("connecting");
-      setTimeout(() => setAgentState("connected"), 400);
+      setTimeout(() => {
+        setAgentState("connected");
+        // Simulate mock audio level
+        const interval = setInterval(() => {
+          setMockInputLevel(Math.random() * 0.7 + 0.1);
+        }, 100);
+        // Stop after 3 seconds
+        setTimeout(() => {
+          clearInterval(interval);
+          setMockInputLevel(0);
+          setAgentState("disconnecting");
+          setTimeout(() => setAgentState("disconnected"), 300);
+        }, 3000);
+      }, 400);
     } else if (agentState === "connected") {
       setAgentState("disconnecting");
+      setMockInputLevel(0);
       setTimeout(() => setAgentState("disconnected"), 300);
     }
+  };
+
+  const handleEditQuestion = (id: string, newText: string) => {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, text: newText } : q))
+    );
   };
 
   const handleDeleteQuestion = (id: string) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
-  const handleEditQuestion = (id: string) => {
-    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, isEditing: true } : q)));
+  const handleReorder = (newOrder: StructuredQuestion[]) => {
+    setQuestions(newOrder);
   };
 
-  const handleSaveQuestion = (id: string, newText: string) => {
-    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, text: newText, isEditing: false } : q)));
+  const handleFinalize = () => {
+    setPhase("finalize");
+    setShowFinalizeModal(true);
   };
 
-  const handleSaveAndGenerateLink = () => {
-    const trimmedName = interviewName.trim();
-    if (!trimmedName || questions.length === 0) return;
-
-    setSavedData({
-      title: trimmedName,
-      questionsCount: questions.length,
-      publicUrl: `${window.location.origin}/i/test-placeholder`,
-    });
-    setIsSaved(true);
-  };
-
-  const handleCreateAnother = () => {
-    setInterviewName("");
+  const handleReset = () => {
+    setPhase("context");
+    setAgentState("disconnected");
     setQuestions([]);
-    setIsSaved(false);
-    setSavedData(null);
+    setInterviewContext({});
+    setMockInputLevel(0);
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: { duration: 0.3 },
-    },
+  const getHelperText = () => {
+    if (agentState === "connected") return "Listening... Tap to stop and process.";
+    if (agentState === "connecting") return "Connecting to assistant...";
+    if (agentState === "disconnecting") return "Processing your input...";
+    if (questions.length > 0) return "Review the questions, or speak to add more";
+    return "Tap to start speaking. Questions will appear as we talk.";
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const } },
-  };
-
-  const questionVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-    exit: { opacity: 0, x: 20, transition: { duration: 0.2 } },
-  };
+  // Mock templates — empty array since no backend
+  const mockTemplates: never[] = [];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 section-container py-8 md:py-12 pt-24 md:pt-28">
-        <div className="mx-auto w-full lg:w-[650px]">
-          <AnimatePresence mode="wait">
-            {!isSaved ? (
-              <motion.div
-                key="editor"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="space-y-8"
-              >
-                {/* Interview Name Section */}
-                <motion.div variants={itemVariants} id="interview-name">
-                  <Card className="glass-card border-border/50">
-                    <CardHeader>
-                      <CardTitle className="text-xl">Interview Name</CardTitle>
-                      <CardDescription>Give your interview a descriptive name</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Input
-                        placeholder="e.g., Product Manager Interview — Q1 2026"
-                        value={interviewName}
-                        onChange={(e) => setInterviewName(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </CardContent>
-                  </Card>
-                </motion.div>
+      <main className="flex-1 pt-24 pb-16">
+        <div className="section-container">
+          {/* Page Header */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                Interview Architect
+              </span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Voice-First Question Builder
+            </h1>
+            <p className="text-muted-foreground max-w-xl mx-auto text-sm">
+              Speak naturally to design structured, expert-level interview
+              questions
+            </p>
+          </div>
 
-                {/* Voice Agent Section (UI-only, no real connection) */}
-                <motion.div variants={itemVariants} id="interview-assistant" className="py-4">
-                  <CreateInterviewVoiceAgentCard
-                    agentName="Interview Assistant"
-                    agentDescription="Tap to start voice dictation. Your questions will appear below."
-                    state={agentState}
-                    errorMessage={null}
-                    inputLevel={0}
-                    outputLevel={0}
-                    onToggle={handleAgentToggle}
-                  />
-                </motion.div>
+          {/* Phase Indicator */}
+          <ArchitectPhaseIndicator currentPhase={phase} className="mb-6" />
 
-                {/* Questions List Section */}
-                <AnimatePresence>
-                  {questions.length > 0 && (
-                    <motion.div
-                      id="interview-questions"
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                    >
-                      <Card className="glass-card border-border/50">
-                        <CardHeader>
-                          <CardTitle className="text-xl">Interview Questions</CardTitle>
-                          <CardDescription>
-                            {questions.length} question{questions.length !== 1 ? "s" : ""} added
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-3">
-                            <AnimatePresence>
-                              {questions.map((question, index) => (
-                                <motion.li
-                                  key={question.id}
-                                  variants={questionVariants}
-                                  initial="hidden"
-                                  animate="visible"
-                                  exit="exit"
-                                  layout
-                                  className="flex items-start gap-3 p-4 rounded-xl bg-background/50 border border-border/30 transition-all duration-200 hover:shadow-card"
-                                >
-                                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-medium flex items-center justify-center">
-                                    {index + 1}
-                                  </span>
-                                  {question.isEditing ? (
-                                    <Input
-                                      defaultValue={question.text}
-                                      className="flex-1 bg-background"
-                                      autoFocus
-                                      onBlur={(e) => handleSaveQuestion(question.id, e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                          handleSaveQuestion(question.id, e.currentTarget.value);
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    <p className="flex-1 text-foreground/90">{question.text}</p>
-                                  )}
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-muted-foreground hover:text-primary transition-transform duration-150 active:scale-95"
-                                      onClick={() => handleEditQuestion(question.id)}
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-muted-foreground hover:text-destructive transition-transform duration-150 active:scale-95"
-                                      onClick={() => handleDeleteQuestion(question.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </motion.li>
-                              ))}
-                            </AnimatePresence>
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+          {/* Interview Context Badges */}
+          <InterviewContextBadges
+            context={interviewContext}
+            className="justify-center mb-8"
+          />
 
-                {/* Save & Generate Link Section */}
-                <motion.div variants={itemVariants} id="save-share">
-                  <Card className="glass-card border-border/50">
-                    <CardHeader>
-                      <CardTitle className="text-xl">Save & Share</CardTitle>
-                      <CardDescription>
-                        Save your interview and generate a shareable link for participants
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <PrimaryButton
-                        onClick={handleSaveAndGenerateLink}
-                        disabled={!interviewName.trim() || questions.length === 0}
-                        className="w-full"
-                        size="lg"
-                      >
-                        Save interview & Generate link
-                      </PrimaryButton>
-                      {(!interviewName.trim() || questions.length === 0) && (
-                        <p className="text-sm text-muted-foreground text-center">
-                          {!interviewName.trim() && questions.length === 0
-                            ? "Enter an interview name and add at least one question to save."
-                            : !interviewName.trim()
-                            ? "Enter an interview name to save your interview."
-                            : "Add at least one question to save your interview."}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="saved"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="space-y-6"
-              >
-                {savedData && (
-                  <SavedInterviewBlock
-                    title={savedData.title}
-                    questionsCount={savedData.questionsCount}
-                    publicUrl={savedData.publicUrl}
-                    onCreateAnother={handleCreateAnother}
-                  />
-                )}
+          {/* Main Content - Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+            {/* Left Column: Agent Card */}
+            <div className="lg:col-span-4 space-y-4">
+              <ArchitectAgentCard
+                agentName="Interview Architect"
+                agentDescription="I'll help you design structured, expert-level interview questions."
+                state={agentState}
+                helperText={getHelperText()}
+                inputLevel={mockInputLevel}
+                onToggle={handleAgentToggle}
+              />
 
+              {/* Reset button */}
+              {questions.length > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   className="flex justify-center"
                 >
-                  <SecondaryButton size="lg" onClick={handleCreateAnother}>
-                    Create Another Interview
-                  </SecondaryButton>
+                  <Button variant="ghost" size="sm" onClick={handleReset}>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Start Over
+                  </Button>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </div>
+
+            {/* Right Column: Question Cards - fixed height matching left column */}
+            <div className="lg:col-span-8">
+              <div className="glass-card rounded-2xl flex flex-col h-[420px] lg:h-[480px] overflow-hidden">
+                {/* Sticky header */}
+                <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
+                  <h3 className="text-sm font-medium text-foreground">
+                    Question Sequence
+                  </h3>
+                  {questions.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {questions.length} question
+                      {questions.length !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+
+                {/* Scrollable content area */}
+                <div className="flex-1 min-h-0 relative">
+                  <div className="h-full overflow-y-auto custom-scrollbar px-5">
+                    <AnimatePresence mode="wait">
+                      {questions.length === 0 ? (
+                        <motion.div
+                          key="empty"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex flex-col items-center justify-center py-16 text-center"
+                        >
+                          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                            <Sparkles className="w-8 h-8 text-muted-foreground/50" />
+                          </div>
+                          <p className="text-muted-foreground text-sm mb-2">
+                            Questions will appear here as you speak
+                          </p>
+                          <p className="text-muted-foreground/60 text-xs max-w-xs">
+                            Start speaking to create your interview
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="questions"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="pb-2"
+                        >
+                          <Reorder.Group
+                            axis="y"
+                            values={questions}
+                            onReorder={handleReorder}
+                            className="space-y-3"
+                          >
+                            {questions.map((question, index) => (
+                              <Reorder.Item
+                                key={question.id}
+                                value={question}
+                                className="cursor-grab active:cursor-grabbing"
+                              >
+                                <StructuredQuestionCard
+                                  question={question}
+                                  index={index}
+                                  onEdit={handleEditQuestion}
+                                  onDelete={handleDeleteQuestion}
+                                />
+                              </Reorder.Item>
+                            ))}
+                          </Reorder.Group>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {/* Bottom fade overlay - scroll affordance */}
+                  {questions.length > 3 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/90 to-transparent pointer-events-none rounded-b-2xl" />
+                  )}
+                </div>
+
+                {/* Sticky footer CTA */}
+                {questions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex-shrink-0 p-4 pt-3 border-t border-border/50 flex justify-center"
+                  >
+                    <PrimaryButton
+                      onClick={handleFinalize}
+                      className="px-8"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Finalize Questions
+                    </PrimaryButton>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Templates Section - Full Width Below */}
+          <div className="max-w-6xl mx-auto mt-8">
+            <TemplatesPanel
+              templates={mockTemplates}
+              isLoading={false}
+              error={null}
+              onSelectTemplate={() => {}}
+              selectedTemplateId={undefined}
+            />
+          </div>
         </div>
       </main>
 
       <Footer />
+
+      {/* Finalize Modal */}
+      <ArchitectFinalizeModal
+        isOpen={showFinalizeModal}
+        onClose={() => setShowFinalizeModal(false)}
+        questions={questions}
+        interviewType={interviewContext.type}
+      />
     </div>
   );
 };

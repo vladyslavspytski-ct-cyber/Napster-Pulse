@@ -3,6 +3,7 @@ import { Mic, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import AuthModal from "@/components/AuthModal";
+import UserMenu from "@/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
@@ -116,9 +117,7 @@ const Header = () => {
             {/* Desktop Auth Buttons - fixed width for balance */}
             <div className="hidden md:flex items-center justify-end gap-3 md:min-w-[140px]">
               {isLoggedIn ? (
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Log out
-                </Button>
+                <UserMenu onLogout={handleLogout} />
               ) : (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/saved-interviews")}>
@@ -181,9 +180,7 @@ const Header = () => {
                 </a>
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (
-                    <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
-                      Log out
-                    </Button>
+                    <UserMenu onLogout={handleLogout} compact />
                   ) : (
                     <>
                       <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/saved-interviews")}>

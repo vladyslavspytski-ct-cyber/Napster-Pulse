@@ -15,7 +15,7 @@ const Terms = () => (
   <div className="min-h-screen bg-background flex flex-col">
     <Header />
     <main className="flex-1 py-16 md:py-24">
-      <div className="section-container max-w-3xl">
+      <div className="section-container">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Terms of Use</h1>
         <p className="text-sm text-muted-foreground mb-10">Last updated: February 2026</p>
         <div className="space-y-8">

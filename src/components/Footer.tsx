@@ -40,11 +40,11 @@ const Footer = () => {
                   Features
                 </a>
               </li>
-              {/* <li>
+              <li>
                 <a href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Pricing
                 </a>
-              </li> */}
+              </li>
             </ul>
           </div>
 

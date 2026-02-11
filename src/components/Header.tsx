@@ -112,6 +112,21 @@ const Header = () => {
               >
                 Dashboard
               </a>
+              <a
+                href="/pricing"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Pricing
+              </a>
+              {/* My Plan - only visible when logged in */}
+              {isLoggedIn && (
+                <a
+                  href="/my-plan"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  My Plan
+                </a>
+              )}
             </nav>
 
             {/* Desktop Auth Buttons - fixed width for balance */}
@@ -178,6 +193,20 @@ const Header = () => {
                 >
                   Dashboard
                 </a>
+                <a
+                  href="/pricing"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Pricing
+                </a>
+                {isLoggedIn && (
+                  <a
+                    href="/my-plan"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    My Plan
+                  </a>
+                )}
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (
                     <UserMenu onLogout={handleLogout} compact />

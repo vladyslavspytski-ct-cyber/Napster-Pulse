@@ -19,12 +19,15 @@ import StructuredQuestionCard, {
   StructuredQuestion,
 } from "@/components/interview-architect/StructuredQuestionCard";
 import ArchitectFinalizeModal from "@/components/interview-architect/ArchitectFinalizeModal";
+import { useTemplates, Template } from "@/hooks/api/useTemplates";
 
 /**
  * UI-only test version of the Interview Architect page.
  * Mirrors InterviewArchitectTest layout and design — no backend, no voice logic.
  */
 const CreateInterviewTest = () => {
+  const { templates, isLoading: templatesLoading, error: templatesError } = useTemplates();
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [phase, setPhase] = useState<ArchitectPhase>("context");
   const [agentState, setAgentState] = useState<AgentState>("disconnected");
   const [mockInputLevel, setMockInputLevel] = useState(0);
@@ -73,6 +76,23 @@ const CreateInterviewTest = () => {
     setQuestions(newOrder);
   };
 
+  const handleSelectTemplate = (template: Template) => {
+    setSelectedTemplate(template);
+    const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
+    const structuredQuestions: StructuredQuestion[] = sortedQuestions.map((q) => ({
+      id: q.id,
+      text: q.text,
+      phase: "core" as const,
+    }));
+    setQuestions(structuredQuestions);
+    setPhase("structure");
+    setAgentState("disconnected");
+    setInterviewContext({
+      type: template.title,
+      goal: template.scenario || undefined,
+    });
+  };
+
   const handleFinalize = () => {
     setPhase("finalize");
     setShowFinalizeModal(true);
@@ -84,6 +104,7 @@ const CreateInterviewTest = () => {
     setQuestions([]);
     setInterviewContext({});
     setMockInputLevel(0);
+    setSelectedTemplate(null);
   };
 
   const getHelperText = () => {
@@ -94,8 +115,6 @@ const CreateInterviewTest = () => {
     return "Tap to start speaking. Questions will appear as we talk.";
   };
 
-  // Mock templates — empty array since no backend
-  const mockTemplates: never[] = [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -143,7 +162,7 @@ const CreateInterviewTest = () => {
               />
 
               {/* Reset button */}
-              {questions.length > 0 && (
+              {(questions.length > 0 || selectedTemplate) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -257,11 +276,11 @@ const CreateInterviewTest = () => {
           {/* Templates Section - Full Width Below */}
           <div className="max-w-6xl mx-auto mt-8">
             <TemplatesPanel
-              templates={mockTemplates}
-              isLoading={false}
-              error={null}
-              onSelectTemplate={() => {}}
-              selectedTemplateId={undefined}
+              templates={templates}
+              isLoading={templatesLoading}
+              error={templatesError}
+              onSelectTemplate={handleSelectTemplate}
+              selectedTemplateId={selectedTemplate?.id}
             />
           </div>
         </div>
@@ -275,6 +294,7 @@ const CreateInterviewTest = () => {
         onClose={() => setShowFinalizeModal(false)}
         questions={questions}
         interviewType={interviewContext.type}
+        defaultTitle={selectedTemplate?.title}
       />
     </div>
   );

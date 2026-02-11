@@ -50,7 +50,7 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-4">Legal</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-4">Legal & Dev</h4>
             <ul className="space-y-3">
               <li>
                 <a href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -65,6 +65,11 @@ const Footer = () => {
               <li>
                 <a href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Contact
+                </a>
+              </li>
+              <li>
+                <a href="/create-interview-test" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+                  Create Interview Test
                 </a>
               </li>
             </ul>

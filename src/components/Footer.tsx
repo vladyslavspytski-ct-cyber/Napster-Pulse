@@ -58,6 +58,14 @@ const Footer = () => {
                 </a>
               </li>
             </ul>
+            {/* Variant links */}
+            <p className="text-[10px] text-muted-foreground/50 mt-3 uppercase tracking-wide">Variants</p>
+            <ul className="space-y-1 mt-1">
+              <li><a href="/pricing-v2" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Pricing V2</a></li>
+              <li><a href="/pricing-v3" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Pricing V3</a></li>
+              <li><a href="/my-plan-v2" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">My Plan V2</a></li>
+              <li><a href="/my-plan-v3" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">My Plan V3</a></li>
+            </ul>
           </div>
 
           {/* Legal */}

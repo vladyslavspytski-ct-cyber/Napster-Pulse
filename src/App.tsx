@@ -17,6 +17,10 @@ import Privacy from "./pages/Privacy";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
 import MyPlan from "./pages/MyPlan";
+import PricingV2 from "./pages/PricingV2";
+import PricingV3 from "./pages/PricingV3";
+import MyPlanV2 from "./pages/MyPlanV2";
+import MyPlanV3 from "./pages/MyPlanV3";
 import CreateInterviewTest from "./pages/CreateInterviewTest";
 
 const queryClient = new QueryClient();
@@ -63,7 +67,11 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/pricing-v2" element={<PricingV2 />} />
+            <Route path="/pricing-v3" element={<PricingV3 />} />
             <Route path="/my-plan" element={<MyPlan />} />
+            <Route path="/my-plan-v2" element={<MyPlanV2 />} />
+            <Route path="/my-plan-v3" element={<MyPlanV3 />} />
             <Route path="/create-interview-test" element={<CreateInterviewTest />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

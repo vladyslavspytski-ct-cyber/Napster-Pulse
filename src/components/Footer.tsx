@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer className="bg-card border-t border-border">
       <div className="section-container py-10 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Logo and Description */}
           <div className="md:col-span-2">
             <a href="/" className="flex items-center gap-2 mb-4">
@@ -40,9 +40,21 @@ const Footer = () => {
                   Features
                 </a>
               </li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="text-sm font-semibold text-foreground mb-4">Account</h4>
+            <ul className="space-y-3">
               <li>
                 <a href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Pricing
+                </a>
+              </li>
+              <li>
+                <a href="/my-plan" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  My Plan
                 </a>
               </li>
             </ul>

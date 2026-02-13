@@ -99,9 +99,9 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl sm:border-border/50">
         {/* Header with Logo */}
-        <DialogHeader className="p-6 pb-4 text-center">
+        <DialogHeader className="p-6 pb-4 text-center flex-shrink-0">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary">
               <Mic className="w-5 h-5 text-primary-foreground" />
@@ -116,7 +116,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
         </DialogHeader>
 
         {/* Tab Switcher */}
-        <div className="px-6">
+        <div className="px-6 flex-shrink-0">
           <div className="flex bg-muted rounded-xl p-1">
             <button
               onClick={() => setActiveTab("login")}
@@ -142,9 +142,9 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
         </div>
 
         {/* Forms */}
-        <div className="p-6 pt-4">
+        <div className="p-6 pt-4 flex-1 overflow-y-auto">
           {activeTab === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4 flex flex-col h-full">
               {loginError && (
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
                   {loginError}
@@ -184,16 +184,17 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
                 />
               </div>
+              <div className="flex-1" />
               <PrimaryButton
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 font-medium"
+                className="w-full h-11 font-medium mt-auto"
               >
                 {isLoading ? "Logging in..." : "Log in"}
               </PrimaryButton>
             </form>
           ) : (
-            <form onSubmit={handleSignup} className="space-y-4">
+            <form onSubmit={handleSignup} className="space-y-4 flex flex-col h-full">
               {signupError && (
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
                   {signupError}
@@ -253,18 +254,21 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   Must be at least {MIN_PASSWORD_LENGTH} characters
                 </p>
               </div>
+              <div className="flex-1" />
               <PrimaryButton
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 font-medium"
+                className="w-full h-11 font-medium mt-auto"
               >
                 {isLoading ? "Creating account..." : "Create account"}
               </PrimaryButton>
             </form>
           )}
+        </div>
 
-          {/* Footer text */}
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+        {/* Footer text - sticky at bottom on mobile */}
+        <div className="flex-shrink-0 p-4 pt-0 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
+          <p className="text-center text-xs text-muted-foreground">
             By continuing, you agree to our{" "}
             <a href="/terms" className="underline hover:text-foreground transition-colors">
               Terms of Use

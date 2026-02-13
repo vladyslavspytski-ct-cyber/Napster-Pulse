@@ -32,7 +32,7 @@ const FinalizeSuccessStep = ({ savedData, onClose }: FinalizeSuccessStepProps) =
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.25 }}
-      className="flex flex-col"
+      className="flex flex-col h-full"
     >
       {/* Success icon + heading */}
       <div className="p-8 text-center">
@@ -71,8 +71,8 @@ const FinalizeSuccessStep = ({ savedData, onClose }: FinalizeSuccessStepProps) =
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-6 border-t border-border">
+      {/* Footer - sticky at bottom on mobile */}
+      <div className="p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6 border-t border-border mt-auto bg-card/95">
         <PrimaryButton className="w-full" onClick={onClose}>
           Done
         </PrimaryButton>

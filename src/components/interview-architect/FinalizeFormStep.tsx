@@ -41,7 +41,7 @@ const FinalizeFormStep = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="flex flex-col max-h-[90vh]"
+      className="flex flex-col h-full sm:max-h-[90vh]"
     >
       {/* Header */}
       <div className="flex items-center gap-3 p-5 border-b border-border flex-shrink-0">
@@ -106,8 +106,8 @@ const FinalizeFormStep = ({
         </div>
       </div>
 
-      {/* Footer CTA – always visible */}
-      <div className="p-5 border-t border-border flex-shrink-0 flex flex-col sm:flex-row gap-3">
+      {/* Footer CTA – always visible, sticky on mobile */}
+      <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5 border-t border-border flex-shrink-0 flex flex-col sm:flex-row gap-3 mt-auto bg-card/95">
         <PrimaryButton
           className="flex-1"
           onClick={onCreateInterview}

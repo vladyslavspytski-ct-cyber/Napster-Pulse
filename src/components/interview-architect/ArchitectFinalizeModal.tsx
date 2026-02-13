@@ -110,7 +110,7 @@ const ArchitectFinalizeModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
-        className="max-w-2xl w-[calc(100%-2rem)] p-0 gap-0 rounded-2xl border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="p-0 gap-0 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden sm:max-w-2xl sm:w-[calc(100%-2rem)] sm:rounded-2xl sm:border-border/50"
         onPointerDownOutside={(e) => isCreating && e.preventDefault()}
         onEscapeKeyDown={(e) => isCreating && e.preventDefault()}
       >

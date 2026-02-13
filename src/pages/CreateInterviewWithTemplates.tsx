@@ -8,19 +8,7 @@ import {
   LayoutTemplate,
   Search,
   Check,
-  Loader2,
-  Briefcase,
-  Users,
-  Heart,
-  GraduationCap,
-  Lightbulb,
-  MessageCircle,
   Mic,
-  Target,
-  Compass,
-  BookOpen,
-  Shield,
-  Zap,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -28,8 +16,15 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { MOCK_TEMPLATES, type MockTemplate } from "@/mock/templates";
+import {
+  TEMPLATE_CATEGORIES,
+  getAllTemplates,
+  getTemplateCount,
+  type DirectoryTemplate,
+  type Category,
+} from "@/mock/templatesDirectory";
 
 /* ── Question card type (minimal) ── */
 interface QuestionCard {
@@ -37,51 +32,70 @@ interface QuestionCard {
   text: string;
 }
 
-/* ── Icon palette for template cards ── */
-const ICON_MAP = [
-  { icon: Briefcase, accent: "from-blue-400/20 to-blue-500/10", text: "text-blue-500" },
-  { icon: Users, accent: "from-violet-400/20 to-violet-500/10", text: "text-violet-500" },
-  { icon: Heart, accent: "from-rose-400/20 to-rose-500/10", text: "text-rose-500" },
-  { icon: GraduationCap, accent: "from-emerald-400/20 to-emerald-500/10", text: "text-emerald-500" },
-  { icon: Lightbulb, accent: "from-amber-400/20 to-amber-500/10", text: "text-amber-500" },
-  { icon: MessageCircle, accent: "from-cyan-400/20 to-cyan-500/10", text: "text-cyan-500" },
-  { icon: Mic, accent: "from-pink-400/20 to-pink-500/10", text: "text-pink-500" },
-  { icon: Target, accent: "from-orange-400/20 to-orange-500/10", text: "text-orange-500" },
-  { icon: Compass, accent: "from-teal-400/20 to-teal-500/10", text: "text-teal-500" },
-  { icon: BookOpen, accent: "from-indigo-400/20 to-indigo-500/10", text: "text-indigo-500" },
-  { icon: Shield, accent: "from-slate-400/20 to-slate-500/10", text: "text-slate-500" },
-  { icon: Zap, accent: "from-yellow-400/20 to-yellow-500/10", text: "text-yellow-500" },
-];
-
 const BATCH_SIZE = 12;
 
 const CreateInterviewWithTemplates = () => {
   const [questions, setQuestions] = useState<QuestionCard[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<MockTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<DirectoryTemplate | null>(null);
 
   // Templates panel state
   const [isTemplatesExpanded, setIsTemplatesExpanded] = useState(false);
   const [templateSearch, setTemplateSearch] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
+  const allTemplates = useMemo(() => getAllTemplates(), []);
+  const totalCount = allTemplates.length;
+
+  const selectedCategory = useMemo(
+    () => TEMPLATE_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? null,
+    [selectedCategoryId],
+  );
+
+  const subcategories = selectedCategory?.subcategories ?? [];
+
   const filtered = useMemo(() => {
-    if (!templateSearch.trim()) return MOCK_TEMPLATES;
-    const q = templateSearch.toLowerCase();
-    return MOCK_TEMPLATES.filter(
-      (t) => t.title.toLowerCase().includes(q) || t.scenario.toLowerCase().includes(q),
-    );
-  }, [templateSearch]);
+    // Search mode — global across all templates
+    if (templateSearch.trim()) {
+      const q = templateSearch.toLowerCase();
+      return allTemplates.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.scenario.toLowerCase().includes(q) ||
+          t.tags?.some((tag) => tag.toLowerCase().includes(q)),
+      );
+    }
+    // Category + optional subcategory filter
+    if (selectedCategory) {
+      const subs = selectedSubcategoryId
+        ? selectedCategory.subcategories.filter((s) => s.id === selectedSubcategoryId)
+        : selectedCategory.subcategories;
+      return subs.flatMap((s) => s.templates);
+    }
+    // No filter — show all
+    return allTemplates;
+  }, [templateSearch, selectedCategory, selectedSubcategoryId, allTemplates]);
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
 
-  // Reset visible on search change
-  useMemo(() => setVisibleCount(BATCH_SIZE), [templateSearch]);
+  // Reset visible count on filter change
+  useMemo(() => setVisibleCount(BATCH_SIZE), [templateSearch, selectedCategoryId, selectedSubcategoryId]);
 
-  const handleSelectTemplate = (template: MockTemplate) => {
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategoryId((prev) => (prev === catId ? null : catId));
+    setSelectedSubcategoryId(null);
+  };
+
+  const handleSelectTemplate = (template: DirectoryTemplate) => {
     setSelectedTemplate(template);
-    const sorted = [...template.questions].sort((a, b) => a.order - b.order);
-    setQuestions(sorted.map((q) => ({ id: q.id, text: q.text })));
+    setQuestions(
+      template.questions.map((text, i) => ({
+        id: `${template.id}-q${i}`,
+        text,
+      })),
+    );
   };
 
   const handleReset = () => {
@@ -238,7 +252,7 @@ const CreateInterviewWithTemplates = () => {
             </div>
           </div>
 
-          {/* ── Templates Section — full width, collapsible ── */}
+          {/* ── Templates Section — full width, collapsible, directory structure ── */}
           <div className="max-w-6xl mx-auto mt-8">
             <button
               onClick={() => setIsTemplatesExpanded((v) => !v)}
@@ -250,7 +264,9 @@ const CreateInterviewWithTemplates = () => {
                 </div>
                 <div className="text-left">
                   <h3 className="text-sm font-semibold text-foreground">Templates</h3>
-                  <p className="text-[11px] text-muted-foreground">{MOCK_TEMPLATES.length} available</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {TEMPLATE_CATEGORIES.length} categories · {totalCount} templates
+                  </p>
                 </div>
               </div>
               <motion.div animate={{ rotate: isTemplatesExpanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
@@ -274,15 +290,80 @@ const CreateInterviewWithTemplates = () => {
                       <Input
                         value={templateSearch}
                         onChange={(e) => setTemplateSearch(e.target.value)}
-                        placeholder="Search templates..."
+                        placeholder="Search all templates..."
                         className="pl-9 h-9 text-sm bg-muted/50 border-border/50 rounded-xl"
                       />
                     </div>
 
+                    {/* Category chips — horizontally scrollable */}
+                    {!templateSearch.trim() && (
+                      <ScrollArea className="w-full">
+                        <div className="flex gap-2 pb-1">
+                          {TEMPLATE_CATEGORIES.map((cat) => (
+                            <button
+                              key={cat.id}
+                              onClick={() => handleSelectCategory(cat.id)}
+                              className={cn(
+                                "flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border",
+                                selectedCategoryId === cat.id
+                                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                  : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground",
+                              )}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    )}
+
+                    {/* Subcategory chips */}
+                    {!templateSearch.trim() && selectedCategory && subcategories.length > 1 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-wrap gap-2"
+                      >
+                        <button
+                          onClick={() => setSelectedSubcategoryId(null)}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-[11px] font-medium transition-all border",
+                            !selectedSubcategoryId
+                              ? "bg-foreground/10 text-foreground border-foreground/20"
+                              : "bg-transparent text-muted-foreground border-border/50 hover:text-foreground",
+                          )}
+                        >
+                          All
+                        </button>
+                        {subcategories.map((sub) => (
+                          <button
+                            key={sub.id}
+                            onClick={() => setSelectedSubcategoryId((prev) => (prev === sub.id ? null : sub.id))}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-[11px] font-medium transition-all border",
+                              selectedSubcategoryId === sub.id
+                                ? "bg-foreground/10 text-foreground border-foreground/20"
+                                : "bg-transparent text-muted-foreground border-border/50 hover:text-foreground",
+                            )}
+                          >
+                            {sub.name}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+
+                    {/* Results count */}
+                    {templateSearch.trim() && (
+                      <p className="text-xs text-muted-foreground">
+                        {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "{templateSearch}"
+                      </p>
+                    )}
+
                     {/* Empty */}
                     {filtered.length === 0 && (
                       <div className="text-center py-12 text-sm text-muted-foreground">
-                        {templateSearch ? "No matching templates" : "No templates available"}
+                        {templateSearch ? "No matching templates" : "No templates in this category"}
                       </div>
                     )}
 
@@ -292,8 +373,6 @@ const CreateInterviewWithTemplates = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {visible.map((template, i) => {
                             const isSelected = selectedTemplate?.id === template.id;
-                            const visual = ICON_MAP[template.seq % ICON_MAP.length];
-                            const IconComp = visual.icon;
 
                             return (
                               <motion.button
@@ -304,27 +383,37 @@ const CreateInterviewWithTemplates = () => {
                                 onClick={() => handleSelectTemplate(template)}
                                 className={cn(
                                   "w-full text-left rounded-xl p-4 transition-all duration-200 glass-card",
-                                  isSelected ? "ring-2 ring-primary/30 shadow-md" : "hover:shadow-sm hover:border-border",
+                                  isSelected
+                                    ? "ring-2 ring-primary/30 shadow-md"
+                                    : "hover:shadow-sm hover:border-border",
                                 )}
                               >
-                                <div className="flex items-start gap-3">
-                                  <div className={cn("w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0", visual.accent)}>
-                                    <IconComp className={cn("w-4 h-4", visual.text)} />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className={cn("text-sm font-medium truncate", isSelected ? "text-primary" : "text-foreground")}>
-                                        {template.title}
-                                      </p>
-                                      {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                                      {template.scenario}
-                                    </p>
-                                    <p className="text-[11px] text-muted-foreground/60 mt-1.5">
-                                      {template.questions.length} question{template.questions.length !== 1 ? "s" : ""}
-                                    </p>
-                                  </div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p
+                                    className={cn(
+                                      "text-sm font-medium truncate",
+                                      isSelected ? "text-primary" : "text-foreground",
+                                    )}
+                                  >
+                                    {template.title}
+                                  </p>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                  {template.scenario}
+                                </p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="text-[11px] text-muted-foreground/60">
+                                    {template.questionCount} questions
+                                  </span>
+                                  {template.tags?.slice(0, 2).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
                                 </div>
                               </motion.button>
                             );
@@ -332,7 +421,7 @@ const CreateInterviewWithTemplates = () => {
                         </div>
 
                         {hasMore && (
-                          <div className="flex justify-center pt-2">
+                          <div className="flex justify-center pt-2 pb-1">
                             <Button
                               variant="ghost"
                               size="sm"

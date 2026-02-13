@@ -23,6 +23,8 @@ import MyPlanV2 from "./pages/MyPlanV2";
 import MyPlanV3 from "./pages/MyPlanV3";
 import CreateInterviewTest from "./pages/CreateInterviewTest";
 import TemplateDirectory from "./pages/TemplateDirectory";
+import CreateInterviewWithTemplates from "./pages/CreateInterviewWithTemplates";
+import CreateInterviewFromTemplate from "./pages/CreateInterviewFromTemplate";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +77,8 @@ const App = () => (
             <Route path="/my-plan-v3" element={<MyPlanV3 />} />
             <Route path="/create-interview-test" element={<CreateInterviewTest />} />
             <Route path="/templates" element={<TemplateDirectory />} />
+            <Route path="/create-interview-with-templates" element={<CreateInterviewWithTemplates />} />
+            <Route path="/create-interview-from-template" element={<CreateInterviewFromTemplate />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

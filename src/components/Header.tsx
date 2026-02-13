@@ -104,6 +104,13 @@ const Header = () => {
                   Saved Interviews
                 </a>
               )}
+              {/* Templates */}
+              <a
+                href="/templates"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Templates
+              </a>
               {/* Dashboard - gated with login modal */}
               <a
                 href="/dashboard"
@@ -170,6 +177,13 @@ const Header = () => {
                     Saved Interviews
                   </a>
                 )}
+                {/* Templates */}
+                <a
+                  href="/templates"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Templates
+                </a>
                 {/* Dashboard - gated with login modal */}
                 <a
                   href="/dashboard"

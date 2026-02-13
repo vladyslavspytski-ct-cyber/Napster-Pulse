@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -72,6 +73,7 @@ const ACCENT_COLORS: Record<string, string> = {
 const BATCH_SIZE = 12;
 
 const TemplateDirectory = () => {
+  const navigate = useNavigate();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -460,7 +462,15 @@ function TemplateDetailContent({
           <Sparkles className="w-4 h-4" />
           Customize with AI
         </PrimaryButton>
-        <Button variant="outline" className="gap-2 rounded-xl" onClick={onClose}>
+        <Button
+          variant="outline"
+          className="gap-2 rounded-xl"
+          onClick={() => {
+            onClose();
+            // Navigate to Variant 2 create page with this template
+            window.location.href = `/create-interview-from-template?templateId=${template.id}`;
+          }}
+        >
           <Play className="w-3.5 h-3.5" />
           Use Template
         </Button>

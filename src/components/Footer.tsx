@@ -65,6 +65,8 @@ const Footer = () => {
               <li><a href="/pricing-v3" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Pricing V3</a></li>
               <li><a href="/my-plan-v2" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">My Plan V2</a></li>
               <li><a href="/my-plan-v3" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">My Plan V3</a></li>
+              <li><a href="/create-interview-with-templates" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Create V1 (embedded)</a></li>
+              <li><a href="/templates" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Create V2 (directory)</a></li>
             </ul>
           </div>
 

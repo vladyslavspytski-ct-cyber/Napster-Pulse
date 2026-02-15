@@ -456,24 +456,18 @@ function TemplateDetailContent({
         </ScrollArea>
       </div>
 
-      {/* CTAs */}
-      <div className="p-6 pt-2 flex gap-3 border-t border-border/50">
-        <PrimaryButton className="flex-1 gap-2" onClick={onClose}>
-          <Sparkles className="w-4 h-4" />
-          Customize with AI
-        </PrimaryButton>
-        <Button
-          variant="outline"
-          className="gap-2 rounded-xl"
+      {/* CTA */}
+      <div className="p-6 pt-2 border-t border-border/50">
+        <PrimaryButton
+          className="w-full gap-2"
           onClick={() => {
             onClose();
-            // Navigate to Variant 2 create page with this template
             window.location.href = `/create-interview-from-template?templateId=${template.id}`;
           }}
         >
-          <Play className="w-3.5 h-3.5" />
-          Use Template
-        </Button>
+          <Sparkles className="w-4 h-4" />
+          Start with This Template
+        </PrimaryButton>
       </div>
     </motion.div>
   );

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
   TEMPLATE_CATEGORIES,
@@ -41,7 +41,7 @@ const CreateInterviewWithTemplates = () => {
   // Templates panel state
   const [isTemplatesExpanded, setIsTemplatesExpanded] = useState(false);
   const [templateSearch, setTemplateSearch] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>("all");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
@@ -49,7 +49,7 @@ const CreateInterviewWithTemplates = () => {
   const totalCount = allTemplates.length;
 
   const selectedCategory = useMemo(
-    () => TEMPLATE_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? null,
+    () => (selectedCategoryId === "all" ? null : TEMPLATE_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? null),
     [selectedCategoryId],
   );
 
@@ -84,7 +84,7 @@ const CreateInterviewWithTemplates = () => {
   useMemo(() => setVisibleCount(BATCH_SIZE), [templateSearch, selectedCategoryId, selectedSubcategoryId]);
 
   const handleSelectCategory = (catId: string) => {
-    setSelectedCategoryId((prev) => (prev === catId ? null : catId));
+    setSelectedCategoryId(catId);
     setSelectedSubcategoryId(null);
   };
 
@@ -297,14 +297,25 @@ const CreateInterviewWithTemplates = () => {
 
                     {/* Category chips — horizontally scrollable */}
                     {!templateSearch.trim() && (
-                      <ScrollArea className="w-full">
-                        <div className="flex gap-2 pb-1">
+                      <div className="overflow-x-auto -mx-1 px-1 pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+                        <div className="flex gap-2 w-max">
+                          <button
+                            onClick={() => handleSelectCategory("all")}
+                            className={cn(
+                              "flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border whitespace-nowrap",
+                              selectedCategoryId === "all"
+                                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground",
+                            )}
+                          >
+                            All
+                          </button>
                           {TEMPLATE_CATEGORIES.map((cat) => (
                             <button
                               key={cat.id}
                               onClick={() => handleSelectCategory(cat.id)}
                               className={cn(
-                                "flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border",
+                                "flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border whitespace-nowrap",
                                 selectedCategoryId === cat.id
                                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                                   : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground",
@@ -314,8 +325,7 @@ const CreateInterviewWithTemplates = () => {
                             </button>
                           ))}
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                      </ScrollArea>
+                      </div>
                     )}
 
                     {/* Subcategory chips */}

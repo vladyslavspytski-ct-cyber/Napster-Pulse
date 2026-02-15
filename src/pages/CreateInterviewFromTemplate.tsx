@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
@@ -6,9 +6,9 @@ import {
   RotateCcw,
   CheckCircle,
   LayoutTemplate,
-  Mic,
   ArrowLeft,
 } from "lucide-react";
+import CreateInterviewVoiceAgentCard from "@/components/CreateInterviewVoiceAgentCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,17 @@ const CreateInterviewFromTemplate = () => {
   }, [templateId]);
 
   const [questions, setQuestions] = useState<QuestionCard[]>(() => resolved?.questions ?? []);
+  const [agentState, setAgentState] = useState<"disconnected" | "connecting" | "connected" | "disconnecting">("disconnected");
+
+  const handleAgentToggle = useCallback(() => {
+    if (agentState === "disconnected") {
+      setAgentState("connecting");
+      setTimeout(() => setAgentState("connected"), 1500);
+    } else if (agentState === "connected") {
+      setAgentState("disconnecting");
+      setTimeout(() => setAgentState("disconnected"), 500);
+    }
+  }, [agentState]);
 
   const handleReorder = (newOrder: QuestionCard[]) => setQuestions(newOrder);
   const handleDeleteQuestion = (id: string) => setQuestions((prev) => prev.filter((q) => q.id !== id));
@@ -109,39 +120,31 @@ const CreateInterviewFromTemplate = () => {
             </p>
           </div>
 
-          {/* Template badge + change link */}
+          {/* Template badge */}
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-3 mb-6"
+            className="flex items-center justify-center mb-6"
           >
             <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-xs gap-2">
               <LayoutTemplate className="w-3.5 h-3.5" />
               Using: {resolved.title}
             </Badge>
-            <Link
-              to="/templates"
-              className="text-xs text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
-            >
-              Change template
-            </Link>
           </motion.div>
 
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
-            {/* Left Column: Agent placeholder */}
+            {/* Left Column: Agent Card */}
             <div className="lg:col-span-4 space-y-4">
-              <div className="glass-card rounded-2xl p-6 flex flex-col items-center justify-center min-h-[280px]">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <Mic className="w-10 h-10 text-primary/40" />
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Voice agent placeholder
-                </p>
-                <p className="text-xs text-muted-foreground/60 text-center mt-1">
-                  Speak to customize your questions
-                </p>
-              </div>
+              <CreateInterviewVoiceAgentCard
+                agentName="Interview Assistant"
+                agentDescription="I'll help you customize these interview questions. Speak to edit, add, or reorder."
+                state={agentState}
+                inputLevel={0}
+                outputLevel={0}
+                onToggle={handleAgentToggle}
+                errorMessage={null}
+              />
 
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center">
                 <Button variant="ghost" size="sm" onClick={handleReset}>

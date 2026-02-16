@@ -350,8 +350,8 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="sticky bottom-6 z-10">
               <div className="glass-card rounded-2xl p-4 flex items-center justify-between gap-4 shadow-lg">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{interviewType.title}</p>
-                  <p className="text-xs text-muted-foreground">{interviewType.questionCount} questions ready to customize</p>
+                  <p className="text-sm font-semibold text-foreground">Start with This Template</p>
+                  <p className="text-xs text-muted-foreground">Questions pre-filled · Edit, reorder & customize with AI</p>
                 </div>
                 <PrimaryButton
                   className="flex-shrink-0 gap-2"

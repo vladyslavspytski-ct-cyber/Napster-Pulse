@@ -6,25 +6,19 @@ import {
   ChevronRight,
   ArrowLeft,
   Sparkles,
-  ChevronDown,
   X,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { cn } from "@/lib/utils";
 import {
-  TEMPLATE_CATEGORIES_V2,
-  getAllInterviewTypes,
-  findCategoryById,
-  findInterviewTypeById,
-  findCategoryForType,
+  useTemplates,
+  type Template,
   type TemplateCategory,
-  type InterviewType,
-  type InterviewQuestion,
-} from "@/mock/templatesDirectoryV2";
+} from "@/hooks/api/useTemplates";
 
 /* ── Animation variants ──────────────────────────────────── */
 const pageVariants = {
@@ -42,10 +36,18 @@ const staggerItem = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
 
+/**
+ * Get inline style for category accent background
+ */
+function getCategoryAccentStyle(color: string): React.CSSProperties {
+  return {
+    background: `linear-gradient(135deg, ${color}20 0%, ${color}08 100%)`,
+  };
+}
+
 /* ── Main component (uses URL params for steps) ──────────── */
 const TemplateDirectory = () => {
   const { categoryId, typeId } = useParams();
-  const navigate = useNavigate();
 
   // Determine current step
   if (typeId && categoryId) {
@@ -63,19 +65,81 @@ const TemplateDirectory = () => {
 function CategoriesHomeView() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const allTypes = useMemo(() => getAllInterviewTypes(), []);
+  const { templates, categories, isLoading, error } = useTemplates();
 
+  // Search results - search across title, scenario, category, subcategory
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return null;
     const q = searchQuery.toLowerCase();
-    const matchedCategories = TEMPLATE_CATEGORIES_V2.filter(
-      (c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q),
+
+    // Search categories
+    const matchedCategories = categories.filter(
+      (c) => c.title.toLowerCase().includes(q)
     );
-    const matchedTypes = allTypes
-      .filter((t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.tags?.some((tag) => tag.toLowerCase().includes(q)))
-      .map((t) => ({ ...t, category: findCategoryForType(t.id)! }));
-    return { categories: matchedCategories, types: matchedTypes };
-  }, [searchQuery, allTypes]);
+
+    // Search templates (interview types)
+    const matchedTemplates = templates
+      .filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.scenario?.toLowerCase().includes(q) ||
+          t.category?.toLowerCase().includes(q) ||
+          t.subcategory?.toLowerCase().includes(q)
+      )
+      .map((t) => {
+        const category = categories.find((c) =>
+          c.templates.some((ct) => ct.id === t.id)
+        );
+        return { template: t, category };
+      });
+
+    // Also include categories that have matching templates
+    const categoriesWithMatchingTemplates = categories.filter(
+      (c) =>
+        !matchedCategories.includes(c) &&
+        c.templates.some(
+          (t) =>
+            t.title.toLowerCase().includes(q) ||
+            t.scenario?.toLowerCase().includes(q) ||
+            t.subcategory?.toLowerCase().includes(q)
+        )
+    );
+
+    return {
+      categories: [...matchedCategories, ...categoriesWithMatchingTemplates],
+      templates: matchedTemplates,
+    };
+  }, [searchQuery, templates, categories]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-16">
+          <div className="section-container flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground text-sm">Loading templates...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-16">
+          <div className="section-container text-center py-20">
+            <p className="text-destructive text-sm mb-4">Failed to load templates</p>
+            <p className="text-muted-foreground text-xs">{error.message}</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,7 +149,7 @@ function CategoriesHomeView() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">Template Directory</h1>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm">
-              Browse {TEMPLATE_CATEGORIES_V2.length} categories and {allTypes.length} interview templates.
+              Browse {categories.length} categories and {templates.length} interview templates.
               Find the right starting point, then customize with AI.
             </p>
           </motion.div>
@@ -97,7 +161,7 @@ function CategoriesHomeView() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search categories or interview types…"
+                placeholder="Search categories or interview types..."
                 className="pl-11 h-12 text-sm bg-card border-border/60 rounded-2xl shadow-sm focus-visible:ring-primary/30"
               />
               {searchQuery && (
@@ -112,7 +176,7 @@ function CategoriesHomeView() {
             {searchResults ? (
               <motion.div key="search" {...pageVariants}>
                 {/* Search results */}
-                {searchResults.categories.length === 0 && searchResults.types.length === 0 && (
+                {searchResults.categories.length === 0 && searchResults.templates.length === 0 && (
                   <div className="text-center py-20">
                     <Search className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
                     <p className="text-muted-foreground text-sm">No results for "{searchQuery}"</p>
@@ -130,25 +194,28 @@ function CategoriesHomeView() {
                   </div>
                 )}
 
-                {searchResults.types.length > 0 && (
+                {searchResults.templates.length > 0 && (
                   <div>
                     <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Interview Types</h2>
                     <div className="space-y-2">
-                      {searchResults.types.map((t) => (
+                      {searchResults.templates.map(({ template, category }) => (
                         <motion.button
-                          key={t.id}
+                          key={template.id}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          onClick={() => { setSearchQuery(""); navigate(`/templates/${t.category.id}/${t.id}`); }}
+                          onClick={() => { setSearchQuery(""); navigate(`/templates/${category?.id}/${template.id}`); }}
                           className="w-full text-left glass-card rounded-2xl p-4 hover:shadow-md transition-all group"
                         >
                           <div className="flex items-center gap-3">
-                            <span className="text-lg">{t.category.emoji}</span>
+                            <span className="text-lg">{template.emoji || category?.emoji || "📋"}</span>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{t.title}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{t.category.title} → {t.title}</p>
+                              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{template.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {template.category}
+                                {template.subcategory && ` → ${template.subcategory}`}
+                              </p>
                             </div>
-                            <span className="text-xs text-muted-foreground/60">{t.questionCount} questions</span>
+                            <span className="text-xs text-muted-foreground/60">{template.questions.length} questions</span>
                             <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                           </div>
                         </motion.button>
@@ -159,13 +226,20 @@ function CategoriesHomeView() {
               </motion.div>
             ) : (
               <motion.div key="categories" variants={staggerContainer} initial="initial" animate="animate">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {TEMPLATE_CATEGORIES_V2.map((cat) => (
-                    <motion.div key={cat.id} variants={staggerItem}>
-                      <CategoryCard category={cat} onClick={() => navigate(`/templates/${cat.id}`)} />
-                    </motion.div>
-                  ))}
-                </div>
+                {categories.length === 0 ? (
+                  <div className="text-center py-20">
+                    <Sparkles className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
+                    <p className="text-muted-foreground text-sm">No templates available yet</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {categories.map((cat) => (
+                      <motion.div key={cat.id} variants={staggerItem}>
+                        <CategoryCard category={cat} onClick={() => navigate(`/templates/${cat.id}`)} />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -184,12 +258,17 @@ function CategoryCard({ category, onClick }: { category: TemplateCategory; onCli
       className="w-full text-left glass-card rounded-2xl p-5 hover:shadow-md hover:scale-[1.01] transition-all duration-200 group"
     >
       <div className="flex items-start gap-3.5">
-        <div className={cn("w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 text-lg", category.accentColor)}>
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+          style={getCategoryAccentStyle(category.color)}
+        >
           {category.emoji}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{category.title}</p>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{category.description}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+            {category.templates[0]?.scenario || `${category.typeCount} interview types available`}
+          </p>
           <div className="flex items-center gap-3 mt-2.5">
             <span className="text-[11px] text-muted-foreground/70">{category.typeCount} types</span>
             <span className="text-[11px] text-muted-foreground/70">{category.questionCount} questions</span>
@@ -206,9 +285,25 @@ function CategoryCard({ category, onClick }: { category: TemplateCategory; onCli
    ═══════════════════════════════════════════════════════════ */
 function CategoryDetailView({ categoryId }: { categoryId: string }) {
   const navigate = useNavigate();
+  const { findCategoryById, isLoading, error } = useTemplates();
   const category = findCategoryById(categoryId);
 
-  if (!category) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-16">
+          <div className="section-container flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground text-sm">Loading...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !category) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -235,12 +330,17 @@ function CategoryDetailView({ categoryId }: { categoryId: string }) {
 
             {/* Header */}
             <div className="flex items-start gap-4 mb-8">
-              <div className={cn("w-14 h-14 rounded-2xl bg-gradient-to-br flex items-center justify-center text-2xl flex-shrink-0", category.accentColor)}>
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                style={getCategoryAccentStyle(category.color)}
+              >
                 {category.emoji}
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{category.title}</h1>
-                <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {category.templates[0]?.scenario || "Interview templates for this category"}
+                </p>
                 <div className="flex items-center gap-3 mt-2">
                   <Badge variant="secondary" className="rounded-full text-[11px]">{category.typeCount} interview types</Badge>
                   <Badge variant="secondary" className="rounded-full text-[11px]">{category.questionCount} questions</Badge>
@@ -250,25 +350,22 @@ function CategoryDetailView({ categoryId }: { categoryId: string }) {
 
             {/* Interview types list */}
             <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-3">
-              {category.interviewTypes.map((type) => (
+              {category.templates.map((template) => (
                 <motion.button
-                  key={type.id}
+                  key={template.id}
                   variants={staggerItem}
-                  onClick={() => navigate(`/templates/${categoryId}/${type.id}`)}
+                  onClick={() => navigate(`/templates/${categoryId}/${template.id}`)}
                   className="w-full text-left glass-card rounded-2xl p-5 hover:shadow-md transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-4">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{type.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{type.description}</p>
+                      <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{template.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{template.scenario}</p>
                       <div className="flex items-center gap-3 mt-2">
-                        <span className="text-[11px] text-muted-foreground/70">{type.questionCount} questions</span>
-                        {type.followupCount > 0 && (
-                          <span className="text-[11px] text-muted-foreground/70">{type.followupCount} follow-ups</span>
+                        <span className="text-[11px] text-muted-foreground/70">{template.questions.length} questions</span>
+                        {template.subcategory && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{template.subcategory}</span>
                         )}
-                        {type.tags?.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
-                        ))}
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors flex-shrink-0" />
@@ -289,10 +386,26 @@ function CategoryDetailView({ categoryId }: { categoryId: string }) {
    ═══════════════════════════════════════════════════════════ */
 function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: string }) {
   const navigate = useNavigate();
+  const { findCategoryById, findTemplateById, isLoading, error } = useTemplates();
   const category = findCategoryById(categoryId);
-  const interviewType = findInterviewTypeById(typeId);
+  const template = findTemplateById(typeId);
 
-  if (!category || !interviewType) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-16">
+          <div className="section-container flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground text-sm">Loading...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !category || !template) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -304,6 +417,9 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
       </div>
     );
   }
+
+  // Sort questions by order
+  const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,22 +433,25 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
               <ChevronRight className="w-3 h-3" />
               <button onClick={() => navigate(`/templates/${categoryId}`)} className="hover:text-foreground transition-colors">{category.title}</button>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-foreground font-medium">{interviewType.title}</span>
+              <span className="text-foreground font-medium">{template.title}</span>
             </div>
 
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-start gap-4">
-                <div className={cn("w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-xl flex-shrink-0", category.accentColor)}>
-                  {category.emoji}
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
+                  style={getCategoryAccentStyle(template.color || category.color)}
+                >
+                  {template.emoji || category.emoji}
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{interviewType.title}</h1>
-                  <p className="text-sm text-muted-foreground mt-1">{interviewType.description}</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{template.title}</h1>
+                  <p className="text-sm text-muted-foreground mt-1">{template.scenario}</p>
                   <div className="flex items-center gap-3 mt-2">
-                    <Badge variant="secondary" className="rounded-full text-[11px]">{interviewType.questionCount} questions</Badge>
-                    {interviewType.followupCount > 0 && (
-                      <Badge variant="secondary" className="rounded-full text-[11px]">{interviewType.followupCount} follow-ups</Badge>
+                    <Badge variant="secondary" className="rounded-full text-[11px]">{sortedQuestions.length} questions</Badge>
+                    {template.subcategory && (
+                      <Badge variant="secondary" className="rounded-full text-[11px]">{template.subcategory}</Badge>
                     )}
                   </div>
                 </div>
@@ -341,12 +460,12 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
 
             {/* Questions list */}
             <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-3 mb-8">
-              {interviewType.questions.map((question, i) => (
-                <QuestionRow key={question.id} question={question} index={i} />
+              {sortedQuestions.map((question, i) => (
+                <QuestionRow key={question.id} questionText={question.text} index={i} />
               ))}
             </motion.div>
 
-            {/* CTA */}
+            {/* CTA - TODO: wire up handler */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="sticky bottom-6 z-10">
               <div className="glass-card rounded-2xl p-4 flex items-center justify-between gap-4 shadow-lg">
                 <div className="min-w-0">
@@ -355,7 +474,8 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
                 </div>
                 <PrimaryButton
                   className="flex-shrink-0 gap-2"
-                  onClick={() => navigate(`/create-interview-from-template?templateId=${interviewType.id}`)}
+                  disabled
+                  title="Coming soon"
                 >
                   <Sparkles className="w-4 h-4" />
                   Start with This Template
@@ -370,11 +490,8 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
   );
 }
 
-/* ── Question Row with optional followup expand ──────────── */
-function QuestionRow({ question, index }: { question: InterviewQuestion; index: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const hasFollowups = question.followups && question.followups.length > 0;
-
+/* ── Question Row ───────────────────────────────────────── */
+function QuestionRow({ questionText, index }: { questionText: string; index: number }) {
   return (
     <motion.div variants={staggerItem} className="glass-card rounded-2xl overflow-hidden">
       <div className="p-4 flex items-start gap-3">
@@ -382,38 +499,9 @@ function QuestionRow({ question, index }: { question: InterviewQuestion; index: 
           {index + 1}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground leading-relaxed">{question.text}</p>
-          {hasFollowups && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1 mt-2 text-[11px] text-muted-foreground hover:text-primary transition-colors"
-            >
-              <ChevronDown className={cn("w-3 h-3 transition-transform", expanded && "rotate-180")} />
-              {question.followups!.length} follow-up{question.followups!.length > 1 ? "s" : ""}
-            </button>
-          )}
+          <p className="text-sm text-foreground leading-relaxed">{questionText}</p>
         </div>
       </div>
-      <AnimatePresence>
-        {expanded && hasFollowups && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 pl-14 space-y-1.5">
-              {question.followups!.map((fu) => (
-                <div key={fu.id} className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <span className="text-primary/50 mt-0.5">↳</span>
-                  <span className="leading-relaxed">{fu.text}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

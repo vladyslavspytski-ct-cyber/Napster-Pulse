@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { callApi } from "@/lib/api";
 import { API_ROUTES } from "@/lib/apiRoutes";
 
@@ -19,19 +19,99 @@ export interface Template {
   id: string;
   title: string;
   scenario: string;
+  category: string;
+  subcategory: string;
+  emoji: string;
+  color: string;
   seq: number;
   questions: TemplateQuestion[];
 }
 
+/**
+ * Derived category data built from templates
+ */
+export interface TemplateCategory {
+  id: string;
+  title: string;
+  emoji: string;
+  color: string;
+  typeCount: number;
+  questionCount: number;
+  templates: Template[];
+}
+
+/**
+ * Helper to generate a slug from a string
+ */
+function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/**
+ * Build categories from flat templates list
+ * Groups by category field, picks emoji/color from first template (by seq)
+ */
+export function buildCategoriesFromTemplates(templates: Template[]): TemplateCategory[] {
+  const categoryMap = new Map<string, Template[]>();
+
+  // Group templates by category
+  for (const template of templates) {
+    const cat = template.category || "Other";
+    if (!categoryMap.has(cat)) {
+      categoryMap.set(cat, []);
+    }
+    categoryMap.get(cat)!.push(template);
+  }
+
+  // Build category objects
+  const categories: TemplateCategory[] = [];
+  for (const [categoryName, categoryTemplates] of categoryMap) {
+    // Sort templates by seq to pick first one for emoji/color
+    const sorted = [...categoryTemplates].sort((a, b) => a.seq - b.seq);
+    const first = sorted[0];
+
+    // Calculate total questions
+    const questionCount = sorted.reduce((sum, t) => sum + t.questions.length, 0);
+
+    categories.push({
+      id: slugify(categoryName),
+      title: categoryName,
+      emoji: first.emoji || "📋",
+      color: first.color || "#6366f1",
+      typeCount: sorted.length,
+      questionCount,
+      templates: sorted,
+    });
+  }
+
+  // Sort categories by the minimum seq of their templates
+  categories.sort((a, b) => {
+    const aMinSeq = Math.min(...a.templates.map((t) => t.seq));
+    const bMinSeq = Math.min(...b.templates.map((t) => t.seq));
+    return aMinSeq - bMinSeq;
+  });
+
+  return categories;
+}
+
 interface UseTemplatesResult {
   templates: Template[];
+  categories: TemplateCategory[];
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  // Helper functions
+  findCategoryById: (id: string) => TemplateCategory | undefined;
+  findTemplateById: (id: string) => Template | undefined;
+  findCategoryForTemplate: (templateId: string) => TemplateCategory | undefined;
 }
 
 /**
  * Hook to fetch interview templates from GET /templates
+ * Also builds derived category data for the directory UI
  */
 export function useTemplates(): UseTemplatesResult {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -65,10 +145,41 @@ export function useTemplates(): UseTemplatesResult {
     refetch();
   }, [refetch]);
 
+  // Build categories from templates
+  const categories = useMemo(() => buildCategoriesFromTemplates(templates), [templates]);
+
+  // Helper: find category by ID
+  const findCategoryById = useCallback(
+    (id: string): TemplateCategory | undefined => {
+      return categories.find((c) => c.id === id);
+    },
+    [categories]
+  );
+
+  // Helper: find template by ID
+  const findTemplateById = useCallback(
+    (id: string): Template | undefined => {
+      return templates.find((t) => t.id === id);
+    },
+    [templates]
+  );
+
+  // Helper: find category that contains a template
+  const findCategoryForTemplate = useCallback(
+    (templateId: string): TemplateCategory | undefined => {
+      return categories.find((c) => c.templates.some((t) => t.id === templateId));
+    },
+    [categories]
+  );
+
   return {
     templates,
+    categories,
     isLoading,
     error,
     refetch,
+    findCategoryById,
+    findTemplateById,
+    findCategoryForTemplate,
   };
 }

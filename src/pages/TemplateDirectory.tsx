@@ -81,7 +81,7 @@ function CategoriesHomeView() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-24 pb-16">
-        <div className="section-container max-w-5xl mx-auto">
+        <div className="section-container">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">Template Directory</h1>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm">
@@ -225,7 +225,7 @@ function CategoryDetailView({ categoryId }: { categoryId: string }) {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-24 pb-16">
-        <div className="section-container max-w-4xl mx-auto">
+        <div className="section-container">
           <motion.div {...pageVariants}>
             {/* Back link */}
             <button onClick={() => navigate("/templates")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
@@ -309,7 +309,7 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
     <div className="min-h-screen bg-background">
       <Header />
       <main className="pt-24 pb-16">
-        <div className="section-container max-w-3xl mx-auto">
+        <div className="section-container">
           <motion.div {...pageVariants}>
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 flex-wrap">

@@ -445,7 +445,7 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
                 >
                   {template.emoji || category.emoji}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{template.title}</h1>
                   <p className="text-sm text-muted-foreground mt-1">{template.scenario}</p>
                   <div className="flex items-center gap-3 mt-2">
@@ -455,6 +455,13 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
                     )}
                   </div>
                 </div>
+                <PrimaryButton
+                  className="flex-shrink-0 gap-2 mt-1"
+                  onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Start with This Template
+                </PrimaryButton>
               </div>
             </div>
 
@@ -463,29 +470,6 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
               {sortedQuestions.map((question, i) => (
                 <QuestionRow key={question.id} questionText={question.text} index={i} />
               ))}
-            </motion.div>
-
-            {/* Separator + CTA */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-10 mb-8">
-              <div className="h-px w-full bg-border/60 mb-8" />
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-base font-semibold text-foreground">Ready to go?</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                    Questions pre-filled · Edit, reorder & customize with AI
-                  </p>
-                </div>
-                <PrimaryButton
-                  className="gap-2 px-6"
-                  onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Start with This Template
-                </PrimaryButton>
-              </div>
             </motion.div>
           </motion.div>
         </div>

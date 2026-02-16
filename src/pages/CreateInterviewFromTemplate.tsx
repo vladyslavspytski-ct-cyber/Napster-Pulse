@@ -15,8 +15,9 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { findMockTemplateById, type MockTemplate } from "@/mock/templates";
-import { getAllTemplates, type DirectoryTemplate } from "@/mock/templatesDirectory";
+import { findMockTemplateById } from "@/mock/templates";
+import { getAllTemplates } from "@/mock/templatesDirectory";
+import { findInterviewTypeById } from "@/mock/templatesDirectoryV2";
 
 interface QuestionCard {
   id: string;
@@ -27,7 +28,7 @@ const CreateInterviewFromTemplate = () => {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId");
 
-  // Try mock templates first, then fall back to directory templates
+  // Try mock templates first, then directory v1, then directory v2
   const resolved = useMemo<{ title: string; questions: QuestionCard[] } | null>(() => {
     if (!templateId) return null;
 
@@ -38,13 +39,22 @@ const CreateInterviewFromTemplate = () => {
       return { title: mock.title, questions: sorted.map((q) => ({ id: q.id, text: q.text })) };
     }
 
-    // Fall back to directory templates
+    // Fall back to directory v1 templates
     const all = getAllTemplates();
     const dir = all.find((t) => t.id === templateId);
     if (dir) {
       return {
         title: dir.title,
         questions: dir.questions.map((text, i) => ({ id: `${templateId}-q${i}`, text })),
+      };
+    }
+
+    // Fall back to directory v2 templates
+    const v2Type = findInterviewTypeById(templateId);
+    if (v2Type) {
+      return {
+        title: v2Type.title,
+        questions: v2Type.questions.map((q) => ({ id: q.id, text: q.text })),
       };
     }
 

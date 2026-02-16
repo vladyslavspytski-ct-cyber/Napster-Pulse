@@ -456,13 +456,20 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
                   </div>
                 </div>
                 <PrimaryButton
-                  className="flex-shrink-0 gap-2 mt-1"
+                  className="hidden sm:flex flex-shrink-0 gap-2 mt-1"
                   onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
                 >
                   <Sparkles className="w-4 h-4" />
                   Start with This Template
                 </PrimaryButton>
               </div>
+              <PrimaryButton
+                className="sm:hidden w-full gap-2 mt-4"
+                onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
+              >
+                <Sparkles className="w-4 h-4" />
+                Start with This Template
+              </PrimaryButton>
             </div>
 
             {/* Questions list */}

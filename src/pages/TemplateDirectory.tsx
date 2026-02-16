@@ -459,23 +459,28 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
             </div>
 
             {/* Questions list */}
-            <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-3 mb-8">
+            <motion.div variants={staggerContainer} initial="initial" animate="animate" className="space-y-3">
               {sortedQuestions.map((question, i) => (
                 <QuestionRow key={question.id} questionText={question.text} index={i} />
               ))}
             </motion.div>
 
-            {/* CTA - TODO: wire up handler */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="sticky bottom-6 z-10">
-              <div className="glass-card rounded-2xl p-4 flex items-center justify-between gap-4 shadow-lg">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Start with This Template</p>
-                  <p className="text-xs text-muted-foreground">Questions pre-filled · Edit, reorder & customize with AI</p>
+            {/* Separator + CTA */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-10 mb-8">
+              <div className="h-px w-full bg-border/60 mb-8" />
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-foreground">Ready to go?</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                    Questions pre-filled · Edit, reorder & customize with AI
+                  </p>
                 </div>
                 <PrimaryButton
-                  className="flex-shrink-0 gap-2"
-                  disabled
-                  title="Coming soon"
+                  className="gap-2 px-6"
+                  onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
                 >
                   <Sparkles className="w-4 h-4" />
                   Start with This Template

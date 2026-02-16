@@ -16,7 +16,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   useTemplates,
-  type Template,
   type TemplateCategory,
 } from "@/hooks/api/useTemplates";
 
@@ -255,21 +254,21 @@ function CategoryCard({ category, onClick }: { category: TemplateCategory; onCli
   return (
     <button
       onClick={onClick}
-      className="w-full text-left glass-card rounded-2xl p-5 hover:shadow-md hover:scale-[1.01] transition-all duration-200 group"
+      className="w-full h-full text-left glass-card rounded-2xl p-5 hover:shadow-md hover:scale-[1.01] transition-all duration-200 group"
     >
-      <div className="flex items-start gap-3.5">
+      <div className="flex items-start gap-3.5 h-full">
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
           style={getCategoryAccentStyle(category.color)}
         >
           {category.emoji}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col">
           <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{category.title}</p>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed min-h-[2.5rem]">
             {category.templates[0]?.scenario || `${category.typeCount} interview types available`}
           </p>
-          <div className="flex items-center gap-3 mt-2.5">
+          <div className="flex items-center gap-3 mt-auto pt-2">
             <span className="text-[11px] text-muted-foreground/70">{category.typeCount} types</span>
             <span className="text-[11px] text-muted-foreground/70">{category.questionCount} questions</span>
           </div>
@@ -457,7 +456,7 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
                 </div>
                 <PrimaryButton
                   className="hidden sm:flex flex-shrink-0 gap-2 mt-1"
-                  onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
+                  onClick={() => navigate(`/create-interview?templateId=${typeId}`)}
                 >
                   <Sparkles className="w-4 h-4" />
                   Start with This Template
@@ -465,7 +464,7 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
               </div>
               <PrimaryButton
                 className="sm:hidden w-full gap-2 mt-4"
-                onClick={() => navigate(`/create-interview-from-template?templateId=${typeId}`)}
+                onClick={() => navigate(`/create-interview?templateId=${typeId}`)}
               >
                 <Sparkles className="w-4 h-4" />
                 Start with This Template

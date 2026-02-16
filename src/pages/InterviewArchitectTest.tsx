@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { Sparkles, RotateCcw, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Sparkles, RotateCcw, CheckCircle, LayoutTemplate } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import ArchitectPhaseIndicator, {
@@ -13,10 +14,8 @@ import ArchitectPhaseIndicator, {
 import ArchitectAgentCard, {
   AgentState,
 } from "@/components/interview-architect/ArchitectAgentCard";
-import InterviewContextBadges, {
-  InterviewContext,
-} from "@/components/interview-architect/InterviewContextBadges";
-import TemplatesPanel from "@/components/interview-architect/TemplatesPanel";
+import InterviewContextBadges,
+  { InterviewContext } from "@/components/interview-architect/InterviewContextBadges";
 import StructuredQuestionCard, {
   StructuredQuestion,
 } from "@/components/interview-architect/StructuredQuestionCard";
@@ -26,10 +25,9 @@ import {
   ActualQuestion,
 } from "@/hooks/api/useInterviewArchitectWs";
 import { useTemplates, Template } from "@/hooks/api/useTemplates";
+import { useQuestionsSync, SyncQuestion } from "@/hooks/api/useQuestionsSync";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
 import { useSignedUrl } from "@/hooks/api";
-import { callApi } from "@/lib/api";
-import { API_ROUTES } from "@/lib/apiRoutes";
 
 // Mock data by preset (kept unchanged for demo purposes)
 const mockDataByPreset: Record<
@@ -300,39 +298,13 @@ function actualQuestionToStructured(q: ActualQuestion): StructuredQuestion {
 }
 
 /**
- * Convert StructuredQuestion back to ActualQuestion for backend sync
+ * Convert StructuredQuestion back to SyncQuestion for backend sync
  */
-function structuredToActualQuestion(q: StructuredQuestion): ActualQuestion {
+function structuredToSyncQuestion(q: StructuredQuestion): SyncQuestion {
   return {
     id: q.id,
     question: q.text,
   };
-}
-
-/**
- * Sync questions to backend with explicit conversationId
- * Used for initial template sync when the hook's ref isn't updated yet
- */
-async function syncQuestionsToBackend(
-  convId: string,
-  questions: ActualQuestion[]
-): Promise<void> {
-  const url = `${API_ROUTES.architectQuestionsSync}?room_id=${encodeURIComponent(convId)}`;
-  const payload = {
-    questions: questions.map((q) => ({ id: q.id, question: q.question })),
-  };
-
-  console.log("[syncQuestionsToBackend] POST", url, "| conversationId:", convId, "| questions:", questions.length);
-
-  try {
-    await callApi<unknown>(url, {
-      method: "POST",
-      body: payload as unknown as BodyInit,
-    });
-    console.log("[syncQuestionsToBackend] POST success");
-  } catch (err) {
-    console.error("[syncQuestionsToBackend] POST error:", err);
-  }
 }
 
 const InterviewArchitectTest = () => {
@@ -348,8 +320,12 @@ const InterviewArchitectTest = () => {
   }, [authLoading, isLoggedIn, navigate]);
 
   // === Templates state ===
-  const { templates, isLoading: templatesLoading, error: templatesError } = useTemplates();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { findTemplateById, isLoading: templatesLoading } = useTemplates();
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+
+  // === Questions sync hook ===
+  const { syncQuestions: syncQuestionsToBackend } = useQuestionsSync();
 
   // === Preset demo state (unchanged) ===
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
@@ -387,9 +363,14 @@ const InterviewArchitectTest = () => {
     questionsFromWs,
     isConnected: isWsConnected,
     error: wsError,
+    applyTemplateEvent,
+    clearApplyTemplateEvent,
     disconnect: disconnectWs,
     syncQuestions,
   } = useInterviewArchitectWs(conversationId, isAgentSessionActive);
+
+  // Toast for notifications
+  const { toast } = useToast();
 
   const currentData = selectedPresetId
     ? mockDataByPreset[selectedPresetId]
@@ -591,54 +572,6 @@ const InterviewArchitectTest = () => {
     }
   };
 
-  // === Template selection handler ===
-  const handleSelectTemplate = (template: Template) => {
-    // Cleanup any active agent session first (but keep editing flow intact)
-    if (conversationRef.current) {
-      stopRealAgentSession();
-    }
-
-    // Clear preset selection
-    setSelectedPresetId(null);
-    setDemoStep(0);
-    stopMockLevelPolling();
-
-    // Set selected template
-    setSelectedTemplate(template);
-
-    // Generate a new conversationId for this template session
-    const newConversationId = generateConversationId();
-    setConversationId(newConversationId);
-
-    // Convert template questions to StructuredQuestion format
-    // Sort by order field first
-    const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
-    const structuredQuestions: StructuredQuestion[] = sortedQuestions.map((q) => ({
-      id: q.id,
-      text: q.text,
-      phase: "core" as const,
-    }));
-
-    setQuestions(structuredQuestions);
-    setPhase("structure");
-    setAgentState("disconnected");
-
-    // Set context from template
-    setInterviewContext({
-      type: template.title,
-      goal: template.scenario || undefined,
-    });
-
-    // Sync questions to backend immediately using explicit conversationId
-    // (can't use hook's syncQuestions as the ref isn't updated yet after setState)
-    const actualQuestions = structuredQuestions.map(structuredToActualQuestion);
-    console.log("[InterviewArchitectTest] Template selected:", template.title);
-    console.log("[InterviewArchitectTest] conversationId:", newConversationId);
-    console.log("[InterviewArchitectTest] Syncing", actualQuestions.length, "questions to backend");
-
-    syncQuestionsToBackend(newConversationId, actualQuestions);
-  };
-
   // === Preset demo handlers (unchanged) ===
   const handleSelectPreset = (presetId: string) => {
     // If we were in real mode, cleanup first
@@ -738,12 +671,17 @@ const InterviewArchitectTest = () => {
     // Debounce for 300ms to avoid spamming backend on rapid edits
     syncDebounceRef.current = setTimeout(() => {
       if (conversationId) {
-        const actualQuestions = questionsToSync.map(structuredToActualQuestion);
-        console.log("[InterviewArchitectTest] Debounced sync | conversationId:", conversationId, "| questions:", actualQuestions.length);
-        syncQuestions(actualQuestions);
+        const syncPayload = questionsToSync.map(structuredToSyncQuestion);
+        console.log("[InterviewArchitectTest] Debounced sync | conversationId:", conversationId, "| questions:", syncPayload.length);
+        // Use the WS hook's syncQuestions for active sessions, otherwise use direct sync
+        if (isAgentSessionActive) {
+          syncQuestions(syncPayload as ActualQuestion[]);
+        } else {
+          syncQuestionsToBackend(conversationId, syncPayload);
+        }
       }
     }, 300);
-  }, [conversationId, syncQuestions]);
+  }, [conversationId, syncQuestions, syncQuestionsToBackend, isAgentSessionActive]);
 
   // === Question handlers ===
   const handleEditQuestion = (id: string, newText: string) => {
@@ -867,6 +805,140 @@ const InterviewArchitectTest = () => {
     };
   }, [stopRealVolumePolling, disconnectWs]);
 
+  // === Handle apply_template WS event ===
+  // When agent sends apply_template, ADD template questions to existing (no replace)
+  useEffect(() => {
+    if (!applyTemplateEvent) return;
+
+    const { templateId } = applyTemplateEvent;
+    console.log("[InterviewArchitectTest] apply_template event received:", templateId);
+
+    // Find template by ID
+    const template = findTemplateById(templateId);
+    if (!template) {
+      console.error("[InterviewArchitectTest] Template not found:", templateId);
+      clearApplyTemplateEvent();
+      return;
+    }
+
+    console.log("[InterviewArchitectTest] Found template:", template.title, "with", template.questions.length, "questions");
+
+    // Sort template questions by order
+    const sortedTemplateQuestions = [...template.questions].sort((a, b) => a.order - b.order);
+
+    // Normalize text for deduplication (lowercase, trim, remove extra spaces)
+    const normalizeText = (text: string) => text.toLowerCase().trim().replace(/\s+/g, " ");
+
+    // Get existing question texts for dedup
+    const existingTexts = new Set(questions.map((q) => normalizeText(q.text)));
+
+    // Filter out duplicates and create new StructuredQuestion items
+    const newQuestions: StructuredQuestion[] = [];
+    for (const tq of sortedTemplateQuestions) {
+      const normalized = normalizeText(tq.text);
+      if (!existingTexts.has(normalized)) {
+        // Generate stable ID: tpl-<templateId>-<questionId>
+        const stableId = `tpl-${templateId}-${tq.id}`;
+        newQuestions.push({
+          id: stableId,
+          text: tq.text,
+          phase: "core" as const,
+        });
+        existingTexts.add(normalized); // Prevent duplicates within template
+      } else {
+        console.log("[InterviewArchitectTest] Skipping duplicate question:", tq.text.substring(0, 50));
+      }
+    }
+
+    console.log("[InterviewArchitectTest] Adding", newQuestions.length, "new questions from template");
+
+    if (newQuestions.length > 0) {
+      // Merge: ADD to existing questions (no delete)
+      const mergedQuestions = [...questions, ...newQuestions];
+      setQuestions(mergedQuestions);
+
+      // Update phase if needed
+      if (phase === "context") {
+        setPhase("structure");
+      }
+
+      // Sync merged questions to backend
+      if (conversationId) {
+        const syncPayload = mergedQuestions.map(structuredToSyncQuestion);
+        console.log("[InterviewArchitectTest] Syncing merged questions to backend | count:", syncPayload.length);
+        syncQuestionsToBackend(conversationId, syncPayload)
+          .then(() => {
+            console.log("[InterviewArchitectTest] apply_template sync SUCCESS");
+          })
+          .catch((err) => {
+            console.error("[InterviewArchitectTest] apply_template sync FAILED:", err);
+          });
+      }
+
+      // Show toast notification
+      toast({
+        title: `Template applied: ${template.title}`,
+        description: `Added ${newQuestions.length} question${newQuestions.length !== 1 ? "s" : ""} to your interview.`,
+      });
+    } else {
+      toast({
+        title: "Template already applied",
+        description: "All questions from this template are already in your list.",
+        variant: "default",
+      });
+    }
+
+    // Clear the event after handling
+    clearApplyTemplateEvent();
+  }, [applyTemplateEvent, findTemplateById, questions, conversationId, phase, syncQuestionsToBackend, clearApplyTemplateEvent, toast]);
+
+  // === Handle templateId from URL query params ===
+  // When coming from /templates page with a template selected
+  const templateIdLoadedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const templateId = searchParams.get("templateId");
+    if (!templateId || templatesLoading) return;
+    // Prevent loading the same template twice
+    if (templateIdLoadedRef.current === templateId) return;
+
+    const template = findTemplateById(templateId);
+    if (template) {
+      console.log("[InterviewArchitectTest] Loading template from URL:", templateId);
+      templateIdLoadedRef.current = templateId;
+
+      // Inline the template selection logic to avoid dependency issues
+      // This mirrors handleSelectTemplate but is safe for useEffect
+      const newConversationId = generateConversationId();
+      setConversationId(newConversationId);
+      setSelectedTemplate(template);
+      setSelectedPresetId(null);
+      setDemoStep(0);
+
+      // Convert template questions to StructuredQuestion format
+      const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
+      const structuredQuestions: StructuredQuestion[] = sortedQuestions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        phase: "core" as const,
+      }));
+
+      setQuestions(structuredQuestions);
+      setPhase("structure");
+      setAgentState("disconnected");
+      setInterviewContext({
+        type: template.title,
+        goal: template.scenario || undefined,
+      });
+
+      // Sync questions to backend
+      const syncPayload = structuredQuestions.map(structuredToSyncQuestion);
+      syncQuestionsToBackend(newConversationId, syncPayload);
+
+      // Clear the query param after loading
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, templatesLoading, findTemplateById, setSearchParams, syncQuestionsToBackend]);
+
   // Show nothing while checking auth (prevents flash before redirect)
   if (authLoading || !isLoggedIn) {
     return null;
@@ -970,7 +1042,7 @@ const InterviewArchitectTest = () => {
                           <p className="text-muted-foreground/60 text-xs max-w-xs">
                             {selectedPresetId
                               ? "Tap the microphone to start the conversation"
-                              : "Select a template below or start speaking to create your interview"}
+                              : "Start speaking or browse templates to create your interview"}
                           </p>
                         </motion.div>
                       ) : (
@@ -1032,15 +1104,16 @@ const InterviewArchitectTest = () => {
             </div>
           </div>
 
-          {/* Templates Section - Full Width Below */}
-          <div className="max-w-6xl mx-auto mt-8">
-            <TemplatesPanel
-              templates={templates}
-              isLoading={templatesLoading}
-              error={templatesError}
-              onSelectTemplate={handleSelectTemplate}
-              selectedTemplateId={selectedTemplate?.id}
-            />
+          {/* Browse Templates Link */}
+          <div className="max-w-6xl mx-auto mt-8 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/templates")}
+              className="gap-2"
+            >
+              <LayoutTemplate className="w-4 h-4" />
+              Browse Templates
+            </Button>
           </div>
         </div>
       </main>

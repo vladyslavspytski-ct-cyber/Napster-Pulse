@@ -11,11 +11,23 @@ export interface ActualQuestion {
   question: string;
 }
 
+/**
+ * Event emitted when backend sends apply_template message
+ */
+export interface ApplyTemplateEvent {
+  templateId: string;
+  timestamp: number;
+}
+
 interface UseInterviewArchitectWsResult {
   questionsFromWs: ActualQuestion[];
   isConnected: boolean;
   lastMessage: unknown | null;
   error: Error | null;
+  /** Event triggered when apply_template WS message is received */
+  applyTemplateEvent: ApplyTemplateEvent | null;
+  /** Clear the applyTemplateEvent after handling */
+  clearApplyTemplateEvent: () => void;
   connect: () => void;
   disconnect: () => void;
   syncQuestions: (questions: ActualQuestion[]) => Promise<void>;
@@ -36,6 +48,7 @@ export function useInterviewArchitectWs(
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<unknown | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [applyTemplateEvent, setApplyTemplateEvent] = useState<ApplyTemplateEvent | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -56,6 +69,10 @@ export function useInterviewArchitectWs(
       wsRef.current = null;
     }
     setIsConnected(false);
+  }, []);
+
+  const clearApplyTemplateEvent = useCallback(() => {
+    setApplyTemplateEvent(null);
   }, []);
 
   const connect = useCallback(() => {
@@ -108,10 +125,21 @@ export function useInterviewArchitectWs(
           setLastMessage(message);
 
           console.log("[InterviewArchitectWs] Parsed message shape:", {
+            type: message.type,
             hasQuestions: "questions" in message,
             questionsIsArray: Array.isArray(message.questions),
             questionsSample: message.questions?.[0],
           });
+
+          // Handle apply_template message: { type: "apply_template", template_id: "<ID>" }
+          if (message.type === "apply_template" && message.template_id) {
+            console.log("[InterviewArchitectWs] apply_template received:", message.template_id);
+            setApplyTemplateEvent({
+              templateId: message.template_id,
+              timestamp: Date.now(),
+            });
+            return; // Don't process as questions
+          }
 
           // Handle questions payload: { questions: [{ id: string, question: string }] }
           if (message.questions && Array.isArray(message.questions)) {
@@ -220,6 +248,8 @@ export function useInterviewArchitectWs(
     isConnected,
     lastMessage,
     error,
+    applyTemplateEvent,
+    clearApplyTemplateEvent,
     connect,
     disconnect,
     syncQuestions,

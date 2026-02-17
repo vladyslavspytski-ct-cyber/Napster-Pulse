@@ -321,7 +321,9 @@ const InterviewArchitectTest = () => {
 
   // === Templates state ===
   const [searchParams, setSearchParams] = useSearchParams();
-  const { findTemplateById, isLoading: templatesLoading } = useTemplates();
+  // Track if we need templates (templateId in URL or apply_template WS event pending)
+  const [needsTemplates, setNeedsTemplates] = useState(() => !!searchParams.get("templateId"));
+  const { findTemplateById, isLoading: templatesLoading } = useTemplates({ enabled: needsTemplates });
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 
   // === Questions sync hook ===
@@ -356,6 +358,18 @@ const InterviewArchitectTest = () => {
 
   // Debounce ref for question sync
   const syncDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // === Sync tracking for anti-loop guard ===
+  // Track the source of question updates to decide sync behavior
+  type UpdateSource = "user" | "ws" | "template" | null;
+  const updateSourceRef = useRef<UpdateSource>(null);
+  // Track hash of last synced questions to prevent duplicate syncs
+  const lastSyncedHashRef = useRef<string | null>(null);
+
+  // Helper: compute simple hash of questions for comparison
+  const computeQuestionsHash = useCallback((qs: StructuredQuestion[]): string => {
+    return qs.map((q) => `${q.id}:${q.text}`).join("|");
+  }, []);
 
   // WebSocket hook for real-time questions
   // Only connects when agent session is active (not on template selection)
@@ -415,29 +429,91 @@ const InterviewArchitectTest = () => {
     setRealInputLevel(0);
   }, []);
 
-  // === Convert WS questions to StructuredQuestion objects ===
-  useEffect(() => {
-    if (isRealMode && questionsFromWs.length > 0) {
-      console.log(
-        "[InterviewArchitectTest] Converting WS questions to cards:",
-        questionsFromWs.length,
-      );
-
-      // Convert ActualQuestion objects to StructuredQuestion objects (using backend IDs)
-      const structuredQuestions = questionsFromWs.map(actualQuestionToStructured);
-
-      setQuestions(structuredQuestions);
-      console.log(
-        "[InterviewArchitectTest] Final rendered questions list length:",
-        structuredQuestions.length,
-      );
-
-      // Update phase when questions arrive
-      if (structuredQuestions.length > 0 && phase === "context") {
-        setPhase("structure");
-      }
+  // === Debounced sync helper with anti-loop guard ===
+  const debouncedSync = useCallback((
+    questionsToSync: StructuredQuestion[],
+    source: "user" | "ws" | "template"
+  ) => {
+    // Clear any pending sync
+    if (syncDebounceRef.current) {
+      clearTimeout(syncDebounceRef.current);
     }
-  }, [questionsFromWs, isRealMode, phase]);
+
+    // Track the source of this update
+    updateSourceRef.current = source;
+
+    // Compute hash for anti-loop guard
+    const currentHash = computeQuestionsHash(questionsToSync);
+
+    // Skip if hash matches last synced (prevents loops)
+    if (currentHash === lastSyncedHashRef.current) {
+      console.log(`[Sync] SKIP | source: ${source} | reason: hash unchanged | questions: ${questionsToSync.length}`);
+      return;
+    }
+
+    // Debounce for 300ms to avoid spamming backend on rapid edits
+    syncDebounceRef.current = setTimeout(() => {
+      if (conversationId) {
+        const syncPayload = questionsToSync.map(structuredToSyncQuestion);
+
+        // Log sync details
+        console.log(`[Sync] POST | source: ${source} | conversationId: ${conversationId} | questions: ${syncPayload.length}`);
+        console.log(`[Sync] POST | ids: [${syncPayload.map(q => q.id).join(", ")}]`);
+
+        // Update last synced hash BEFORE posting to prevent re-sync on echo
+        lastSyncedHashRef.current = currentHash;
+
+        // Use the WS hook's syncQuestions for active sessions, otherwise use direct sync
+        if (isAgentSessionActive) {
+          syncQuestions(syncPayload as ActualQuestion[]);
+        } else {
+          syncQuestionsToBackend(conversationId, syncPayload);
+        }
+      }
+    }, 300);
+  }, [conversationId, syncQuestions, syncQuestionsToBackend, isAgentSessionActive, computeQuestionsHash]);
+
+  // === Convert WS questions to StructuredQuestion objects ===
+  // Track previous length to detect changes (including deletions to empty)
+  const prevWsQuestionsLengthRef = useRef<number>(0);
+
+  useEffect(() => {
+    // Only process in real mode (not preset demos)
+    if (!isRealMode) return;
+
+    // Detect if this is a meaningful change (new questions or deletion)
+    const hasQuestions = questionsFromWs.length > 0;
+    const hadQuestions = prevWsQuestionsLengthRef.current > 0;
+    const lengthChanged = questionsFromWs.length !== prevWsQuestionsLengthRef.current;
+
+    // Update ref for next comparison
+    prevWsQuestionsLengthRef.current = questionsFromWs.length;
+
+    // Skip if no questions and never had questions (initial state)
+    if (!hasQuestions && !hadQuestions) return;
+
+    console.log("[WS] Received questions update | count:", questionsFromWs.length, "| changed:", lengthChanged);
+    if (questionsFromWs.length > 0) {
+      console.log("[WS] Question IDs:", questionsFromWs.map(q => q.id).join(", "));
+    }
+
+    // Convert ActualQuestion objects to StructuredQuestion objects (using backend IDs)
+    const structuredQuestions = questionsFromWs.map(actualQuestionToStructured);
+
+    setQuestions(structuredQuestions);
+
+    // Update phase when questions arrive
+    if (structuredQuestions.length > 0 && phase === "context") {
+      setPhase("structure");
+    }
+
+    // Sync WS-driven updates to backend (with anti-loop guard)
+    // This ensures backend persistence even for agent-generated questions
+    if (conversationId && lengthChanged) {
+      console.log("[WS] Triggering sync for WS-driven update");
+      debouncedSync(structuredQuestions, "ws");
+    }
+  }, [questionsFromWs, isRealMode, phase, conversationId, debouncedSync]);
 
   // === Real agent session management ===
   const startRealAgentSession = async () => {
@@ -661,37 +737,15 @@ const InterviewArchitectTest = () => {
     }
   };
 
-  // === Debounced sync helper ===
-  const debouncedSync = useCallback((questionsToSync: StructuredQuestion[]) => {
-    // Clear any pending sync
-    if (syncDebounceRef.current) {
-      clearTimeout(syncDebounceRef.current);
-    }
-
-    // Debounce for 300ms to avoid spamming backend on rapid edits
-    syncDebounceRef.current = setTimeout(() => {
-      if (conversationId) {
-        const syncPayload = questionsToSync.map(structuredToSyncQuestion);
-        console.log("[InterviewArchitectTest] Debounced sync | conversationId:", conversationId, "| questions:", syncPayload.length);
-        // Use the WS hook's syncQuestions for active sessions, otherwise use direct sync
-        if (isAgentSessionActive) {
-          syncQuestions(syncPayload as ActualQuestion[]);
-        } else {
-          syncQuestionsToBackend(conversationId, syncPayload);
-        }
-      }
-    }, 300);
-  }, [conversationId, syncQuestions, syncQuestionsToBackend, isAgentSessionActive]);
-
-  // === Question handlers ===
+  // === Question handlers (user-driven) ===
   const handleEditQuestion = (id: string, newText: string) => {
     setQuestions((prev) => {
       const updated = prev.map((q) => (q.id === id ? { ...q, text: newText } : q));
 
       // Sync to backend if conversationId exists (template or real agent mode)
       if (conversationId) {
-        console.log("[InterviewArchitectTest] Question edited:", { id, conversationId });
-        debouncedSync(updated);
+        console.log("[User] Question edited:", { id, newText: newText.substring(0, 50) });
+        debouncedSync(updated, "user");
       }
 
       return updated;
@@ -704,8 +758,8 @@ const InterviewArchitectTest = () => {
 
       // Sync to backend if conversationId exists
       if (conversationId) {
-        console.log("[InterviewArchitectTest] Question deleted:", { id, conversationId });
-        debouncedSync(updated);
+        console.log("[User] Question deleted:", { id, remainingCount: updated.length });
+        debouncedSync(updated, "user");
       }
 
       return updated;
@@ -717,8 +771,8 @@ const InterviewArchitectTest = () => {
 
     // Sync to backend if conversationId exists
     if (conversationId) {
-      console.log("[InterviewArchitectTest] Questions reordered | conversationId:", conversationId);
-      debouncedSync(newOrder);
+      console.log("[User] Questions reordered | count:", newOrder.length);
+      debouncedSync(newOrder, "user");
     }
   };
 
@@ -813,6 +867,19 @@ const InterviewArchitectTest = () => {
     const { templateId } = applyTemplateEvent;
     console.log("[InterviewArchitectTest] apply_template event received:", templateId);
 
+    // If templates aren't loaded yet, trigger loading and wait
+    if (!needsTemplates) {
+      console.log("[InterviewArchitectTest] Triggering templates load for apply_template");
+      setNeedsTemplates(true);
+      return; // Effect will re-run when templates are loaded
+    }
+
+    // Still loading templates, wait
+    if (templatesLoading) {
+      console.log("[InterviewArchitectTest] Waiting for templates to load...");
+      return;
+    }
+
     // Find template by ID
     const template = findTemplateById(templateId);
     if (!template) {
@@ -862,17 +929,10 @@ const InterviewArchitectTest = () => {
         setPhase("structure");
       }
 
-      // Sync merged questions to backend
+      // Sync merged questions to backend (via debouncedSync for consistency)
       if (conversationId) {
-        const syncPayload = mergedQuestions.map(structuredToSyncQuestion);
-        console.log("[InterviewArchitectTest] Syncing merged questions to backend | count:", syncPayload.length);
-        syncQuestionsToBackend(conversationId, syncPayload)
-          .then(() => {
-            console.log("[InterviewArchitectTest] apply_template sync SUCCESS");
-          })
-          .catch((err) => {
-            console.error("[InterviewArchitectTest] apply_template sync FAILED:", err);
-          });
+        console.log("[Template] apply_template | syncing merged questions | count:", mergedQuestions.length);
+        debouncedSync(mergedQuestions, "template");
       }
 
       // Show toast notification
@@ -890,7 +950,7 @@ const InterviewArchitectTest = () => {
 
     // Clear the event after handling
     clearApplyTemplateEvent();
-  }, [applyTemplateEvent, findTemplateById, questions, conversationId, phase, syncQuestionsToBackend, clearApplyTemplateEvent, toast]);
+  }, [applyTemplateEvent, findTemplateById, questions, conversationId, phase, syncQuestionsToBackend, clearApplyTemplateEvent, toast, needsTemplates, templatesLoading, debouncedSync]);
 
   // === Handle templateId from URL query params ===
   // When coming from /templates page with a template selected
@@ -930,14 +990,21 @@ const InterviewArchitectTest = () => {
         goal: template.scenario || undefined,
       });
 
-      // Sync questions to backend
+      // Sync questions to backend (direct call since conversationId not in state yet)
       const syncPayload = structuredQuestions.map(structuredToSyncQuestion);
+      console.log(`[Sync] POST | source: template | conversationId: ${newConversationId} | questions: ${syncPayload.length}`);
+      console.log(`[Sync] POST | ids: [${syncPayload.map(q => q.id).join(", ")}]`);
+
+      // Update hash ref to prevent re-sync when WS echoes back
+      lastSyncedHashRef.current = computeQuestionsHash(structuredQuestions);
+      updateSourceRef.current = "template";
+
       syncQuestionsToBackend(newConversationId, syncPayload);
 
       // Clear the query param after loading
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, templatesLoading, findTemplateById, setSearchParams, syncQuestionsToBackend]);
+  }, [searchParams, templatesLoading, findTemplateById, setSearchParams, syncQuestionsToBackend, computeQuestionsHash]);
 
   // Show nothing while checking auth (prevents flash before redirect)
   if (authLoading || !isLoggedIn) {

@@ -97,6 +97,11 @@ export function buildCategoriesFromTemplates(templates: Template[]): TemplateCat
   return categories;
 }
 
+interface UseTemplatesOptions {
+  /** If false, templates won't be fetched on mount. Use refetch() to load manually. Default: true */
+  enabled?: boolean;
+}
+
 interface UseTemplatesResult {
   templates: Template[];
   categories: TemplateCategory[];
@@ -112,8 +117,11 @@ interface UseTemplatesResult {
 /**
  * Hook to fetch interview templates from GET /templates
  * Also builds derived category data for the directory UI
+ *
+ * @param options.enabled - If false, won't auto-fetch on mount (default: true)
  */
-export function useTemplates(): UseTemplatesResult {
+export function useTemplates(options: UseTemplatesOptions = {}): UseTemplatesResult {
+  const { enabled = true } = options;
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -140,10 +148,12 @@ export function useTemplates(): UseTemplatesResult {
     }
   }, []);
 
-  // Fetch on mount
+  // Fetch on mount (if enabled)
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    if (enabled) {
+      refetch();
+    }
+  }, [enabled, refetch]);
 
   // Build categories from templates
   const categories = useMemo(() => buildCategoriesFromTemplates(templates), [templates]);

@@ -264,44 +264,49 @@ export function useInterviewArchitectWs(
       }
 
       // === Handler: questions_delete ===
+      // NOTE: Backend sends the REMAINING list after deletion, not IDs to delete
       function handleQuestionsDelete(data: unknown) {
-        // Support: data.ids (preferred) or data.questions (fallback with id field)
-        let idsToDelete: string[] = [];
+        // Support: data as array directly, or data.questions as array
+        let remainingQuestionsArray: unknown[] = [];
 
-        if (typeof data === "object" && data !== null) {
+        if (Array.isArray(data)) {
+          remainingQuestionsArray = data;
+        } else if (typeof data === "object" && data !== null) {
           const obj = data as Record<string, unknown>;
-
-          // Preferred: data.ids array
-          if (Array.isArray(obj.ids)) {
-            idsToDelete = obj.ids.filter((id): id is string => typeof id === "string");
-          }
-          // Fallback: data.questions array with id field
-          else if (Array.isArray(obj.questions)) {
-            idsToDelete = obj.questions
-              .map((q) => (typeof q === "object" && q !== null ? (q as Record<string, unknown>).id : null))
-              .filter((id): id is string => typeof id === "string");
+          if (Array.isArray(obj.questions)) {
+            remainingQuestionsArray = obj.questions;
           }
         }
 
-        if (idsToDelete.length === 0) {
-          console.log("[InterviewArchitectWs] questions_delete: No valid IDs found in data:", data);
-          return;
+        console.log("[WS] questions_delete | incoming remaining count:", remainingQuestionsArray.length);
+
+        // Parse questions from the remaining list
+        const parsedQuestions: ActualQuestion[] = [];
+        const newSeenIds = new Set<string>();
+
+        for (const q of remainingQuestionsArray) {
+          if (typeof q === "object" && q !== null &&
+              typeof (q as Record<string, unknown>).id === "string" &&
+              typeof (q as Record<string, unknown>).question === "string") {
+            const qObj = q as { id: string; question: string };
+            parsedQuestions.push({ id: qObj.id, question: qObj.question });
+            newSeenIds.add(qObj.id);
+          } else {
+            console.log("[WS] questions_delete | skipping invalid question format:", q);
+          }
         }
 
-        console.log("[InterviewArchitectWs] questions_delete | ids to remove:", idsToDelete.length, idsToDelete);
+        // Get previous count for logging
+        const prevCount = seenQuestionIdsRef.current.size;
 
-        // Remove from seen set
-        for (const id of idsToDelete) {
-          seenQuestionIdsRef.current.delete(id);
-        }
+        // Replace seen IDs with new set
+        seenQuestionIdsRef.current = newSeenIds;
 
-        // Remove from questions list
-        const idsSet = new Set(idsToDelete);
-        setQuestionsFromWs((prev) => {
-          const updated = prev.filter((q) => !idsSet.has(q.id));
-          console.log("[InterviewArchitectWs] questions_delete | removed:", prev.length - updated.length, "| remaining:", updated.length);
-          return updated;
-        });
+        // Replace questions list entirely
+        setQuestionsFromWs(parsedQuestions);
+
+        console.log(`[WS] questions_delete | prev: ${prevCount} | new: ${parsedQuestions.length} | removed: ${prevCount - parsedQuestions.length}`);
+        console.log(`[WS] questions_delete | new IDs: [${parsedQuestions.map(q => q.id).join(", ")}]`);
       }
     } catch (err) {
       console.error("[InterviewArchitectWs] Failed to create WebSocket:", err);

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Check, Copy, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ interface FinalizeSuccessStepProps {
 
 const FinalizeSuccessStep = ({ savedData, onClose }: FinalizeSuccessStepProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(savedData.publicUrl);
@@ -73,7 +75,13 @@ const FinalizeSuccessStep = ({ savedData, onClose }: FinalizeSuccessStepProps) =
 
       {/* Footer - sticky at bottom on mobile */}
       <div className="p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6 border-t border-border mt-auto bg-card/95">
-        <PrimaryButton className="w-full" onClick={onClose}>
+        <PrimaryButton
+          className="w-full"
+          onClick={() => {
+            onClose();
+            navigate("/saved-interviews");
+          }}
+        >
           Done
         </PrimaryButton>
       </div>

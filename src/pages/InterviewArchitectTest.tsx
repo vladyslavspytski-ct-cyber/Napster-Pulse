@@ -481,37 +481,63 @@ const InterviewArchitectTest = () => {
     // Only process in real mode (not preset demos)
     if (!isRealMode) return;
 
-    // Detect if this is a meaningful change (new questions or deletion)
-    const hasQuestions = questionsFromWs.length > 0;
-    const hadQuestions = prevWsQuestionsLengthRef.current > 0;
-    const lengthChanged = questionsFromWs.length !== prevWsQuestionsLengthRef.current;
+    // Detect the type of change
+    const prevLength = prevWsQuestionsLengthRef.current;
+    const currentLength = questionsFromWs.length;
+    const wasAdded = currentLength > prevLength;
+    const wasRemoved = currentLength < prevLength;
 
     // Update ref for next comparison
-    prevWsQuestionsLengthRef.current = questionsFromWs.length;
+    prevWsQuestionsLengthRef.current = currentLength;
 
     // Skip if no questions and never had questions (initial state)
-    if (!hasQuestions && !hadQuestions) return;
+    if (currentLength === 0 && prevLength === 0) return;
 
-    console.log("[WS] Received questions update | count:", questionsFromWs.length, "| changed:", lengthChanged);
-    if (questionsFromWs.length > 0) {
-      console.log("[WS] Question IDs:", questionsFromWs.map(q => q.id).join(", "));
+    console.log("[WS] Received questions update | prev:", prevLength, "| current:", currentLength, "| added:", wasAdded, "| removed:", wasRemoved);
+    if (currentLength > 0) {
+      console.log("[WS] WS Question IDs:", questionsFromWs.map(q => q.id).join(", "));
     }
 
     // Convert ActualQuestion objects to StructuredQuestion objects (using backend IDs)
-    const structuredQuestions = questionsFromWs.map(actualQuestionToStructured);
+    const wsStructuredQuestions = questionsFromWs.map(actualQuestionToStructured);
 
-    setQuestions(structuredQuestions);
+    if (wasAdded) {
+      // Questions were ADDED - MERGE with existing questions (preserves template questions)
+      setQuestions(prev => {
+        const existingIds = new Set(prev.map(q => q.id));
+        const newFromWs = wsStructuredQuestions.filter(q => !existingIds.has(q.id));
 
-    // Update phase when questions arrive
-    if (structuredQuestions.length > 0 && phase === "context") {
-      setPhase("structure");
+        if (newFromWs.length === 0) {
+          console.log("[WS] No new questions to add (all duplicates)");
+          return prev;
+        }
+
+        const merged = [...prev, ...newFromWs];
+        console.log("[WS] MERGE | existing:", prev.length, "| new:", newFromWs.length, "| total:", merged.length);
+
+        // Sync merged questions to backend
+        if (conversationId) {
+          console.log("[WS] Triggering sync for merged questions");
+          debouncedSync(merged, "ws");
+        }
+
+        return merged;
+      });
+    } else if (wasRemoved) {
+      // Questions were REMOVED (questions_delete) - REPLACE with WS state
+      console.log("[WS] REPLACE | questions_delete detected | new count:", wsStructuredQuestions.length);
+      setQuestions(wsStructuredQuestions);
+
+      // Sync to backend
+      if (conversationId) {
+        console.log("[WS] Triggering sync for replaced questions");
+        debouncedSync(wsStructuredQuestions, "ws");
+      }
     }
 
-    // Sync WS-driven updates to backend (with anti-loop guard)
-    // This ensures backend persistence even for agent-generated questions
-    if (conversationId && lengthChanged) {
-      console.log("[WS] Triggering sync for WS-driven update");
-      debouncedSync(structuredQuestions, "ws");
+    // Update phase when questions arrive
+    if (wsStructuredQuestions.length > 0 && phase === "context") {
+      setPhase("structure");
     }
   }, [questionsFromWs, isRealMode, phase, conversationId, debouncedSync]);
 
@@ -883,8 +909,10 @@ const InterviewArchitectTest = () => {
     // Find template by ID
     const template = findTemplateById(templateId);
     if (!template) {
-      console.error("[InterviewArchitectTest] Template not found:", templateId);
-      clearApplyTemplateEvent();
+      // If we just triggered loading and templates aren't available yet, wait
+      // This handles the race condition where effect runs before fetch completes
+      console.log("[InterviewArchitectTest] Template not found:", templateId, "- may still be loading");
+      // Don't clear the event yet - it will be processed on next render when templates are available
       return;
     }
 

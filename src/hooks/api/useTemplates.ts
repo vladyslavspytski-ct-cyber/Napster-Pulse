@@ -123,7 +123,8 @@ interface UseTemplatesResult {
 export function useTemplates(options: UseTemplatesOptions = {}): UseTemplatesResult {
   const { enabled = true } = options;
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // Start with isLoading=true if enabled, so callers know to wait for data
+  const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<Error | null>(null);
 
   const refetch = useCallback(async () => {
@@ -147,6 +148,14 @@ export function useTemplates(options: UseTemplatesOptions = {}): UseTemplatesRes
       setIsLoading(false);
     }
   }, []);
+
+  // When enabled changes to true, set loading state immediately
+  // This prevents race conditions where callers check isLoading before fetch starts
+  useEffect(() => {
+    if (enabled && templates.length === 0) {
+      setIsLoading(true);
+    }
+  }, [enabled, templates.length]);
 
   // Fetch on mount (if enabled)
   useEffect(() => {

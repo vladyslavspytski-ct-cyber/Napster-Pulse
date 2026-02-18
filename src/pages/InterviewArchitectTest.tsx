@@ -886,7 +886,7 @@ const InterviewArchitectTest = () => {
   }, [stopRealVolumePolling, disconnectWs]);
 
   // === Handle apply_template WS event ===
-  // When agent sends apply_template, ADD template questions to existing (no replace)
+
   useEffect(() => {
     if (!applyTemplateEvent) return;
 

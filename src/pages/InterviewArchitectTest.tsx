@@ -23,6 +23,7 @@ import ArchitectFinalizeModal from "@/components/interview-architect/ArchitectFi
 import {
   useInterviewArchitectWs,
   ActualQuestion,
+  WsEventType,
 } from "@/hooks/api/useInterviewArchitectWs";
 import { useTemplates, Template } from "@/hooks/api/useTemplates";
 import { useQuestionsSync, SyncQuestion } from "@/hooks/api/useQuestionsSync";
@@ -369,6 +370,11 @@ const InterviewArchitectTest = () => {
   // Debounce ref for question sync
   const syncDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Ref to track current questions (for computing merges outside setState)
+  const questionsRef = useRef<StructuredQuestion[]>([]);
+  // Keep ref in sync with state
+  questionsRef.current = questions;
+
   // === Sync tracking for anti-loop guard ===
   // Track the source of question updates to decide sync behavior
   type UpdateSource = "user" | "ws" | "template" | null;
@@ -391,6 +397,7 @@ const InterviewArchitectTest = () => {
     questionsFromWs,
     isConnected: isWsConnected,
     error: wsError,
+    lastWsEventType,
     applyTemplateEvent,
     clearApplyTemplateEvent,
     disconnect: disconnectWs,
@@ -546,6 +553,12 @@ const InterviewArchitectTest = () => {
       clearTimeout(syncDebounceRef.current);
     }
 
+    // GUARD: Never sync empty array - this confuses the agent
+    if (questionsToSync.length === 0) {
+      console.log(`[Sync] SKIP | source: ${source} | reason: empty array | conversationId: ${conversationId}`);
+      return;
+    }
+
     // Track the source of this update
     updateSourceRef.current = source;
 
@@ -581,26 +594,37 @@ const InterviewArchitectTest = () => {
   }, [conversationId, syncQuestions, syncQuestionsToBackend, isAgentSessionActive, computeQuestionsHash]);
 
   // === Convert WS questions to StructuredQuestion objects ===
-  // Track previous length to detect changes (including deletions to empty)
-  const prevWsQuestionsLengthRef = useRef<number>(0);
+  // Track previous hash to detect content changes
+  const prevWsQuestionsHashRef = useRef<string>("");
+
+  // Helper: compute hash for ActualQuestion array
+  const computeWsQuestionsHash = useCallback((qs: ActualQuestion[]): string => {
+    return qs.map((q) => `${q.id}:${q.question}`).join("|");
+  }, []);
 
   useEffect(() => {
     // Only process in real mode (not preset demos)
     if (!isRealMode) return;
 
-    // Detect the type of change
-    const prevLength = prevWsQuestionsLengthRef.current;
-    const currentLength = questionsFromWs.length;
-    const wasAdded = currentLength > prevLength;
-    const wasRemoved = currentLength < prevLength;
+    // Skip if no event type (initial state or no WS message yet)
+    if (!lastWsEventType) return;
+
+    // Compute hash to detect actual changes
+    const prevHash = prevWsQuestionsHashRef.current;
+    const currentHash = computeWsQuestionsHash(questionsFromWs);
+
+    // Skip if nothing changed (prevents duplicate processing)
+    if (currentHash === prevHash) {
+      console.log(`[WS] SKIP | reason: hash unchanged | eventType: ${lastWsEventType}`);
+      return;
+    }
 
     // Update ref for next comparison
-    prevWsQuestionsLengthRef.current = currentLength;
+    prevWsQuestionsHashRef.current = currentHash;
 
-    // Skip if no questions and never had questions (initial state)
-    if (currentLength === 0 && prevLength === 0) return;
+    const currentLength = questionsFromWs.length;
 
-    console.log("[WS] Received questions update | prev:", prevLength, "| current:", currentLength, "| added:", wasAdded, "| removed:", wasRemoved);
+    console.log(`[WS] Processing | eventType: ${lastWsEventType} | count: ${currentLength}`);
     if (currentLength > 0) {
       console.log("[WS] WS Question IDs:", questionsFromWs.map(q => q.id).join(", "));
     }
@@ -608,45 +632,42 @@ const InterviewArchitectTest = () => {
     // Convert ActualQuestion objects to StructuredQuestion objects (using backend IDs)
     const wsStructuredQuestions = questionsFromWs.map(actualQuestionToStructured);
 
-    if (wasAdded) {
-      // Questions were ADDED - MERGE with existing questions (preserves template questions)
-      setQuestions(prev => {
-        const existingIds = new Set(prev.map(q => q.id));
-        const newFromWs = wsStructuredQuestions.filter(q => !existingIds.has(q.id));
+    // Route based on event type (not count heuristics)
+    if (lastWsEventType === "offer") {
+      // questions_offer: MERGE new questions with existing UI questions
+      // Compute merge OUTSIDE of setState to avoid side effects in updater
+      const currentQuestions = questionsRef.current;
+      const existingIds = new Set(currentQuestions.map(q => q.id));
+      const newFromWs = wsStructuredQuestions.filter(q => !existingIds.has(q.id));
 
-        if (newFromWs.length === 0) {
-          console.log("[WS] No new questions to add (all duplicates)");
-          return prev;
-        }
+      if (newFromWs.length === 0) {
+        console.log("[WS] MERGE | no new questions (all duplicates)");
+      } else {
+        const merged = [...currentQuestions, ...newFromWs];
+        console.log(`[WS] MERGE | existing: ${currentQuestions.length} | new: ${newFromWs.length} | total: ${merged.length}`);
 
-        const merged = [...prev, ...newFromWs];
-        console.log("[WS] MERGE | existing:", prev.length, "| new:", newFromWs.length, "| total:", merged.length);
+        // Update state (pure state update, no side effects)
+        setQuestions(merged);
 
-        // Sync merged questions to backend
-        if (conversationId) {
+        // Sync merged list to backend OUTSIDE of setState
+        if (conversationId && merged.length > 0) {
           console.log("[WS] Triggering sync for merged questions");
           debouncedSync(merged, "ws");
         }
-
-        return merged;
-      });
-    } else if (wasRemoved) {
-      // Questions were REMOVED (questions_delete) - REPLACE with WS state
-      console.log("[WS] REPLACE | questions_delete detected | new count:", wsStructuredQuestions.length);
-      setQuestions(wsStructuredQuestions);
-
-      // Sync to backend
-      if (conversationId) {
-        console.log("[WS] Triggering sync for replaced questions");
-        debouncedSync(wsStructuredQuestions, "ws");
       }
+    } else if (lastWsEventType === "update" || lastWsEventType === "delete") {
+      // questions_update/questions_delete: REPLACE UI with WS state
+      // Backend is source of truth - no need to sync back
+      console.log(`[WS] REPLACE | eventType: ${lastWsEventType} | new count: ${wsStructuredQuestions.length}`);
+      setQuestions(wsStructuredQuestions);
+      // NO sync needed - backend already has this state
     }
 
     // Update phase when questions arrive
     if (wsStructuredQuestions.length > 0 && phase === "context") {
       setPhase("structure");
     }
-  }, [questionsFromWs, isRealMode, phase, conversationId, debouncedSync]);
+  }, [questionsFromWs, lastWsEventType, isRealMode, phase, conversationId, debouncedSync, computeWsQuestionsHash]);
 
   // === Real agent session management ===
   const startRealAgentSession = async () => {

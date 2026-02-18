@@ -39,6 +39,12 @@ export function useQuestionsSync(): UseQuestionsSyncResult {
 
   const syncQuestions = useCallback(
     async (roomId: string, questions: SyncQuestion[]): Promise<void> => {
+      // GUARD: Never sync empty array - this confuses the agent
+      if (questions.length === 0) {
+        console.log("[useQuestionsSync] SKIP | reason: empty array | roomId:", roomId);
+        return;
+      }
+
       const url = `${API_ROUTES.architectQuestionsSync}?room_id=${encodeURIComponent(roomId)}`;
       const payload = {
         questions: questions.map((q) => ({ id: q.id, question: q.question })),

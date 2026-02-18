@@ -101,7 +101,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl sm:border-border/50">
         {/* Header with Logo */}
-        <DialogHeader className="p-6 pb-4 text-center flex-shrink-0">
+        <DialogHeader className="!px-6 !pt-8 sm:!pt-8 pb-4 text-center flex-shrink-0">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary">
               <Mic className="w-5 h-5 text-primary-foreground" />

@@ -39,7 +39,7 @@ const Header = () => {
   };
 
   // Protected pages that require redirect to home on logout
-  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/saved-interviews"];
+  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/saved-interviews", "/templates"];
 
   const handleLogout = () => {
     logout();
@@ -61,23 +61,32 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  // Handle Templates click - if logged out, open login modal and redirect after
+  const handleTemplatesClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      openAuthModal("login", "/templates");
+    }
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 glass-card">
         <div className="section-container">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo - fixed width for balance */}
-            <a href="/" className="flex items-center gap-2 group md:min-w-[140px]">
+            <a href="/" className="flex items-center gap-2 group lg:min-w-[180px]">
               <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary transition-all duration-300 group-hover:shadow-glow">
                 <Mic className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-semibold text-foreground tracking-tight">
+              <span className="text-xl font-semibold text-foreground tracking-tight whitespace-nowrap">
                 Napster Connect
               </span>
             </a>
 
-            {/* Desktop Navigation - centered */}
-            <nav className="hidden md:flex items-center justify-center gap-6 flex-1">
+            {/* Desktop Navigation - centered (hidden until lg breakpoint) */}
+            <nav className="hidden lg:flex items-center justify-center gap-4 xl:gap-6 flex-1">
               {/* How it works & Features - only visible on home page */}
               {window.location.pathname === "/" && (
                 <>
@@ -104,9 +113,10 @@ const Header = () => {
                   Saved Interviews
                 </a>
               )}
-              {/* Templates */}
+              {/* Templates - gated with login modal */}
               <a
                 href="/templates"
+                onClick={handleTemplatesClick}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Templates
@@ -122,7 +132,7 @@ const Header = () => {
             </nav>
 
             {/* Desktop Auth Buttons - fixed width for balance */}
-            <div className="hidden md:flex items-center justify-end gap-3 md:min-w-[140px]">
+            <div className="hidden lg:flex items-center justify-end gap-3 lg:min-w-[140px]">
               {isLoggedIn ? (
                 <UserMenu onLogout={handleLogout} />
               ) : (
@@ -139,7 +149,7 @@ const Header = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 text-foreground"
+              className="lg:hidden p-2 text-foreground"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -149,7 +159,7 @@ const Header = () => {
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="md:hidden py-4 border-t border-border animate-fade-in">
+            <div className="lg:hidden py-4 border-t border-border animate-fade-in">
               <nav className="flex flex-col gap-4">
                 {/* How it works & Features - only visible on home page */}
                 {window.location.pathname === "/" && (
@@ -177,9 +187,10 @@ const Header = () => {
                     Saved Interviews
                   </a>
                 )}
-                {/* Templates */}
+                {/* Templates - gated with login modal */}
                 <a
                   href="/templates"
+                  onClick={handleTemplatesClick}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Templates

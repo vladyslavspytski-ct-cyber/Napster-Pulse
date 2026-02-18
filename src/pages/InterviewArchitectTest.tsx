@@ -28,6 +28,7 @@ import { useTemplates, Template } from "@/hooks/api/useTemplates";
 import { useQuestionsSync, SyncQuestion } from "@/hooks/api/useQuestionsSync";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
 import { useSignedUrl } from "@/hooks/api";
+import { useInterviewDraft, type InterviewDraft } from "@/hooks/useInterviewDraft";
 
 // Mock data by preset (kept unchanged for demo purposes)
 const mockDataByPreset: Record<
@@ -329,6 +330,9 @@ const InterviewArchitectTest = () => {
   // === Questions sync hook ===
   const { syncQuestions: syncQuestionsToBackend } = useQuestionsSync();
 
+  // === Draft persistence hook ===
+  const { debouncedSaveDraft, loadDraft, clearDraft, cancelPendingSave } = useInterviewDraft();
+
   // === Preset demo state (unchanged) ===
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [phase, setPhase] = useState<ArchitectPhase>("context");
@@ -340,11 +344,17 @@ const InterviewArchitectTest = () => {
   );
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
+  const [draftTitle, setDraftTitle] = useState<string>("");
 
   // === Conversation state (stable ID for session) ===
   // conversationId is generated on template selection or first agent start
   // and persists throughout the editing session until explicit reset
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  // Initialize from URL param if present
+  const [conversationId, setConversationId] = useState<string | null>(() => {
+    return searchParams.get("conv") || null;
+  });
+  // Track if draft was restored to avoid re-loading template
+  const draftRestoredRef = useRef(false);
   // Flag to control WS subscription - only true when agent session is active
   // Template selection sets conversationId but NOT this flag
   const [isAgentSessionActive, setIsAgentSessionActive] = useState(false);
@@ -365,6 +375,10 @@ const InterviewArchitectTest = () => {
   const updateSourceRef = useRef<UpdateSource>(null);
   // Track hash of last synced questions to prevent duplicate syncs
   const lastSyncedHashRef = useRef<string | null>(null);
+
+  // === Template/Draft tracking refs ===
+  // Track if template was loaded to prevent re-loading
+  const templateIdLoadedRef = useRef<string | null>(null);
 
   // Helper: compute simple hash of questions for comparison
   const computeQuestionsHash = useCallback((qs: StructuredQuestion[]): string => {
@@ -428,6 +442,99 @@ const InterviewArchitectTest = () => {
     }
     setRealInputLevel(0);
   }, []);
+
+  // === URL params helper ===
+  const updateUrlParams = useCallback((params: { templateId?: string | null; conv?: string | null }) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    if (params.templateId !== undefined) {
+      if (params.templateId) {
+        newParams.set("templateId", params.templateId);
+      } else {
+        newParams.delete("templateId");
+      }
+    }
+
+    if (params.conv !== undefined) {
+      if (params.conv) {
+        newParams.set("conv", params.conv);
+      } else {
+        newParams.delete("conv");
+      }
+    }
+
+    setSearchParams(newParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // === Draft restoration on mount ===
+  // Using ref to track if restoration was attempted (mount-only effect)
+  const draftRestorationAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    // Only run once on mount
+    if (draftRestorationAttemptedRef.current) return;
+    draftRestorationAttemptedRef.current = true;
+
+    // Only try to restore if we have a conv param in URL
+    const convFromUrl = searchParams.get("conv");
+    if (!convFromUrl) {
+      console.log("[Draft] No conv in URL, skipping restoration");
+      return;
+    }
+
+    // Try to load draft
+    const draft = loadDraft(convFromUrl);
+    if (!draft) {
+      console.log("[Draft] No draft found for conv:", convFromUrl);
+      return;
+    }
+
+    console.log("[Draft] Restoring draft | conv:", convFromUrl, "| questions:", draft.questions.length);
+    draftRestoredRef.current = true;
+
+    // Restore state from draft
+    setConversationId(draft.conversationId);
+    setQuestions(draft.questions as StructuredQuestion[]);
+    setInterviewContext(draft.interviewContext);
+    setDraftTitle(draft.title);
+
+    // Set phase based on questions
+    if (draft.questions.length > 0) {
+      setPhase("structure");
+    }
+
+    // If we have a templateId, trigger template loading for metadata
+    if (draft.templateId) {
+      setNeedsTemplates(true);
+    }
+  }, [searchParams, loadDraft]);
+
+  // === Autosave draft on changes ===
+  useEffect(() => {
+    // Don't save if no conversationId or in demo mode
+    if (!conversationId || selectedPresetId) return;
+
+    // Don't save empty drafts
+    if (questions.length === 0 && !interviewContext.type) return;
+
+    const draft: InterviewDraft = {
+      conversationId,
+      templateId: searchParams.get("templateId"),
+      title: draftTitle || interviewContext.type || "Untitled Interview",
+      questions: questions.map(q => ({ id: q.id, text: q.text, phase: q.phase })),
+      interviewContext,
+      updatedAt: Date.now(),
+    };
+
+    debouncedSaveDraft(draft);
+  }, [conversationId, questions, interviewContext, draftTitle, selectedPresetId, searchParams, debouncedSaveDraft]);
+
+  // === Update URL when conversationId changes ===
+  useEffect(() => {
+    if (conversationId && !searchParams.get("conv")) {
+      updateUrlParams({ conv: conversationId });
+    }
+  }, [conversationId, searchParams, updateUrlParams]);
 
   // === Debounced sync helper with anti-loop guard ===
   const debouncedSync = useCallback((
@@ -808,10 +915,16 @@ const InterviewArchitectTest = () => {
   };
 
   const handleReset = () => {
-    // Clear any pending sync
+    // Clear any pending sync and save
     if (syncDebounceRef.current) {
       clearTimeout(syncDebounceRef.current);
       syncDebounceRef.current = null;
+    }
+    cancelPendingSave();
+
+    // Clear draft from storage
+    if (conversationId) {
+      clearDraft(conversationId);
     }
 
     // Cleanup real agent session if active
@@ -828,11 +941,20 @@ const InterviewArchitectTest = () => {
     setAgentState("disconnected");
     setQuestions([]);
     setInterviewContext({});
+    setDraftTitle("");
     setDemoStep(0);
     stopMockLevelPolling();
     stopRealVolumePolling();
 
-    console.log("[InterviewArchitectTest] Reset complete - conversationId cleared");
+    // Reset refs
+    draftRestoredRef.current = false;
+    draftRestorationAttemptedRef.current = false;
+    templateIdLoadedRef.current = null;
+
+    // Clear URL params
+    setSearchParams({}, { replace: true });
+
+    console.log("[InterviewArchitectTest] Reset complete - conversationId and draft cleared");
   };
 
   const getHelperText = () => {
@@ -982,10 +1104,17 @@ const InterviewArchitectTest = () => {
 
   // === Handle templateId from URL query params ===
   // When coming from /templates page with a template selected
-  const templateIdLoadedRef = useRef<string | null>(null);
   useEffect(() => {
     const templateId = searchParams.get("templateId");
     if (!templateId || templatesLoading) return;
+
+    // Skip if draft was restored (already has questions)
+    if (draftRestoredRef.current) {
+      console.log("[InterviewArchitectTest] Skipping template load - draft was restored");
+      templateIdLoadedRef.current = templateId;
+      return;
+    }
+
     // Prevent loading the same template twice
     if (templateIdLoadedRef.current === templateId) return;
 
@@ -1029,10 +1158,10 @@ const InterviewArchitectTest = () => {
 
       syncQuestionsToBackend(newConversationId, syncPayload);
 
-      // Clear the query param after loading
-      setSearchParams({}, { replace: true });
+      // Update URL with conv param (keep templateId)
+      updateUrlParams({ conv: newConversationId });
     }
-  }, [searchParams, templatesLoading, findTemplateById, setSearchParams, syncQuestionsToBackend, computeQuestionsHash]);
+  }, [searchParams, templatesLoading, findTemplateById, syncQuestionsToBackend, computeQuestionsHash, updateUrlParams]);
 
   // Show nothing while checking auth (prevents flash before redirect)
   if (authLoading || !isLoggedIn) {

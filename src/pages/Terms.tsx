@@ -169,7 +169,7 @@ const Terms = () => (
           <section className="glass-card rounded-2xl p-6">
             <h2 className="text-lg font-semibold text-foreground mb-3">19. Contact Us</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              If you have questions, you may contact us at: <a href="mailto:support@interu.ai" className="text-primary hover:underline">support@interu.ai</a>
+              If you have questions, you may contact us at: <a href="mailto:support@napsterconnect.ai" className="text-primary hover:underline">support@napsterconnect.ai</a>
             </p>
           </section>
 
@@ -181,7 +181,7 @@ const Terms = () => (
               <li><strong>Impersonation & Likeness:</strong> You must not create or deploy any AI persona or media that depicts or convincingly imitates a real individual without verifiable, written consent.</li>
               <li><strong>Voice & Biometric Data:</strong> Uploading or cloning another person's voice, image, or recording data requires that individual's explicit, recorded consent.</li>
               <li><strong>Prompt Manipulation:</strong> Attempts to override or bypass system prompts, safety filters, or role segmentation are prohibited.</li>
-              <li><strong>Reporting:</strong> Suspected violations can be reported at <a href="mailto:support@interu.ai" className="text-primary hover:underline">support@interu.ai</a>.</li>
+              <li><strong>Reporting:</strong> Suspected violations can be reported at <a href="mailto:support@napsterconnect.ai" className="text-primary hover:underline">support@napsterconnect.ai</a>.</li>
             </ul>
           </section>
         </div>

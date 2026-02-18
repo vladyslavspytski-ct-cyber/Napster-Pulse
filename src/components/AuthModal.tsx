@@ -107,7 +107,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
               <Mic className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-semibold text-foreground tracking-tight">
-              Interu
+              Napster Connect
             </span>
           </div>
           <DialogTitle className="text-lg font-medium text-foreground">

@@ -12,7 +12,7 @@ const Privacy = () => (
         <div className="space-y-8">
           <section className="glass-card rounded-2xl p-6">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              This Privacy Policy ("Policy") describes how Interu and its affiliates and subsidiaries (collectively, "Company," "we," "our," or "us") collects, discloses, or otherwise processes Personal Data (defined below) when we act as a data controller in relation to the operation of our business including through our websites, our digital platform of AI-driven products, any communications between you and us, such as through customer service interactions and emails and other communications we send, and where this Policy is posted (collectively, the "Services").
+              This Privacy Policy ("Policy") describes how Napster Connect and its affiliates and subsidiaries (collectively, "Company," "we," "our," or "us") collects, discloses, or otherwise processes Personal Data (defined below) when we act as a data controller in relation to the operation of our business including through our websites, our digital platform of AI-driven products, any communications between you and us, such as through customer service interactions and emails and other communications we send, and where this Policy is posted (collectively, the "Services").
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed mt-3">
               This Policy does not apply to Personal Data for which Company is acting as a processor on behalf of a controller such as when we perform Services on behalf of our business customers (e.g., where we do not determine the purpose and means of the data processing).
@@ -111,7 +111,7 @@ const Privacy = () => (
           <section className="glass-card rounded-2xl p-6">
             <h2 className="text-lg font-semibold text-foreground mb-3">9. Children Under Age 18</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Company does not knowingly collect personally identifiable information from children under 18 without parental consent. In the event that we learn that we have collected such information from a child under the age of 18 without parental consent, we will delete this information from our database as quickly as possible. If you believe we have collected any personally identifiable information about anyone under 18, please contact us at <a href="mailto:support@interu.ai" className="text-primary hover:underline">support@interu.ai</a>.
+              Company does not knowingly collect personally identifiable information from children under 18 without parental consent. In the event that we learn that we have collected such information from a child under the age of 18 without parental consent, we will delete this information from our database as quickly as possible. If you believe we have collected any personally identifiable information about anyone under 18, please contact us at <a href="mailto:support@napsterconnect.ai" className="text-primary hover:underline">support@napsterconnect.ai</a>.
             </p>
           </section>
 
@@ -149,7 +149,7 @@ const Privacy = () => (
               <li><strong>Right to lodge a complaint.</strong> You have the right to lodge a complaint with a national supervisory authority about the way we handle or process your Personal Data.</li>
             </ul>
             <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-              To exercise any of these rights, please contact us at <a href="mailto:support@interu.ai" className="text-primary hover:underline">support@interu.ai</a>.
+              To exercise any of these rights, please contact us at <a href="mailto:support@napsterconnect.ai" className="text-primary hover:underline">support@napsterconnect.ai</a>.
             </p>
           </section>
 
@@ -177,7 +177,7 @@ const Privacy = () => (
           <section className="glass-card rounded-2xl p-6">
             <h2 className="text-lg font-semibold text-foreground mb-3">15. Contact Information</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              If you have questions about this Policy, you may contact us at: <a href="mailto:support@interu.ai" className="text-primary hover:underline">support@interu.ai</a>
+              If you have questions about this Policy, you may contact us at: <a href="mailto:support@napsterconnect.ai" className="text-primary hover:underline">support@napsterconnect.ai</a>
             </p>
           </section>
         </div>

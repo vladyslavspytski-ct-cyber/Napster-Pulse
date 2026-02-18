@@ -24,11 +24,11 @@ const Contact = () => (
               Reach out via email and we'll get back to you as soon as possible.
             </p>
             <a
-              href="mailto:hello@napsterconnect.io"
+              href="mailto:hello@napsterpulse.io"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
             >
               <Mail className="h-4 w-4" />
-              hello@napsterconnect.io
+              hello@napsterpulse.io
             </a>
           </div>
 

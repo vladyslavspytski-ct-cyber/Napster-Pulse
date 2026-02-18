@@ -13,7 +13,7 @@ const Footer = () => {
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary">
                 <Mic className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-semibold text-foreground tracking-tight">Napster Connect</span>
+              <span className="text-xl font-semibold text-foreground tracking-tight">Napster Pulse</span>
             </a>
             <p className="text-sm text-muted-foreground max-w-sm">
               Create and participate in voice-based interviews. Easy, fast, and insightful.
@@ -99,7 +99,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground text-center">© {currentYear} Napster Connect. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground text-center">© {currentYear} Napster Pulse. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -25,7 +25,7 @@ const CTASection = ({ onCreateInterview }: CTASectionProps) => {
             </h2>
 
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8">
-              Join thousands of creators who are already using Napster Connect to conduct smarter, more insightful voice-based
+              Join thousands of creators who are already using Napster Pulse to conduct smarter, more insightful voice-based
               interviews.
             </p>
 

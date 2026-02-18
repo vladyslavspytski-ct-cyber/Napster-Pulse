@@ -12,7 +12,7 @@ const Privacy = () => (
         <div className="space-y-8">
           <section className="glass-card rounded-2xl p-6">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              This Privacy Policy ("Policy") describes how Napster Connect and its affiliates and subsidiaries (collectively, "Company," "we," "our," or "us") collects, discloses, or otherwise processes Personal Data (defined below) when we act as a data controller in relation to the operation of our business including through our websites, our digital platform of AI-driven products, any communications between you and us, such as through customer service interactions and emails and other communications we send, and where this Policy is posted (collectively, the "Services").
+              This Privacy Policy ("Policy") describes how Napster Pulse and its affiliates and subsidiaries (collectively, "Company," "we," "our," or "us") collects, discloses, or otherwise processes Personal Data (defined below) when we act as a data controller in relation to the operation of our business including through our websites, our digital platform of AI-driven products, any communications between you and us, such as through customer service interactions and emails and other communications we send, and where this Policy is posted (collectively, the "Services").
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed mt-3">
               This Policy does not apply to Personal Data for which Company is acting as a processor on behalf of a controller such as when we perform Services on behalf of our business customers (e.g., where we do not determine the purpose and means of the data processing).

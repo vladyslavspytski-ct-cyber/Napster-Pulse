@@ -23,6 +23,26 @@ const STORAGE_KEY_PREFIX = "interview_draft_";
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
+ * Standalone function to clear all interview drafts from sessionStorage.
+ * Can be called from non-React contexts (e.g., logout handler).
+ */
+export function clearAllInterviewDrafts(): void {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key?.startsWith(STORAGE_KEY_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => sessionStorage.removeItem(key));
+    console.log("[Draft] Cleared all drafts on logout:", keysToRemove.length);
+  } catch (err) {
+    console.error("[Draft] Failed to clear all drafts:", err);
+  }
+}
+
+/**
  * Hook for managing interview draft persistence in sessionStorage
  * Provides autosave and restore functionality to prevent data loss on reload
  */

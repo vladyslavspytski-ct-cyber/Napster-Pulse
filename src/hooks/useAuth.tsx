@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { BACKEND_BASE_URL } from "@/config";
+import { clearAllInterviewDrafts } from "@/hooks/useInterviewDraft";
 
 // Token storage keys
 const TOKEN_KEY = "interu_access_token";
@@ -234,6 +235,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clear local state immediately (don't wait for backend)
     clearStoredToken();
     setToken(null);
+
+    // Clear all interview drafts from sessionStorage
+    clearAllInterviewDrafts();
 
     // Best-effort backend logout - fire and forget
     // We don't wait for this or handle errors since local state is already cleared

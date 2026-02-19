@@ -485,17 +485,34 @@ const InterviewArchitectTest = () => {
     // Only try to restore if we have a conv param in URL
     const convFromUrl = searchParams.get("conv");
     if (!convFromUrl) {
-      console.log("[Draft] No conv in URL, skipping restoration");
+      console.log("[Draft] No conv in URL, skipping restoration (clean start)");
       return;
     }
 
     // Try to load draft
     const draft = loadDraft(convFromUrl);
-    if (!draft) {
-      console.log("[Draft] No draft found for conv:", convFromUrl);
+
+    // If draft not found OR has no questions -> clean start
+    if (!draft || draft.questions.length === 0) {
+      console.log("[Draft] No valid draft for conv:", convFromUrl, "| clearing URL and starting fresh");
+
+      // Clear conv (and templateId) from URL - reset to clean /create-interview
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("conv");
+      newParams.delete("templateId");
+      setSearchParams(newParams, { replace: true });
+
+      // Explicitly reset state to ensure clean start (don't set conversationId)
+      setConversationId(null);
+      setQuestions([]);
+      setInterviewContext({});
+      setDraftTitle("");
+      setPhase("context");
+
       return;
     }
 
+    // Draft found with questions -> restore
     console.log("[Draft] Restoring draft | conv:", convFromUrl, "| questions:", draft.questions.length);
     draftRestoredRef.current = true;
 
@@ -514,7 +531,7 @@ const InterviewArchitectTest = () => {
     if (draft.templateId) {
       setNeedsTemplates(true);
     }
-  }, [searchParams, loadDraft]);
+  }, [searchParams, loadDraft, setSearchParams]);
 
   // === Autosave draft on changes ===
   useEffect(() => {
@@ -1372,6 +1389,34 @@ const InterviewArchitectTest = () => {
         questions={questions}
         interviewType={interviewContext.type}
         defaultTitle={selectedTemplate?.title}
+        onInterviewCreated={() => {
+          // Cancel any pending autosave first (prevents race condition)
+          cancelPendingSave();
+
+          // Clear draft from sessionStorage
+          if (conversationId) {
+            clearDraft(conversationId);
+            console.log("[Draft] Cleared on Done click | conv:", conversationId);
+          }
+
+          // Clear URL params (conv, templateId)
+          setSearchParams({}, { replace: true });
+
+          // Reset page state to fresh start
+          setConversationId(null);
+          setQuestions([]);
+          setInterviewContext({});
+          setDraftTitle("");
+          setPhase("context");
+          setSelectedTemplate(null);
+          setSelectedPresetId(null);
+
+          // Reset tracking refs
+          draftRestoredRef.current = false;
+          templateIdLoadedRef.current = null;
+
+          console.log("[Draft] Page state reset to fresh start");
+        }}
       />
     </div>
   );

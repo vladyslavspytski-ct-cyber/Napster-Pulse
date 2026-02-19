@@ -20,6 +20,8 @@ interface ArchitectFinalizeModalProps {
   questions: StructuredQuestion[];
   interviewType?: string;
   defaultTitle?: string;
+  /** Called after interview is successfully created - use for cleanup (clear draft, URL, etc.) */
+  onInterviewCreated?: () => void;
 }
 
 interface SavedInterviewData {
@@ -34,6 +36,7 @@ const ArchitectFinalizeModal = ({
   questions,
   interviewType,
   defaultTitle,
+  onInterviewCreated,
 }: ArchitectFinalizeModalProps) => {
   const [interviewTitle, setInterviewTitle] = useState(defaultTitle || "");
   const [savedData, setSavedData] = useState<SavedInterviewData | null>(null);
@@ -99,6 +102,8 @@ const ArchitectFinalizeModal = ({
       questionsCount: questions.length,
       publicUrl,
     });
+    // NOTE: Don't call onInterviewCreated here - autosave would immediately re-save the draft
+    // Cleanup is deferred to when user clicks "Done" in the success step
   };
 
   const handleClose = () => {
@@ -125,6 +130,7 @@ const ArchitectFinalizeModal = ({
               key="success"
               savedData={savedData}
               onClose={handleClose}
+              onDone={onInterviewCreated}
             />
           ) : (
             <FinalizeFormStep

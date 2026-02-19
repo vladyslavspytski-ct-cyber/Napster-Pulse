@@ -14,9 +14,11 @@ interface FinalizeSuccessStepProps {
     publicUrl: string;
   };
   onClose: () => void;
+  /** Called when user clicks Done - use for cleanup (clear draft, reset state, etc.) */
+  onDone?: () => void;
 }
 
-const FinalizeSuccessStep = ({ savedData, onClose }: FinalizeSuccessStepProps) => {
+const FinalizeSuccessStep = ({ savedData, onClose, onDone }: FinalizeSuccessStepProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -78,6 +80,8 @@ const FinalizeSuccessStep = ({ savedData, onClose }: FinalizeSuccessStepProps) =
         <PrimaryButton
           className="w-full"
           onClick={() => {
+            // Cleanup draft and reset state before navigating
+            onDone?.();
             onClose();
             navigate("/saved-interviews");
           }}

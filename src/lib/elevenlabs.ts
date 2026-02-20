@@ -71,8 +71,20 @@ export class ElevenLabsConversation {
   private audioWorkletNode: ScriptProcessorNode | null = null;
   private nextPlayTime: number = 0;
 
+  // Track scheduled audio sources for barge-in interruption
+  private scheduledSources: AudioBufferSourceNode[] = [];
+  // Track if agent is currently speaking (for turn-taking)
+  private _isAgentSpeaking: boolean = false;
+
   constructor(eventHandlers: ConversationEventHandler = {}) {
     this.eventHandlers = eventHandlers;
+  }
+
+  /**
+   * Check if agent is currently speaking (has scheduled audio)
+   */
+  get isAgentSpeaking(): boolean {
+    return this._isAgentSpeaking;
   }
 
   /**
@@ -204,6 +216,21 @@ export class ElevenLabsConversation {
           // Handle JSON or text messages
           try {
             const message = JSON.parse(event.data);
+
+            // Log all event types for debugging (except frequent audio events)
+            if (message.type !== "audio") {
+              console.log("[ElevenLabs] event:", message.type, message);
+            }
+
+            // Handle interruption event from server
+            if (
+              message.type === "interruption" ||
+              message.type === "agent_interruption" ||
+              message.interruption_event
+            ) {
+              console.log("[ElevenLabs] interruption received -> interruptPlayback");
+              this.interruptPlayback();
+            }
 
             // Handle audio events
             if (
@@ -394,6 +421,22 @@ export class ElevenLabsConversation {
       const currentTime = this.audioContext.currentTime;
       const startTime = Math.max(currentTime, this.nextPlayTime);
 
+      // Track source for barge-in interruption
+      this.scheduledSources.push(source);
+      this._isAgentSpeaking = true;
+
+      // Remove source from tracking when it ends
+      source.onended = () => {
+        const idx = this.scheduledSources.indexOf(source);
+        if (idx > -1) {
+          this.scheduledSources.splice(idx, 1);
+        }
+        // Update speaking state when all sources finished
+        if (this.scheduledSources.length === 0) {
+          this._isAgentSpeaking = false;
+        }
+      };
+
       source.start(startTime);
 
       // Update next play time
@@ -441,6 +484,51 @@ export class ElevenLabsConversation {
 
     // Normalize to 0-1 range
     return Math.min(average / 128, 1);
+  }
+
+  /**
+   * Signal to the server that the user is actively speaking
+   * This helps ElevenLabs to better manage turn-taking
+   */
+  sendUserActivity(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    const message = {
+      type: "user_activity",
+    };
+
+    this.ws.send(JSON.stringify(message));
+  }
+
+  /**
+   * Interrupt (stop) agent audio playback locally
+   * Used for barge-in when user starts speaking or server sends interruption
+   */
+  interruptPlayback(): void {
+    if (this.scheduledSources.length === 0) {
+      return;
+    }
+
+    // Stop all scheduled audio sources
+    for (const source of this.scheduledSources) {
+      try {
+        source.stop();
+        source.disconnect();
+      } catch (e) {
+        // Source may have already stopped
+      }
+    }
+
+    // Clear the array
+    this.scheduledSources = [];
+    this._isAgentSpeaking = false;
+
+    // Reset next play time to current time
+    if (this.audioContext) {
+      this.nextPlayTime = this.audioContext.currentTime;
+    }
   }
 
   /**

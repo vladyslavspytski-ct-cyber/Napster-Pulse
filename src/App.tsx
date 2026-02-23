@@ -24,7 +24,8 @@ import MyPlanV3 from "./pages/MyPlanV3";
 import CreateInterviewTest from "./pages/CreateInterviewTest";
 import TemplateDirectory from "./pages/TemplateDirectory";
 import CreateInterviewFromTemplate from "./pages/CreateInterviewFromTemplate";
-import InterviewAnalytics from "./pages/InterviewAnalytics";
+import InterviewOverview from "./pages/InterviewOverview";
+import CandidateAnalytics from "./pages/CandidateAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -64,7 +65,8 @@ const App = () => (
             {/* Keep old path for backwards compatibility */}
             <Route path="/interview-architect-test" element={<InterviewArchitectTest />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/interview/:id" element={<InterviewAnalytics />} />
+            <Route path="/dashboard/interview/:interviewId" element={<InterviewOverview />} />
+            <Route path="/dashboard/interview/:interviewId/candidate/:candidateId" element={<CandidateAnalytics />} />
             <Route path="/saved-interviews" element={<SavedInterviews />} />
             <Route path="/i/:token" element={<PublicInterview />} />
             <Route path="/terms" element={<Terms />} />

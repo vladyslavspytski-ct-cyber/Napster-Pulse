@@ -4,13 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import {
-  getMockAnalyticsInterview,
-  type InternshipRubric,
-  type FeedbackRubric,
-} from "@/lib/mockAnalyticsData";
-import InternshipAnalyticsLayout from "@/components/analytics/InternshipAnalyticsLayout";
-import FeedbackAnalyticsLayout from "@/components/analytics/FeedbackAnalyticsLayout";
+import { getMockAnalyticsInterview } from "@/lib/mockAnalyticsData";
+import DynamicAnalyticsRenderer from "@/components/analytics/DynamicAnalyticsRenderer";
 
 export default function InterviewAnalytics() {
   const { id } = useParams<{ id: string }>();
@@ -44,7 +39,6 @@ export default function InterviewAnalytics() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            {/* Back + Title */}
             <div className="flex items-center gap-3 mb-6">
               <Button
                 variant="ghost"
@@ -64,20 +58,10 @@ export default function InterviewAnalytics() {
               </div>
             </div>
 
-            {/* Conditional layout */}
-            {interview.type === "internship_screening" && (
-              <InternshipAnalyticsLayout
-                rubric={interview.rubric as InternshipRubric}
-                summary={interview.summary}
-              />
-            )}
-
-            {interview.type === "360_feedback" && (
-              <FeedbackAnalyticsLayout
-                rubric={interview.rubric as FeedbackRubric}
-                summary={interview.summary}
-              />
-            )}
+            <DynamicAnalyticsRenderer
+              summary={interview.rubric.summary}
+              sections={interview.rubric.sections}
+            />
           </motion.div>
         </div>
       </main>

@@ -378,6 +378,43 @@ export const mockAnalyticsInterviews: AnalyticsInterview[] = [
   },
 ];
 
+// ─── Mock conducted runs per analytics interview ───
+
+import type { ConductedRun } from "@/lib/mockDashboardV2Data";
+
+export const mockAnalyticsRuns: Record<string, ConductedRun[]> = {
+  "mock-internship-1": [
+    { id: "mr-1a", interviewId: "mock-internship-1", participantFirstName: "Alex", participantLastName: "Rivera", participantEmail: "alex.r@university.edu", conductedAt: "2025-02-18T10:30:00Z", summary: "Candidate demonstrates strong learning agility and clear career motivation. Execution discipline is an area for development.", sentimentLabel: "positive" },
+    { id: "mr-1b", interviewId: "mock-internship-1", participantFirstName: "Anna", participantLastName: "Kim", participantEmail: "anna.k@college.edu", conductedAt: "2025-02-17T14:15:00Z", summary: "Outstanding candidate with exceptional initiative and strong technical foundations. Minor concern around prioritization under pressure.", sentimentLabel: "positive" },
+    { id: "mr-1c", interviewId: "mock-internship-1", participantFirstName: "Mark", participantLastName: "Torres", participantEmail: "mark.t@uni.edu", conductedAt: "2025-02-16T09:00:00Z", summary: "Solid candidate with good fundamentals. Communication skills are a notable strength but limited project experience.", sentimentLabel: "neutral" },
+    { id: "mr-1d", interviewId: "mock-internship-1", participantFirstName: "Leo", participantLastName: "Park", participantEmail: "leo.p@school.edu", conductedAt: "2025-02-15T11:45:00Z", summary: "Promising candidate with strong motivation but needs development in execution skills and time management.", sentimentLabel: "neutral" },
+    { id: "mr-1e", interviewId: "mock-internship-1", participantFirstName: "Nina", participantLastName: "Sato", participantEmail: "nina.s@campus.edu", conductedAt: "2025-02-14T16:00:00Z", summary: "Candidate shows potential but needs significant development across multiple areas. Curious mindset is an asset.", sentimentLabel: "negative" },
+  ],
+  "mock-360-feedback-1": [
+    { id: "mr-2a", interviewId: "mock-360-feedback-1", participantFirstName: "Jordan", participantLastName: "Blake", participantEmail: "jordan.b@company.com", conductedAt: "2025-02-20T09:00:00Z", summary: "Overall positive peer perception with high reliability scores. Communication clarity and delegation identified as key improvement areas.", sentimentLabel: "positive" },
+    { id: "mr-2b", interviewId: "mock-360-feedback-1", participantFirstName: "Casey", participantLastName: "Morgan", participantEmail: "casey.m@company.com", conductedAt: "2025-02-19T14:00:00Z", summary: "Strong overall performer. Peers consistently rate reliability and leadership as top strengths. Great mentorship potential.", sentimentLabel: "positive" },
+    { id: "mr-2c", interviewId: "mock-360-feedback-1", participantFirstName: "Riley", participantLastName: "Chen", participantEmail: "riley.c@company.com", conductedAt: "2025-02-18T10:30:00Z", summary: "Mixed feedback. Strong technical skills but interpersonal dynamics need attention. Communication gaps noted by multiple peers.", sentimentLabel: "negative" },
+    { id: "mr-2d", interviewId: "mock-360-feedback-1", participantFirstName: "Morgan", participantLastName: "Wells", participantEmail: "morgan.w@company.com", conductedAt: "2025-02-17T15:45:00Z", summary: "Adequate performance across most metrics. Team morale impact is positive but leadership influence could be stronger.", sentimentLabel: "neutral" },
+  ],
+  "mock-internship-2": [
+    { id: "mr-3a", interviewId: "mock-internship-2", participantFirstName: "Sam", participantLastName: "Williams", participantEmail: "sam.w@tech.edu", conductedAt: "2025-02-21T10:00:00Z", summary: "Candidate shows a balanced skill distribution with strong technical aptitude. Growth trajectory is positive with a notable gap in delegation skills.", sentimentLabel: "neutral" },
+    { id: "mr-3b", interviewId: "mock-internship-2", participantFirstName: "Jamie", participantLastName: "Lee", participantEmail: "jamie.l@tech.edu", conductedAt: "2025-02-20T14:30:00Z", summary: "Exceptional candidate with strong initiative and reliability. Ready for cross-functional project involvement.", sentimentLabel: "positive" },
+    { id: "mr-3c", interviewId: "mock-internship-2", participantFirstName: "Devon", participantLastName: "Reyes", participantEmail: "devon.r@tech.edu", conductedAt: "2025-02-19T09:15:00Z", summary: "Candidate struggled with technical assessment but demonstrated strong interpersonal skills and enthusiasm for learning.", sentimentLabel: "negative" },
+    { id: "mr-3d", interviewId: "mock-internship-2", participantFirstName: "Quinn", participantLastName: "Harper", participantEmail: "quinn.h@tech.edu", conductedAt: "2025-02-18T16:00:00Z", summary: "Solid all-around candidate. Technical depth is above average for an intern. Presentation skills need improvement.", sentimentLabel: "positive" },
+    { id: "mr-3e", interviewId: "mock-internship-2", participantFirstName: "Avery", participantLastName: "Nakamura", participantEmail: "avery.n@tech.edu", conductedAt: "2025-02-17T11:30:00Z", summary: "Average performance with no standout areas. Needs more structured mentorship to reach full potential.", sentimentLabel: "neutral" },
+  ],
+  "mock-360-feedback-2": [
+    { id: "mr-4a", interviewId: "mock-360-feedback-2", participantFirstName: "Taylor", participantLastName: "Nguyen", participantEmail: "taylor.n@corp.com", conductedAt: "2025-02-22T10:00:00Z", summary: "Manager and peer ratings show notable divergence on collaboration. Consistency across respondents is moderate, with leadership as the strongest theme.", sentimentLabel: "neutral" },
+    { id: "mr-4b", interviewId: "mock-360-feedback-2", participantFirstName: "Drew", participantLastName: "Patel", participantEmail: "drew.p@corp.com", conductedAt: "2025-02-21T14:30:00Z", summary: "Highly consistent ratings across all respondents. Strong alignment between manager and peer perspectives. Leadership development candidate.", sentimentLabel: "positive" },
+    { id: "mr-4c", interviewId: "mock-360-feedback-2", participantFirstName: "Sage", participantLastName: "Kim", participantEmail: "sage.k@corp.com", conductedAt: "2025-02-20T09:45:00Z", summary: "Peers noted excellent collaboration but concerns about accountability. Manager rating is significantly higher than peer average.", sentimentLabel: "neutral" },
+    { id: "mr-4d", interviewId: "mock-360-feedback-2", participantFirstName: "Rowan", participantLastName: "Fischer", participantEmail: "rowan.f@corp.com", conductedAt: "2025-02-19T16:15:00Z", summary: "Overall negative perception from direct reports. Communication style described as abrupt. Manager views differ significantly from team feedback.", sentimentLabel: "negative" },
+  ],
+};
+
+export function getMockAnalyticsRuns(interviewId: string): ConductedRun[] {
+  return mockAnalyticsRuns[interviewId] || [];
+}
+
 // ─── Lookup helpers ───
 
 export function getMockAnalyticsInterview(id: string): AnalyticsInterview | undefined {

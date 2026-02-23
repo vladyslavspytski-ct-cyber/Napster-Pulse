@@ -1,3 +1,8 @@
-export const BACKEND_BASE_URL =
-  import.meta.env.VITE_BACKEND_BASE_URL ||
-  "https://6b1f480e-522b-4966-994d-ab07935e3eae-00-d9x034m4h7fk.worf.replit.dev";
+export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
+if (!BACKEND_BASE_URL) {
+  throw new Error(
+    "VITE_BACKEND_BASE_URL is not defined. " +
+      "Ensure .env.development or .env.production exists with this variable set."
+  );
+}

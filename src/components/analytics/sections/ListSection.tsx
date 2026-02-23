@@ -8,9 +8,24 @@ interface ListData {
 }
 
 const variantConfig = {
-  positive: { icon: CheckCircle2, dotClass: "bg-emerald-500", iconClass: "text-emerald-500" },
-  warning: { icon: AlertTriangle, dotClass: "bg-amber-500", iconClass: "text-amber-500" },
-  neutral: { icon: Info, dotClass: "bg-muted-foreground", iconClass: "text-muted-foreground" },
+  positive: {
+    icon: CheckCircle2,
+    iconClass: "text-interu-mint",
+    dotClass: "bg-interu-mint",
+    bgClass: "from-interu-mint/[0.04]",
+  },
+  warning: {
+    icon: AlertTriangle,
+    iconClass: "text-accent",
+    dotClass: "bg-accent",
+    bgClass: "from-accent/[0.04]",
+  },
+  neutral: {
+    icon: Info,
+    iconClass: "text-muted-foreground",
+    dotClass: "bg-muted-foreground",
+    bgClass: "from-muted/[0.3]",
+  },
 };
 
 export default function ListSection({ title, data }: { title: string; data: ListData }) {
@@ -19,16 +34,17 @@ export default function ListSection({ title, data }: { title: string; data: List
   const Icon = config.icon;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
+    <Card className="group hover:shadow-card-hover transition-shadow duration-300 overflow-hidden relative">
+      <div className={cn("absolute inset-0 bg-gradient-to-br to-transparent pointer-events-none", config.bgClass)} />
+      <CardHeader className="pb-2 relative">
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Icon className={cn("w-4 h-4", config.iconClass)} /> {title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
+      <CardContent className="relative">
+        <ul className="space-y-2.5">
           {data.items.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+            <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/90 leading-relaxed">
               <span className={cn("mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0", config.dotClass)} />
               {item}
             </li>

@@ -20,7 +20,8 @@ import { useCompletedInterviews } from "@/hooks/api/useCompletedInterviews";
 import { useAttempts } from "@/hooks/api/useAttempts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-import { mockAnalyticsInterviews } from "@/lib/mockAnalyticsData";
+import { mockAnalyticsInterviews, type AnalyticsInterview } from "@/lib/mockAnalyticsData";
+import InterviewDetailPanel from "@/components/dashboard-v2/InterviewDetailPanel";
 
 const INTERVIEWS_PER_PAGE = 10;
 const RUNS_PER_PAGE = 4;
@@ -41,6 +42,7 @@ const DashboardV2 = () => {
   const [runSearch, setRunSearch] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [runsPage, setRunsPage] = useState(1);
+  const [detailInterview, setDetailInterview] = useState<AnalyticsInterview | null>(null);
 
   // Fetch completed interviews from API with server-side pagination
   const interviewsOffset = (currentPage - 1) * INTERVIEWS_PER_PAGE;
@@ -336,7 +338,7 @@ const DashboardV2 = () => {
                       {mockAnalyticsInterviews.map((mi) => (
                         <motion.button
                           key={mi.id}
-                          onClick={() => navigate(`/dashboard/interview/${mi.id}`)}
+                          onClick={() => setDetailInterview(mi)}
                           className="w-full text-left p-4 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-200"
                           whileTap={{ scale: 0.98 }}
                         >
@@ -349,7 +351,7 @@ const DashboardV2 = () => {
                                 {mi.title}
                               </h3>
                               <span className="text-xs text-muted-foreground capitalize">
-                                {mi.type.replace(/_/g, " ")} • Analytics
+                                {mi.type.replace(/_/g, " ")} • {mi.participants.length} participants
                               </span>
                             </div>
                           </div>
@@ -540,6 +542,11 @@ const DashboardV2 = () => {
           )}
         </div>
       </main>
+
+      <InterviewDetailPanel
+        interview={detailInterview}
+        onClose={() => setDetailInterview(null)}
+      />
 
       <Footer />
     </div>

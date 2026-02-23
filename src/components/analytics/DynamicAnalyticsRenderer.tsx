@@ -18,9 +18,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  */
 
 interface Props {
-  summary: string;
   sections: RubricSection[];
 }
+
+/* Sections that should span full width in the grid */
+const FULL_WIDTH_TYPES = new Set(["text_block", "ranking", "bar_chart"]);
 
 function renderSection(section: RubricSection) {
   switch (section.type) {
@@ -54,22 +56,26 @@ function renderSection(section: RubricSection) {
   }
 }
 
-export default function DynamicAnalyticsRenderer({ summary, sections }: Props) {
-  return (
-    <div className="space-y-6">
-      {/* Summary */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
+export default function DynamicAnalyticsRenderer({ sections }: Props) {
+  if (!sections.length) {
+    return (
+      <Card className="py-12">
+        <CardContent className="text-center">
+          <p className="text-muted-foreground text-sm">No analytics sections available for this interview.</p>
         </CardContent>
       </Card>
+    );
+  }
 
-      {/* Dynamic sections */}
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {sections.map((section) => (
-        <div key={section.id}>{renderSection(section)}</div>
+        <div
+          key={section.id}
+          className={FULL_WIDTH_TYPES.has(section.type) ? "lg:col-span-2" : ""}
+        >
+          {renderSection(section)}
+        </div>
       ))}
     </div>
   );

@@ -6,6 +6,11 @@ import StackedBarSection from "./sections/StackedBarSection";
 import ListSection from "./sections/ListSection";
 import RankingSection from "./sections/RankingSection";
 import TextBlockSection from "./sections/TextBlockSection";
+import PieChartSection from "./sections/PieChartSection";
+import LineChartSection from "./sections/LineChartSection";
+import AreaChartSection from "./sections/AreaChartSection";
+import HorizontalBarChartSection from "./sections/HorizontalBarChartSection";
+import ComposedChartSection from "./sections/ComposedChartSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
@@ -22,7 +27,7 @@ interface Props {
 }
 
 /* Sections that should span full width in the grid */
-const FULL_WIDTH_TYPES = new Set(["text_block", "ranking", "bar_chart"]);
+const FULL_WIDTH_TYPES = new Set(["text_block", "ranking", "bar_chart", "horizontal_bar_chart", "composed_chart"]);
 
 function renderSection(section: RubricSection) {
   switch (section.type) {
@@ -40,6 +45,16 @@ function renderSection(section: RubricSection) {
       return <RankingSection title={section.title} data={section.data as any} />;
     case "text_block":
       return <TextBlockSection title={section.title} data={section.data as any} />;
+    case "pie_chart":
+      return <PieChartSection title={section.title} data={section.data as any} />;
+    case "line_chart":
+      return <LineChartSection title={section.title} data={section.data as any} />;
+    case "area_chart":
+      return <AreaChartSection title={section.title} data={section.data as any} />;
+    case "horizontal_bar_chart":
+      return <HorizontalBarChartSection title={section.title} data={section.data as any} />;
+    case "composed_chart":
+      return <ComposedChartSection title={section.title} data={section.data as any} />;
     default:
       return (
         <Card>

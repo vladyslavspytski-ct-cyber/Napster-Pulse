@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle, BarChart3 } from "lucide-react";
+import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,6 @@ import { useCompletedInterviews } from "@/hooks/api/useCompletedInterviews";
 import { useAttempts } from "@/hooks/api/useAttempts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-import { mockAnalyticsInterviews } from "@/lib/mockAnalyticsData";
 
 const INTERVIEWS_PER_PAGE = 10;
 const RUNS_PER_PAGE = 4;
@@ -29,7 +27,6 @@ type SentimentFilter = "all" | "positive" | "neutral" | "negative";
 
 const DashboardV2 = () => {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   // State - Interviews
@@ -329,34 +326,6 @@ const DashboardV2 = () => {
                       className="pl-9"
                     />
                   </div>
-
-                  {/* Mock Analytics Interviews */}
-                  {!isLoadingInterviews && (
-                    <div className="space-y-2 mb-3">
-                      {mockAnalyticsInterviews.map((mi) => (
-                        <motion.button
-                          key={mi.id}
-                          onClick={() => navigate(`/dashboard/interview/${mi.id}`)}
-                          className="w-full text-left p-4 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-200"
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <BarChart3 className="w-4 h-4 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-sm leading-tight truncate text-foreground">
-                                {mi.title}
-                              </h3>
-                              <span className="text-xs text-muted-foreground capitalize">
-                                {mi.type.replace(/_/g, " ")} • Analytics
-                              </span>
-                            </div>
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Interview list */}
                   <div className="space-y-2 mb-4">

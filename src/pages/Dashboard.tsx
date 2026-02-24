@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle, BarChart3, ExternalLink, ArrowRight, Mail, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle, BarChart3 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
@@ -21,7 +20,7 @@ import { useCompletedInterviews } from "@/hooks/api/useCompletedInterviews";
 import { useAttempts } from "@/hooks/api/useAttempts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-import { mockAnalyticsInterviews, type AnalyticsInterview } from "@/lib/mockAnalyticsData";
+import { mockAnalyticsInterviews } from "@/lib/mockAnalyticsData";
 
 const INTERVIEWS_PER_PAGE = 10;
 const RUNS_PER_PAGE = 4;
@@ -42,7 +41,6 @@ const DashboardV2 = () => {
   const [runSearch, setRunSearch] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
   const [runsPage, setRunsPage] = useState(1);
-  const [selectedMockInterview, setSelectedMockInterview] = useState<AnalyticsInterview | null>(null);
 
   // Fetch completed interviews from API with server-side pagination
   const interviewsOffset = (currentPage - 1) * INTERVIEWS_PER_PAGE;
@@ -153,10 +151,9 @@ const DashboardV2 = () => {
 
   const handleInterviewSelect = (interview: InterviewTemplate) => {
     setSelectedInterview(interview);
-    setSelectedMockInterview(null);
     setRunSearch("");
     setSentimentFilter("all");
-    setRunsPage(1);
+    setRunsPage(1); // Reset runs pagination when interview changes
   };
 
   // Reset runs page when search or sentiment filter changes
@@ -339,34 +336,20 @@ const DashboardV2 = () => {
                       {mockAnalyticsInterviews.map((mi) => (
                         <motion.button
                           key={mi.id}
-                          onClick={() => {
-                            setSelectedMockInterview(mi);
-                            setSelectedInterview(null);
-                          }}
-                          className={cn(
-                            "w-full text-left p-4 rounded-xl border transition-all duration-200",
-                            selectedMockInterview?.id === mi.id
-                              ? "bg-primary/5 border-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.3)]"
-                              : "border-primary/20 bg-primary/5 hover:bg-primary/10"
-                          )}
+                          onClick={() => navigate(`/dashboard/interview/${mi.id}`)}
+                          className="w-full text-left p-4 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-200"
                           whileTap={{ scale: 0.98 }}
                         >
                           <div className="flex items-start gap-3">
-                            <div className={cn(
-                              "flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
-                              selectedMockInterview?.id === mi.id ? "bg-primary/10" : "bg-primary/10"
-                            )}>
-                              <BarChart3 className={cn(
-                                "w-4 h-4",
-                                selectedMockInterview?.id === mi.id ? "text-primary" : "text-primary"
-                              )} />
+                            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <BarChart3 className="w-4 h-4 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-medium text-sm leading-tight truncate text-foreground">
                                 {mi.title}
                               </h3>
                               <span className="text-xs text-muted-foreground capitalize">
-                                {mi.type.replace(/_/g, " ")} • {mi.participants.length} participants
+                                {mi.type.replace(/_/g, " ")} • Analytics
                               </span>
                             </div>
                           </div>
@@ -445,189 +428,118 @@ const DashboardV2 = () => {
 
               {/* Right Column - Runs Detail */}
               <div id="runs-detail" className="flex-1 min-w-0">
-                {selectedMockInterview ? (
-                  /* Mock Analytics Interview Detail */
-                  <div>
-                    <div className="flex items-center gap-4 mb-4">
-                      <h2 className="text-lg font-semibold text-foreground truncate">
-                        {selectedMockInterview.title}
-                      </h2>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="w-3 h-3" />
-                        {selectedMockInterview.participants.length}{" "}
-                        {selectedMockInterview.participants.length === 1 ? "participant" : "participants"}
-                      </span>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mb-5 w-full gap-2"
-                      onClick={() => navigate(`/dashboard/interview/${selectedMockInterview.id}`)}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      View Interview Overview
-                    </Button>
-
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Participants
-                    </h3>
-                    <div className="space-y-2">
-                      {selectedMockInterview.participants.map((p) => (
-                        <motion.div
-                          key={p.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={cn(
-                            "group rounded-xl border border-border bg-card p-4",
-                            "hover:border-primary/30 hover:shadow-sm transition-all duration-200"
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm text-foreground truncate">{p.name}</p>
-                              <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                                <Mail className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">{p.email}</span>
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0 text-right">
-                              <div className="text-lg font-bold text-foreground leading-none">
-                                {p.compositeScore}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground">/ 10</span>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="mt-3 w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                            onClick={() => navigate(`/dashboard/interview/${selectedMockInterview.id}/candidate/${p.id}`)}
-                          >
-                            View Profile
-                            <ArrowRight className="w-3 h-3" />
-                          </Button>
-                        </motion.div>
-                      ))}
+                {/* Header with search and sentiment filter */}
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-lg font-semibold text-foreground truncate">
+                      {selectedInterview?.title || "Select an interview"}
+                    </h2>
+                    <div className="flex-1 max-w-xs ml-auto">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search participants..."
+                          value={runSearch}
+                          onChange={(e) => handleRunSearchChange(e.target.value)}
+                          className="pl-9"
+                          disabled={!selectedInterview}
+                        />
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  /* Real Interview Runs Detail */
-                  <>
-                    {/* Header with search and sentiment filter */}
-                    <div className="flex flex-col gap-3 mb-4">
-                      <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-semibold text-foreground truncate">
-                          {selectedInterview?.title || "Select an interview"}
-                        </h2>
-                        <div className="flex-1 max-w-xs ml-auto">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                              placeholder="Search participants..."
-                              value={runSearch}
-                              onChange={(e) => handleRunSearchChange(e.target.value)}
-                              className="pl-9"
-                              disabled={!selectedInterview}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      {/* Sentiment filter */}
-                      <div className="flex gap-2">
-                        {(["all", "positive", "neutral", "negative"] as SentimentFilter[]).map((sentiment) => (
-                          <Button
-                            key={sentiment}
-                            variant={sentimentFilter === sentiment ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handleSentimentFilterChange(sentiment)}
-                            className="h-8 capitalize"
-                            disabled={!selectedInterview}
-                          >
-                            {sentiment}
-                          </Button>
+                  {/* Sentiment filter */}
+                  <div className="flex gap-2">
+                    {(["all", "positive", "neutral", "negative"] as SentimentFilter[]).map((sentiment) => (
+                      <Button
+                        key={sentiment}
+                        variant={sentimentFilter === sentiment ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleSentimentFilterChange(sentiment)}
+                        className="h-8 capitalize"
+                        disabled={!selectedInterview}
+                      >
+                        {sentiment}
+                      </Button>
+                    ))}
+                  </div>
+                  </div>
+
+                {/* Sentiment Distribution - shows actual data from backend */}
+                {/* Hidden when sentiment filter is active */}
+                {selectedInterview && !isLoadingAttempts && selectedRuns.length > 0 && sentimentFilter === "all" && sentimentStats && (
+                  <SentimentDistribution
+                    className="mb-4"
+                    data={{
+                      positive: Math.round(sentimentStats.positive_percent),
+                      neutral: Math.round(sentimentStats.neutral_percent),
+                      negative: Math.round(sentimentStats.negative_percent),
+                    }}
+                  />
+                )}
+
+                {/* Runs list - no scroll, pagination only */}
+                <div className="flex-1">
+                  <AnimatePresence mode="wait">
+                    {isLoadingInterviews ? (
+                      <LoadingRunsState key="loading-interviews" />
+                    ) : allFilteredInterviews.length === 0 ? (
+                      <EmptyInterviewsState key="empty-interviews" />
+                    ) : isLoadingAttempts ? (
+                      <LoadingRunsState key="loading-attempts" />
+                    ) : selectedRuns.length > 0 ? (
+                      <motion.div
+                        key={`${selectedInterview?.id}-${runsPage}`}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
+                      >
+                        {selectedRuns.map((run, index) => (
+                          <ConductedRunCard key={run.id} run={run} index={index} />
                         ))}
-                      </div>
-                    </div>
-
-                    {/* Sentiment Distribution */}
-                    {selectedInterview && !isLoadingAttempts && selectedRuns.length > 0 && sentimentFilter === "all" && sentimentStats && (
-                      <SentimentDistribution
-                        className="mb-4"
-                        data={{
-                          positive: Math.round(sentimentStats.positive_percent),
-                          neutral: Math.round(sentimentStats.neutral_percent),
-                          negative: Math.round(sentimentStats.negative_percent),
-                        }}
-                      />
+                      </motion.div>
+                    ) : attemptsError ? (
+                      <ErrorState key="error" message="Failed to load responses" />
+                    ) : (
+                      <EmptyRunsState key="empty-runs" />
                     )}
+                  </AnimatePresence>
+                </div>
 
-                    {/* Runs list */}
-                    <div className="flex-1">
-                      <AnimatePresence mode="wait">
-                        {isLoadingInterviews ? (
-                          <LoadingRunsState key="loading-interviews" />
-                        ) : allFilteredInterviews.length === 0 ? (
-                          <EmptyInterviewsState key="empty-interviews" />
-                        ) : isLoadingAttempts ? (
-                          <LoadingRunsState key="loading-attempts" />
-                        ) : selectedRuns.length > 0 ? (
-                          <motion.div
-                            key={`${selectedInterview?.id}-${runsPage}`}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.2 }}
-                            className="space-y-3"
-                          >
-                            {selectedRuns.map((run, index) => (
-                              <ConductedRunCard key={run.id} run={run} index={index} />
-                            ))}
-                          </motion.div>
-                        ) : attemptsError ? (
-                          <ErrorState key="error" message="Failed to load responses" />
-                        ) : (
-                          <EmptyRunsState key="empty-runs" />
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Runs pagination */}
-                    {!isLoadingAttempts && !isLoadingInterviews && allFilteredInterviews.length > 0 && runsTotalPages > 1 && (
-                      <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handlePreviousRunsPage}
-                          disabled={runsPage === 1}
-                          className="h-8 px-2"
-                        >
-                          <ChevronLeft className="w-4 h-4 mr-1" />
-                          Prev
-                        </Button>
-                        <span className="text-xs text-muted-foreground">
-                          Page {runsPage} of {runsTotalPages}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleNextRunsPage}
-                          disabled={runsPage === runsTotalPages}
-                          className="h-8 px-2"
-                        >
-                          Next
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
-                    )}
-                  </>
+                {/* Runs pagination */}
+                {!isLoadingAttempts && !isLoadingInterviews && allFilteredInterviews.length > 0 && runsTotalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handlePreviousRunsPage}
+                      disabled={runsPage === 1}
+                      className="h-8 px-2"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Prev
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      Page {runsPage} of {runsTotalPages}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleNextRunsPage}
+                      disabled={runsPage === runsTotalPages}
+                      className="h-8 px-2"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </motion.div>
           )}
         </div>
       </main>
-
 
       <Footer />
     </div>

@@ -21,7 +21,7 @@ import { useCompletedInterviews } from "@/hooks/api/useCompletedInterviews";
 import { useAttempts } from "@/hooks/api/useAttempts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-import { mockAnalyticsInterviews, getMockAnalyticsRuns, type AnalyticsInterview } from "@/lib/mockAnalyticsData";
+import { mockAnalyticsInterviews, type AnalyticsInterview } from "@/lib/mockAnalyticsData";
 
 const INTERVIEWS_PER_PAGE = 10;
 const RUNS_PER_PAGE = 4;
@@ -446,55 +446,71 @@ const DashboardV2 = () => {
               {/* Right Column - Runs Detail */}
               <div id="runs-detail" className="flex-1 min-w-0">
                 {selectedMockInterview ? (
-                  /* Mock Analytics Interview Detail - matching runs layout */
-                  <>
-                    {/* Header with title and overview button */}
-                    <div className="flex flex-col gap-3 mb-4">
-                      <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-semibold text-foreground truncate">
-                          {selectedMockInterview.title}
-                        </h2>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-auto gap-1.5 text-xs text-muted-foreground hover:text-foreground flex-shrink-0"
-                          onClick={() => navigate(`/dashboard/interview/${selectedMockInterview.id}`)}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          View Interview Overview
-                        </Button>
-                      </div>
+                  /* Mock Analytics Interview Detail */
+                  <div>
+                    <div className="flex items-center gap-4 mb-4">
+                      <h2 className="text-lg font-semibold text-foreground truncate">
+                        {selectedMockInterview.title}
+                      </h2>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        {selectedMockInterview.participants.length}{" "}
+                        {selectedMockInterview.participants.length === 1 ? "participant" : "participants"}
+                      </span>
                     </div>
 
-                    {/* Runs list using ConductedRunCard */}
-                    <div className="flex-1">
-                      <motion.div
-                        key={selectedMockInterview.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.2 }}
-                        className="space-y-3"
-                      >
-                        {getMockAnalyticsRuns(selectedMockInterview.id).map((run, index) => (
-                          <motion.div
-                            key={run.id}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              const participant = selectedMockInterview.participants.find(
-                                (p) => p.email === run.participantEmail
-                              );
-                              if (participant) {
-                                navigate(`/dashboard/interview/${selectedMockInterview.id}/candidate/${participant.id}`);
-                              }
-                            }}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mb-5 w-full gap-2"
+                      onClick={() => navigate(`/dashboard/interview/${selectedMockInterview.id}`)}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View Interview Overview
+                    </Button>
+
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                      Participants
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedMockInterview.participants.map((p) => (
+                        <motion.div
+                          key={p.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={cn(
+                            "group rounded-xl border border-border bg-card p-4",
+                            "hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm text-foreground truncate">{p.name}</p>
+                              <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                                <Mail className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{p.email}</span>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 text-right">
+                              <div className="text-lg font-bold text-foreground leading-none">
+                                {p.compositeScore}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">/ 10</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mt-3 w-full h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                            onClick={() => navigate(`/dashboard/interview/${selectedMockInterview.id}/candidate/${p.id}`)}
                           >
-                            <ConductedRunCard run={run} index={index} />
-                          </motion.div>
-                        ))}
-                      </motion.div>
+                            View Profile
+                            <ArrowRight className="w-3 h-3" />
+                          </Button>
+                        </motion.div>
+                      ))}
                     </div>
-                  </>
+                  </div>
                 ) : (
                   /* Real Interview Runs Detail */
                   <>

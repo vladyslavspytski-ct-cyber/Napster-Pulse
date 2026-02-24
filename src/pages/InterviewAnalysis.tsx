@@ -9,6 +9,7 @@ import AIInsightBlock from "@/components/analytics/AIInsightBlock";
 import DynamicChartCard from "@/components/analytics/DynamicChartCard";
 import { MOCK_ANALYTICS } from "@/lib/mockAnalyticsData";
 
+const PRIMARY_TYPES = new Set(["radar", "score"]);
 const WIDE_TYPES = new Set(["bar", "horizontal_bar", "line", "area"]);
 
 const InterviewAnalysis = () => {
@@ -16,15 +17,9 @@ const InterviewAnalysis = () => {
   const navigate = useNavigate();
   const data = MOCK_ANALYTICS;
 
-  const chartCount = data.aggregate_chart_results.length;
-
-  // Determine grid class based on chart count
-  const gridClass =
-    chartCount === 1
-      ? "grid-cols-1"
-      : chartCount === 2
-      ? "grid-cols-1 md:grid-cols-2"
-      : "grid-cols-1 md:grid-cols-2";
+  // Classify charts into tiers
+  const primaryCharts = data.aggregate_chart_results.filter(c => PRIMARY_TYPES.has(c.chart_type));
+  const secondaryCharts = data.aggregate_chart_results.filter(c => !PRIMARY_TYPES.has(c.chart_type));
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -36,9 +31,9 @@ const InterviewAnalysis = () => {
           className="relative overflow-hidden"
           style={{ background: "var(--analytics-hero-gradient)" }}
         >
-          {/* Subtle dot pattern */}
+          {/* Dot pattern */}
           <div
-            className="absolute inset-0 opacity-[0.03]"
+            className="absolute inset-0 opacity-[0.025]"
             style={{
               backgroundImage:
                 "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
@@ -46,7 +41,7 @@ const InterviewAnalysis = () => {
             }}
           />
 
-          <div className="section-container max-w-7xl mx-auto relative z-10 py-10 md:py-14">
+          <div className="section-container max-w-7xl mx-auto relative z-10 py-12 md:py-16 lg:py-20">
             {/* Back button */}
             <motion.div
               initial={{ opacity: 0, x: -12 }}
@@ -57,22 +52,22 @@ const InterviewAnalysis = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/dashboard")}
-                className="gap-2 text-muted-foreground hover:text-foreground mb-6"
+                className="gap-2 text-muted-foreground hover:text-foreground mb-8"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Dashboard
               </Button>
             </motion.div>
 
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10 lg:gap-16">
               {/* Left: Title + Meta */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="space-y-4 flex-1 min-w-0"
+                className="space-y-5 flex-1 min-w-0"
               >
-                <h1 className="text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-foreground leading-tight tracking-tight">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-[1.15] tracking-tight">
                   {data.interview_title}
                 </h1>
 
@@ -91,54 +86,91 @@ const InterviewAnalysis = () => {
                       })}
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 text-primary text-xs font-medium">
                     ID: {interviewId}
                   </span>
                 </div>
+
+                {/* AI Insight — placed closer to context */}
+                <div className="pt-2">
+                  <AIInsightBlock
+                    insight="This interview shows strong consistency across candidates, with highest alignment in Performance & Impact. Communication scores are trending upward week-over-week, suggesting effective development in this competency area."
+                  />
+                </div>
               </motion.div>
 
-              {/* Right: KPI */}
+              {/* Right: KPI — visually dominant */}
               {data.aggregate_overall_score !== undefined && (
-                <div className="flex-shrink-0">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                  className="flex-shrink-0 lg:pt-2"
+                >
                   <AnimatedKPI value={data.aggregate_overall_score} />
-                </div>
+                </motion.div>
               )}
             </div>
+          </div>
 
-            {/* AI Insight */}
-            <div className="mt-8">
-              <AIInsightBlock
-                insight="This interview shows strong consistency across candidates, with highest alignment in Performance & Impact. Communication scores are trending upward week-over-week, suggesting effective development in this competency area."
-              />
+          {/* Bottom fade into content */}
+          <div className="h-16 bg-gradient-to-b from-transparent to-background" />
+        </section>
+
+        {/* ── Primary Charts (Radar / Score) ── */}
+        {primaryCharts.length > 0 && (
+          <section className="section-container max-w-7xl mx-auto mt-2 md:mt-4">
+            <div className={`grid gap-6 md:gap-8 ${
+              primaryCharts.length === 1
+                ? "grid-cols-1 max-w-3xl mx-auto"
+                : "grid-cols-1 md:grid-cols-2"
+            }`}>
+              {primaryCharts.map((chart, i) => (
+                <DynamicChartCard
+                  key={chart.chart_name}
+                  chart={chart}
+                  index={i}
+                  tier="primary"
+                />
+              ))}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* ── Analytics Grid ── */}
-        <section className="section-container max-w-7xl mx-auto mt-10 md:mt-14">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="mb-6"
-          >
-            <h2 className="text-xl font-semibold text-foreground">Aggregate Analytics</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Dynamic assessment breakdown across all {data.completed_count} participants
-            </p>
-          </motion.div>
+        {/* ── Secondary Charts ── */}
+        {secondaryCharts.length > 0 && (
+          <section className="section-container max-w-7xl mx-auto mt-10 md:mt-14">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="mb-6"
+            >
+              <h2 className="text-lg font-semibold text-foreground">Detailed Breakdown</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                In-depth analysis across {data.completed_count} participants
+              </p>
+            </motion.div>
 
-          <div className={`grid ${gridClass} gap-5 md:gap-6`}>
-            {data.aggregate_chart_results.map((chart, i) => (
-              <DynamicChartCard
-                key={chart.chart_name}
-                chart={chart}
-                index={i}
-                isWide={WIDE_TYPES.has(chart.chart_type) && chartCount > 1}
-              />
-            ))}
-          </div>
-        </section>
+            <div className={`grid gap-5 md:gap-6 ${
+              secondaryCharts.length === 1
+                ? "grid-cols-1"
+                : secondaryCharts.length === 2
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            }`}>
+              {secondaryCharts.map((chart, i) => (
+                <DynamicChartCard
+                  key={chart.chart_name}
+                  chart={chart}
+                  index={i + primaryCharts.length}
+                  tier="secondary"
+                  isWide={WIDE_TYPES.has(chart.chart_type) && secondaryCharts.length >= 3}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer />

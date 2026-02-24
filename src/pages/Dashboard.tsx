@@ -1,10 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import InterviewListItem from "@/components/dashboard-v2/InterviewListItem";
 import ConductedRunCard from "@/components/dashboard-v2/ConductedRunCard";
@@ -27,6 +29,7 @@ type SentimentFilter = "all" | "positive" | "neutral" | "negative";
 
 const DashboardV2 = () => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // State - Interviews
@@ -231,6 +234,15 @@ const DashboardV2 = () => {
                 />
               </div>
 
+              {/* View Interview Analysis - Mobile */}
+              <PrimaryButton
+                className="w-full"
+                disabled={!selectedInterview}
+                onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}`)}
+              >
+                View Interview Analysis
+              </PrimaryButton>
+
               {/* Sentiment filter - Mobile */}
               <div className="flex gap-2">
                 {(["all", "positive", "neutral", "negative"] as SentimentFilter[]).map((sentiment) => (
@@ -403,8 +415,8 @@ const DashboardV2 = () => {
                     <h2 className="text-lg font-semibold text-foreground truncate">
                       {selectedInterview?.title || "Select an interview"}
                     </h2>
-                    <div className="flex-1 max-w-xs ml-auto">
-                      <div className="relative">
+                    <div className="flex items-center gap-3 ml-auto">
+                      <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           placeholder="Search participants..."
@@ -414,6 +426,14 @@ const DashboardV2 = () => {
                           disabled={!selectedInterview}
                         />
                       </div>
+                      <PrimaryButton
+                        size="sm"
+                        disabled={!selectedInterview}
+                        onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}`)}
+                        className="whitespace-nowrap"
+                      >
+                        View Interview Analysis
+                      </PrimaryButton>
                     </div>
                   </div>
                   {/* Sentiment filter */}

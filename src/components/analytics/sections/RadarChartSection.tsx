@@ -5,7 +5,6 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   ResponsiveContainer,
-  Tooltip,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -18,36 +17,25 @@ export default function RadarChartSection({ title, data }: { title: string; data
   const chartData = data.map((d) => ({ ...d, fullMark: 10 }));
 
   return (
-    <Card className="group hover:shadow-card-hover transition-shadow duration-300">
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <RadarChart data={chartData} cx="50%" cy="50%" outerRadius="72%">
-            <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.6} />
+          <RadarChart data={chartData} cx="50%" cy="50%" outerRadius="75%">
+            <PolarGrid stroke="hsl(var(--border))" />
             <PolarAngleAxis
               dataKey="metric"
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
             />
             <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
-            <Tooltip
-              contentStyle={{
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: 8,
-                fontSize: 12,
-                boxShadow: "var(--shadow-md)",
-              }}
-              formatter={(value: number) => [value.toFixed(1), "Score"]}
-            />
             <Radar
               dataKey="value"
-              stroke="hsl(var(--primary))"
-              fill="hsl(var(--primary))"
-              fillOpacity={0.2}
+              stroke="hsl(220, 70%, 55%)"
+              fill="hsl(220, 70%, 55%)"
+              fillOpacity={0.25}
               strokeWidth={2}
-              dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }}
             />
           </RadarChart>
         </ResponsiveContainer>

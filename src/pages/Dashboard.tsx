@@ -200,6 +200,17 @@ const DashboardV2 = () => {
           >
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Conducted Interviews</h1>
             <p className="text-muted-foreground mt-1">View responses from all your completed interview sessions</p>
+            {/* DEV ONLY — Insight Demo link */}
+            {import.meta.env.DEV && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/dashboard/insight-demo")}
+                className="mt-2 text-xs opacity-60 hover:opacity-100"
+              >
+                🧪 Insight Demo
+              </Button>
+            )}
           </motion.div>
 
           {/* Mobile Layout */}

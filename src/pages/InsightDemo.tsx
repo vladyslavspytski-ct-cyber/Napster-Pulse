@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import ConceptA from "@/components/insight-concepts/ConceptA";
 import ConceptB from "@/components/insight-concepts/ConceptB";
 import ConceptC from "@/components/insight-concepts/ConceptC";
+import { DistributionChartSection } from "@/components/interview-dashboard/sections/DistributionChartSection";
+
+const DISTRIBUTION_MOCK = {
+  title: "Overall Performance Sentiment",
+  labels: ["Strong Hire", "Hire", "Neutral", "No Hire"],
+  values: [4, 0, 2, 0],
+};
 
 const CONCEPTS = [
   { key: "A", label: "Executive Brief", description: "Minimal, premium, strategic" },
@@ -81,6 +88,12 @@ const InsightDemo = () => {
             {active === "C" && <ConceptC />}
           </motion.div>
         </AnimatePresence>
+
+        {/* Distribution Chart Exploration */}
+        <div className="section-container max-w-7xl mx-auto mt-12 pt-12 border-t border-border/30">
+          <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 px-1">Section Exploration</h3>
+          <DistributionChartSection data={DISTRIBUTION_MOCK} />
+        </div>
       </main>
 
       <Footer />

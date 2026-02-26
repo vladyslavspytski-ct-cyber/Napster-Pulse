@@ -1,181 +1,319 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, CalendarDays } from "lucide-react";
+import { ArrowLeft, AlertCircle, BarChart3, RefreshCw, Sparkles, Users } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import AnimatedKPI from "@/components/analytics/AnimatedKPI";
-import AIInsightBlock from "@/components/analytics/AIInsightBlock";
-import DynamicChartCard from "@/components/analytics/DynamicChartCard";
-import { MOCK_ANALYTICS } from "@/lib/mockAnalyticsData";
-
-const PRIMARY_TYPES = new Set(["radar", "score"]);
-const WIDE_TYPES = new Set(["bar", "horizontal_bar", "line", "area"]);
+import { Skeleton } from "@/components/ui/skeleton";
+import { useInterviewDashboard } from "@/hooks/api/useInterviewDashboard";
+import SectionRenderer from "@/components/interview-dashboard/SectionRenderer";
 
 const InterviewAnalysis = () => {
   const { interviewId } = useParams<{ interviewId: string }>();
   const navigate = useNavigate();
-  const data = MOCK_ANALYTICS;
 
-  // Classify charts into tiers
-  const primaryCharts = data.aggregate_chart_results.filter(c => PRIMARY_TYPES.has(c.chart_type));
-  const secondaryCharts = data.aggregate_chart_results.filter(c => !PRIMARY_TYPES.has(c.chart_type));
+  const { data, isLoading, error, notFound, refetch } = useInterviewDashboard({
+    interviewId,
+    enabled: !!interviewId,
+  });
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 pt-24 pb-16">
+          <LoadingState />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 pt-24 pb-16">
+          <ErrorState error={error} onRetry={refetch} onBack={() => navigate("/dashboard")} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Not found state
+  if (notFound) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 pt-24 pb-16">
+          <NotFoundState onBack={() => navigate("/dashboard")} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // No data state
+  if (!data) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 pt-24 pb-16">
+          <EmptyState onBack={() => navigate("/dashboard")} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Check if we have sections
+  const hasSections = data.sections && data.sections.length > 0;
+
+  // Check if we have a summary section
+  const hasSummarySection = data.sections.some((s) => s.type === "summary");
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
       <main className="flex-1 pt-24 pb-16">
-        {/* ── Hero Section ── */}
-        <section
-          className="relative overflow-hidden"
-          style={{ background: "var(--analytics-hero-gradient)" }}
-        >
-          {/* Dot pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.025]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
-              backgroundSize: "24px 24px",
-            }}
-          />
+        {/* Back button - always visible at top */}
+        <div className="section-container max-w-6xl mx-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/dashboard")}
+            className="-ml-2 text-muted-foreground hover:text-foreground mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Dashboard
+          </Button>
+        </div>
 
-          <div className="section-container max-w-7xl mx-auto relative z-10 py-12 md:py-16 lg:py-20">
-            {/* Back button */}
-            <motion.div
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/dashboard")}
-                className="gap-2 text-muted-foreground hover:text-foreground mb-8"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Dashboard
-              </Button>
-            </motion.div>
-
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10 lg:gap-16">
-              {/* Left: Title + Meta */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-5 flex-1 min-w-0"
-              >
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-[1.15] tracking-tight">
-                  {data.interview_title}
-                </h1>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Users className="w-4 h-4" />
-                    {data.completed_count} completed
-                  </span>
-                  {data.created_at && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays className="w-4 h-4" />
-                      {new Date(data.created_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 text-primary text-xs font-medium">
-                    ID: {interviewId}
-                  </span>
-                </div>
-
-                {/* AI Insight — placed closer to context */}
-                <div className="pt-2">
-                  <AIInsightBlock
-                    insight="This interview shows strong consistency across candidates, with highest alignment in Performance & Impact. Communication scores are trending upward week-over-week, suggesting effective development in this competency area."
-                  />
-                </div>
-              </motion.div>
-
-              {/* Right: KPI — visually dominant */}
-              {data.aggregate_overall_score !== undefined && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-                  className="flex-shrink-0 lg:pt-2"
-                >
-                  <AnimatedKPI value={data.aggregate_overall_score} />
-                </motion.div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom fade into content */}
-          <div className="h-16 bg-gradient-to-b from-transparent to-background" />
-        </section>
-
-        {/* ── Primary Charts (Radar / Score) ── */}
-        {primaryCharts.length > 0 && (
-          <section className="section-container max-w-7xl mx-auto mt-2 md:mt-4">
-            <div className={`grid gap-6 md:gap-8 ${
-              primaryCharts.length === 1
-                ? "grid-cols-1 max-w-3xl mx-auto"
-                : "grid-cols-1 md:grid-cols-2"
-            }`}>
-              {primaryCharts.map((chart, i) => (
-                <DynamicChartCard
-                  key={chart.chart_name}
-                  chart={chart}
-                  index={i}
-                  tier="primary"
-                />
-              ))}
-            </div>
-          </section>
+        {/* Default Hero when no summary section */}
+        {!hasSummarySection && (
+          <DefaultHero title={data.title} completedCount={data.completed_count} />
         )}
 
-        {/* ── Secondary Charts ── */}
-        {secondaryCharts.length > 0 && (
-          <section className="section-container max-w-7xl mx-auto mt-10 md:mt-14">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="mb-6"
-            >
-              <h2 className="text-lg font-semibold text-foreground">Detailed Breakdown</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                In-depth analysis across {data.completed_count} participants
-              </p>
-            </motion.div>
+        {/* No sections fallback */}
+        {!hasSections && <NoSectionsState completedCount={data.completed_count} />}
 
-            <div className={`grid gap-5 md:gap-6 ${
-              secondaryCharts.length === 1
-                ? "grid-cols-1"
-                : secondaryCharts.length === 2
-                ? "grid-cols-1 md:grid-cols-2"
-                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            }`}>
-              {secondaryCharts.map((chart, i) => (
-                <DynamicChartCard
-                  key={chart.chart_name}
-                  chart={chart}
-                  index={i + primaryCharts.length}
-                  tier="secondary"
-                  isWide={WIDE_TYPES.has(chart.chart_type) && secondaryCharts.length >= 3}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Dynamic sections */}
+        <div className="space-y-0">
+          {data.sections.map((section, index) => (
+            <SectionRenderer
+              key={`${section.type}-${index}`}
+              section={section}
+              title={data.title}
+              completedCount={data.completed_count}
+            />
+          ))}
+        </div>
       </main>
 
       <Footer />
     </div>
   );
 };
+
+// ─────────────────────────────────────────────────────────────
+// Default Hero (when no summary section)
+// ─────────────────────────────────────────────────────────────
+
+interface DefaultHeroProps {
+  title: string;
+  completedCount: number;
+}
+
+const DefaultHero = ({ title, completedCount }: DefaultHeroProps) => (
+  <section className="relative py-16 md:py-20 overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-background to-interu-purple/[0.03]" />
+    <div className="section-container relative z-10 max-w-6xl mx-auto text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-4"
+      >
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/10 text-primary text-sm font-semibold mx-auto">
+          <Sparkles className="w-4 h-4" />
+          Interview Analysis
+        </div>
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground">{title}</h1>
+        <p className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Users className="w-4 h-4" /> {completedCount} participants
+        </p>
+      </motion.div>
+    </div>
+  </section>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Loading State
+// ─────────────────────────────────────────────────────────────
+
+const LoadingState = () => (
+  <div className="section-container max-w-6xl mx-auto">
+    {/* Hero skeleton */}
+    <div className="py-16 md:py-20 text-center">
+      <Skeleton className="h-8 w-48 mx-auto mb-6" />
+      <Skeleton className="h-14 w-3/4 mx-auto mb-4" />
+      <Skeleton className="h-5 w-40 mx-auto" />
+      <Skeleton className="h-32 w-32 rounded-full mx-auto mt-10" />
+    </div>
+
+    {/* Stats skeleton */}
+    <div className="py-6 border-y border-border/50">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="text-center space-y-2">
+            <Skeleton className="h-8 w-16 mx-auto" />
+            <Skeleton className="h-4 w-24 mx-auto" />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Content skeleton */}
+    <div className="py-16 space-y-4">
+      <Skeleton className="h-8 w-48 mb-6" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Error State
+// ─────────────────────────────────────────────────────────────
+
+interface ErrorStateProps {
+  error: Error;
+  onRetry: () => void;
+  onBack: () => void;
+}
+
+const ErrorState = ({ error, onRetry, onBack }: ErrorStateProps) => (
+  <div className="section-container max-w-xl mx-auto py-20">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center text-center"
+    >
+      <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-6">
+        <AlertCircle className="w-8 h-8 text-destructive" />
+      </div>
+      <h2 className="text-xl font-semibold text-foreground mb-2">Failed to Load</h2>
+      <p className="text-muted-foreground mb-6 max-w-sm">
+        {error.message || "Something went wrong while fetching the interview data."}
+      </p>
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        <Button onClick={onRetry}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    </motion.div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Not Found State
+// ─────────────────────────────────────────────────────────────
+
+interface NotFoundStateProps {
+  onBack: () => void;
+}
+
+const NotFoundState = ({ onBack }: NotFoundStateProps) => (
+  <div className="section-container max-w-xl mx-auto py-20">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center text-center"
+    >
+      <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+        <BarChart3 className="w-8 h-8 text-muted-foreground" />
+      </div>
+      <h2 className="text-xl font-semibold text-foreground mb-2">Interview Not Found</h2>
+      <p className="text-muted-foreground mb-6 max-w-sm">
+        This interview could not be found. It may have been deleted or the ID is invalid.
+      </p>
+      <Button variant="outline" onClick={onBack}>
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
+    </motion.div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Empty State (no data returned)
+// ─────────────────────────────────────────────────────────────
+
+interface EmptyStateProps {
+  onBack: () => void;
+}
+
+const EmptyState = ({ onBack }: EmptyStateProps) => (
+  <div className="section-container max-w-xl mx-auto py-20">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center text-center"
+    >
+      <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+        <BarChart3 className="w-8 h-8 text-muted-foreground" />
+      </div>
+      <h2 className="text-xl font-semibold text-foreground mb-2">No Data Available</h2>
+      <p className="text-muted-foreground mb-6 max-w-sm">
+        Could not load the interview data. Please try again later.
+      </p>
+      <Button variant="outline" onClick={onBack}>
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
+    </motion.div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
+// No Sections State (data exists but no dashboard sections)
+// ─────────────────────────────────────────────────────────────
+
+interface NoSectionsStateProps {
+  completedCount: number;
+}
+
+const NoSectionsState = ({ completedCount }: NoSectionsStateProps) => (
+  <section className="section-container max-w-6xl mx-auto py-16">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="flex flex-col items-center text-center py-12 px-6 rounded-2xl border border-border/40 bg-card"
+    >
+      <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-5">
+        <BarChart3 className="w-7 h-7 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-2">No Analytics Yet</h3>
+      <p className="text-sm text-muted-foreground max-w-md">
+        {completedCount > 0
+          ? "This interview has completed responses but the analytics are still being processed. Check back soon."
+          : "This interview does not have any completed responses yet. Analytics will appear once participants complete the interview."}
+      </p>
+    </motion.div>
+  </section>
+);
 
 export default InterviewAnalysis;

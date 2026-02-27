@@ -92,6 +92,7 @@ export type SectionType =
 export interface DashboardSection {
   type: SectionType;
   data: unknown;
+  priority?: number;
 }
 
 export interface GlobalDashboard {

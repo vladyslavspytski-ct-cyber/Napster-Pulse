@@ -108,14 +108,26 @@ export const SummarySection = ({ data, title, completedCount }: SummarySectionPr
   // Parse markdown content
   const blocks = useMemo(() => parseMarkdown(data.text || ""), [data.text]);
 
-  // Always collapsible if more than one block
-  const isLongContent = blocks.length > 1;
+  // Count approximate lines per block and show ~14-15 lines worth
+  const MAX_VISIBLE_LINES = 15;
 
-  // For collapsed view, show only the first block
   const visibleBlocks = useMemo(() => {
-    if (isExpanded || !isLongContent) return blocks;
-    return blocks.slice(0, 1);
-  }, [blocks, isExpanded, isLongContent]);
+    if (isExpanded) return blocks;
+    let lineCount = 0;
+    const result: ContentBlock[] = [];
+    for (const block of blocks) {
+      const blockLines =
+        block.type === "list" ? (block.items?.length ?? 1) :
+        block.type === "heading" ? 2 : // heading + spacing
+        Math.max(1, Math.ceil((block.content?.length ?? 0) / 80));
+      if (result.length > 0 && lineCount + blockLines > MAX_VISIBLE_LINES) break;
+      result.push(block);
+      lineCount += blockLines;
+    }
+    return result;
+  }, [blocks, isExpanded]);
+
+  const isLongContent = visibleBlocks.length < blocks.length;
 
   return (
     <section className="relative py-14 md:py-20 overflow-hidden">

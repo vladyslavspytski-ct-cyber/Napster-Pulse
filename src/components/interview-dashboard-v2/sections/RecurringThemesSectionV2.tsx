@@ -1,5 +1,12 @@
-import { motion } from "framer-motion";
-import { Hash, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Hash, TrendingUp, TrendingDown, Minus, ChevronDown } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RecurringThemeInput {
   theme: string;
@@ -39,6 +46,104 @@ const frequencyLabel = (frequency?: string): string => {
   return frequency;
 };
 
+const ThemeCard = ({ theme, index }: { theme: RecurringThemeInput; index: number }) => {
+  const accent = getAccent(index);
+  const [expanded, setExpanded] = useState(false);
+  const hasLongDesc = (theme.description?.length ?? 0) > 80;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: index * 0.05 }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="group relative rounded-2xl p-4 cursor-default transition-shadow flex flex-col"
+      style={{
+        backgroundColor: accent.bg,
+        border: `1px solid ${accent.border}`,
+      }}
+    >
+      {/* Header row */}
+      <div className="flex items-start gap-3">
+        <div
+          className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
+          style={{ backgroundColor: accent.dot }}
+        />
+        <div className="flex-1 min-w-0">
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className="text-sm font-semibold text-foreground leading-snug line-clamp-3">
+                  {theme.theme}
+                </h3>
+              </TooltipTrigger>
+              {theme.theme.length > 60 && (
+                <TooltipContent side="top" className="max-w-xs text-xs">
+                  {theme.theme}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {/* Description — truncated, expandable on click or tooltip on hover */}
+      {theme.description && (
+        <div className="mt-2 flex-1">
+          <TooltipProvider delayDuration={400}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p
+                  className={`text-xs text-muted-foreground leading-relaxed ${
+                    expanded ? "" : "line-clamp-2"
+                  }`}
+                >
+                  {theme.description}
+                </p>
+              </TooltipTrigger>
+              {hasLongDesc && !expanded && (
+                <TooltipContent side="bottom" className="max-w-sm text-xs leading-relaxed">
+                  {theme.description}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+          {hasLongDesc && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-[10px] font-medium mt-1 flex items-center gap-0.5 transition-colors"
+              style={{ color: accent.text }}
+            >
+              {expanded ? "Less" : "More"}
+              <ChevronDown
+                className="w-3 h-3 transition-transform"
+                style={{ transform: expanded ? "rotate(180deg)" : undefined }}
+              />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Frequency indicator */}
+      <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t" style={{ borderColor: accent.border }}>
+        <span style={{ color: accent.text }}>
+          <FrequencyIcon frequency={theme.frequency} />
+        </span>
+        <span className="text-[11px] font-medium" style={{ color: accent.text }}>
+          {frequencyLabel(theme.frequency)}
+        </span>
+      </div>
+
+      {/* Hover glow */}
+      <div
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        style={{ boxShadow: `0 6px 24px ${accent.bg}` }}
+      />
+    </motion.div>
+  );
+};
+
 export const RecurringThemesSectionV2 = ({ data }: RecurringThemesSectionV2Props) => {
   if (!data || !Array.isArray(data) || data.length === 0) return null;
 
@@ -58,59 +163,9 @@ export const RecurringThemesSectionV2 = ({ data }: RecurringThemesSectionV2Props
       </motion.div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {data.map((theme, i) => {
-          const accent = getAccent(i);
-
-          return (
-            <motion.div
-              key={`${theme.theme}-${i}`}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-              whileHover={{ y: -2, transition: { duration: 0.2 } }}
-              className="group relative rounded-2xl p-4 cursor-default transition-shadow"
-              style={{
-                backgroundColor: accent.bg,
-                border: `1px solid ${accent.border}`,
-              }}
-            >
-              {/* Header row: dot + theme name */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
-                  style={{ backgroundColor: accent.dot }}
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground leading-snug">
-                    {theme.theme}
-                  </h3>
-                  {theme.description && (
-                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
-                      {theme.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Frequency indicator */}
-              <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t" style={{ borderColor: accent.border }}>
-                <span style={{ color: accent.text }}>
-                  <FrequencyIcon frequency={theme.frequency} />
-                </span>
-                <span className="text-[11px] font-medium" style={{ color: accent.text }}>
-                  {frequencyLabel(theme.frequency)}
-                </span>
-              </div>
-
-              {/* Hover glow */}
-              <div
-                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                style={{ boxShadow: `0 6px 24px ${accent.bg}` }}
-              />
-            </motion.div>
-          );
-        })}
+        {data.map((theme, i) => (
+          <ThemeCard key={`${theme.theme}-${i}`} theme={theme} index={i} />
+        ))}
       </div>
     </section>
   );

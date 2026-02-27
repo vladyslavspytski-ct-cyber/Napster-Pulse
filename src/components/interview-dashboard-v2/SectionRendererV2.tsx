@@ -3,12 +3,9 @@ import type { DashboardSection } from "@/hooks/api/useInterviewDashboard";
 // Reuse unchanged sections from v1
 import {
   SummarySection,
-  StatsCardsSection,
   SkillsRadarSection,
   CriteriaBenchmarksSection,
   LeaderboardSection,
-  RedFlagsSection,
-  KeyIdeasSection,
 } from "@/components/interview-dashboard/sections";
 
 // V2 redesigned sections
@@ -16,6 +13,9 @@ import { RecurringThemesSectionV2 } from "./sections/RecurringThemesSectionV2";
 import WordCloudSectionV2 from "./sections/WordCloudSectionV2";
 import { TopQuotesSectionV2 } from "./sections/TopQuotesSectionV2";
 import { DistributionChartSectionV2 } from "./sections/DistributionChartSectionV2";
+import { KeyIdeasSectionV2 } from "./sections/KeyIdeasSectionV2";
+import { RedFlagsSectionV2 } from "./sections/RedFlagsSectionV2";
+import { StatsCardsSectionV2 } from "./sections/StatsCardsSectionV2";
 
 interface SectionRendererV2Props {
   section: DashboardSection;
@@ -38,7 +38,7 @@ export const SectionRendererV2 = ({ section, title, completedCount }: SectionRen
     case "summary":
       return <SummarySection data={anyData} title={title} completedCount={completedCount} />;
     case "stats_cards":
-      return <StatsCardsSection data={anyData} />;
+      return <StatsCardsSectionV2 data={anyData} />;
     case "word_cloud":
       return <WordCloudSectionV2 data={anyData} />;
     case "leaderboard":
@@ -50,9 +50,9 @@ export const SectionRendererV2 = ({ section, title, completedCount }: SectionRen
     case "recurring_themes":
       return <RecurringThemesSectionV2 data={anyData} />;
     case "red_flags":
-      return <RedFlagsSection data={anyData} />;
+      return <RedFlagsSectionV2 data={anyData} />;
     case "key_ideas":
-      return <KeyIdeasSection data={anyData} />;
+      return <KeyIdeasSectionV2 data={anyData} />;
     case "top_quotes":
       return <TopQuotesSectionV2 data={anyData} />;
     case "distribution_chart":

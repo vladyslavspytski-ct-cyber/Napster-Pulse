@@ -9,13 +9,13 @@ import {
   LeaderboardSection,
   RedFlagsSection,
   KeyIdeasSection,
-  DistributionChartSection,
 } from "@/components/interview-dashboard/sections";
 
 // V2 redesigned sections
 import { RecurringThemesSectionV2 } from "./sections/RecurringThemesSectionV2";
-import { WordCloudSectionV2 } from "./sections/WordCloudSectionV2";
+import WordCloudSectionV2 from "./sections/WordCloudSectionV2";
 import { TopQuotesSectionV2 } from "./sections/TopQuotesSectionV2";
+import { DistributionChartSectionV2 } from "./sections/DistributionChartSectionV2";
 
 interface SectionRendererV2Props {
   section: DashboardSection;
@@ -56,7 +56,7 @@ export const SectionRendererV2 = ({ section, title, completedCount }: SectionRen
     case "top_quotes":
       return <TopQuotesSectionV2 data={anyData} />;
     case "distribution_chart":
-      return <DistributionChartSection data={anyData} />;
+      return <DistributionChartSectionV2 data={anyData} />;
     default:
       console.warn(`[SectionRendererV2] Unknown section type: ${type}`);
       return null;

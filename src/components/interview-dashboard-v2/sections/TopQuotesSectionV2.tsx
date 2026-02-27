@@ -52,17 +52,17 @@ export const TopQuotesSectionV2 = ({ data }: TopQuotesSectionV2Props) => {
             viewport={{ once: true }}
             transition={{ duration: 0.45, delay: 0.06 * Math.min(i, 6) }}
             whileHover={{ y: -3, transition: { duration: 0.2 } }}
-            className={`group relative p-6 rounded-2xl border border-border/30 bg-gradient-to-br ${ACCENT_GRADIENTS[i % ACCENT_GRADIENTS.length]} backdrop-blur-sm overflow-hidden cursor-default`}
+            className={`group relative p-5 rounded-2xl border border-border/30 bg-gradient-to-br ${ACCENT_GRADIENTS[i % ACCENT_GRADIENTS.length]} backdrop-blur-sm overflow-hidden cursor-default`}
             style={{ boxShadow: "var(--shadow-sm)" }}
           >
-            {/* Large decorative quote mark */}
+            {/* Small decorative quote mark */}
             <Quote
-              className="absolute -top-1 -left-1 w-16 h-16 text-primary/[0.06] rotate-180 pointer-events-none"
-              strokeWidth={1}
+              className="absolute top-3 left-3 w-6 h-6 text-primary/[0.08] rotate-180 pointer-events-none"
+              strokeWidth={1.5}
             />
 
             {/* Quote text */}
-            <p className="relative text-sm md:text-base leading-relaxed text-foreground/85 italic z-10">
+            <p className="relative text-sm md:text-base leading-relaxed text-foreground/85 italic z-10 pl-4">
               "{q.text}"
             </p>
 

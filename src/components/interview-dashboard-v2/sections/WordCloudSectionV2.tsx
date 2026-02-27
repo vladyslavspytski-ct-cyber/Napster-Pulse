@@ -303,8 +303,8 @@ const BubbleView = ({ data }: { data: NormalizedItem[] }) => {
   );
 
   useEffect(() => {
-    const minR = Math.max(24, containerWidth * 0.035);
-    const maxR = Math.max(48, containerWidth * 0.08);
+    const minR = Math.max(18, containerWidth * 0.025);
+    const maxR = Math.max(34, containerWidth * 0.055);
 
     const initialNodes: BubbleNode[] = data.map((item, i) => ({
       word: item.word,

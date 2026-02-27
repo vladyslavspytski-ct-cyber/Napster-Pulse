@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutGrid, Circle } from "lucide-react";
 
@@ -23,15 +23,15 @@ const PALETTE = [
   "hsl(var(--destructive))",
 ];
 
-const getBgPalette = (i: number) => {
+const getBgColor = (i: number, opacity: number) => {
   const bases = [
-    "hsl(var(--primary) / VAR)",
-    "hsl(var(--interu-purple) / VAR)",
-    "hsl(var(--accent) / VAR)",
-    "hsl(var(--interu-mint) / VAR)",
-    "hsl(var(--destructive) / VAR)",
+    "--primary",
+    "--interu-purple",
+    "--accent",
+    "--interu-mint",
+    "--destructive",
   ];
-  return bases[i % bases.length];
+  return `hsl(var(${bases[i % bases.length]}) / ${opacity})`;
 };
 
 export const WordCloudSectionV2 = ({ data }: WordCloudSectionV2Props) => {
@@ -55,7 +55,6 @@ export const WordCloudSectionV2 = ({ data }: WordCloudSectionV2Props) => {
 
   return (
     <section className="py-10">
-      {/* Header with toggle */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -70,7 +69,6 @@ export const WordCloudSectionV2 = ({ data }: WordCloudSectionV2Props) => {
           <h2 className="text-lg font-semibold text-foreground">Key Topics</h2>
         </div>
 
-        {/* Toggle */}
         <div className="flex gap-1 p-1 rounded-xl bg-muted/60">
           {([
             { key: "treemap" as const, label: "Treemap", Icon: LayoutGrid },
@@ -109,59 +107,171 @@ export const WordCloudSectionV2 = ({ data }: WordCloudSectionV2Props) => {
   );
 };
 
-/* ── Treemap View ── */
+/* ── Treemap View — Squarified algorithm ── */
 interface NormalizedItem {
   word: string;
   weight: number;
   ratio: number;
 }
 
+interface TreemapRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  item: NormalizedItem;
+  index: number;
+}
+
+function squarify(
+  items: { weight: number; item: NormalizedItem; index: number }[],
+  x: number,
+  y: number,
+  w: number,
+  h: number
+): TreemapRect[] {
+  if (items.length === 0) return [];
+  if (items.length === 1) {
+    return [{ x, y, w, h, item: items[0].item, index: items[0].index }];
+  }
+
+  const total = items.reduce((s, i) => s + i.weight, 0);
+  const rects: TreemapRect[] = [];
+
+  let remaining = [...items];
+  let cx = x, cy = y, cw = w, ch = h;
+
+  while (remaining.length > 0) {
+    const isWide = cw >= ch;
+    const side = isWide ? ch : cw;
+    const remainingTotal = remaining.reduce((s, i) => s + i.weight, 0);
+
+    // Find the best row
+    let row: typeof remaining = [];
+    let bestRatio = Infinity;
+
+    for (let i = 1; i <= remaining.length; i++) {
+      const candidate = remaining.slice(0, i);
+      const candidateTotal = candidate.reduce((s, it) => s + it.weight, 0);
+      const rowSize = (candidateTotal / remainingTotal) * (isWide ? cw : ch);
+
+      let worstRatio = 0;
+      for (const it of candidate) {
+        const itemSize = (it.weight / candidateTotal) * side;
+        const r = Math.max(rowSize / itemSize, itemSize / rowSize);
+        worstRatio = Math.max(worstRatio, r);
+      }
+
+      if (worstRatio <= bestRatio) {
+        bestRatio = worstRatio;
+        row = candidate;
+      } else {
+        break;
+      }
+    }
+
+    // Layout the row
+    const rowTotal = row.reduce((s, it) => s + it.weight, 0);
+    const rowSize = (rowTotal / remainingTotal) * (isWide ? cw : ch);
+
+    let offset = 0;
+    for (const it of row) {
+      const itemFraction = it.weight / rowTotal;
+      const itemSize = itemFraction * side;
+
+      if (isWide) {
+        rects.push({ x: cx, y: cy + offset, w: rowSize, h: itemSize, item: it.item, index: it.index });
+      } else {
+        rects.push({ x: cx + offset, y: cy, w: itemSize, h: rowSize, item: it.item, index: it.index });
+      }
+      offset += itemSize;
+    }
+
+    // Update remaining area
+    if (isWide) {
+      cx += rowSize;
+      cw -= rowSize;
+    } else {
+      cy += rowSize;
+      ch -= rowSize;
+    }
+
+    remaining = remaining.slice(row.length);
+  }
+
+  return rects;
+}
+
 const TreemapView = ({ data }: { data: NormalizedItem[] }) => {
-  const totalWeight = data.reduce((s, d) => s + d.weight, 0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 600, h: 350 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setContainerSize({
+          w: entry.contentRect.width,
+          h: Math.max(280, Math.min(420, entry.contentRect.width * 0.5)),
+        });
+      }
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const rects = useMemo(() => {
+    const items = data.map((item, index) => ({ weight: item.weight, item, index }));
+    return squarify(items, 0, 0, containerSize.w, containerSize.h);
+  }, [data, containerSize]);
+
+  const gap = 3;
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="grid gap-1.5"
-      style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-        gridAutoRows: "minmax(50px, auto)",
-      }}
+      className="relative w-full"
+      style={{ height: containerSize.h }}
     >
-      {data.map((item, i) => {
-        const pct = totalWeight > 0 ? item.weight / totalWeight : 0;
-        // Large items span more columns
-        const span = pct > 0.15 ? 3 : pct > 0.08 ? 2 : 1;
-        const rowSpan = pct > 0.12 ? 2 : 1;
-        const bgColor = getBgPalette(i).replace("VAR", `${0.10 + item.ratio * 0.12}`);
-        const textColor = PALETTE[i % PALETTE.length];
+      {rects.map((rect, i) => {
+        const bgColor = getBgColor(rect.index, 0.10 + rect.item.ratio * 0.12);
+        const textColor = PALETTE[rect.index % PALETTE.length];
+        // Scale font to fit: use shorter dimension
+        const minDim = Math.min(rect.w - gap * 2, rect.h - gap * 2);
+        const fontSize = Math.max(10, Math.min(18, minDim * 0.22, (rect.w - gap * 2) / Math.max(rect.item.word.length * 0.65, 1)));
 
         return (
           <motion.div
-            key={item.word}
-            initial={{ opacity: 0, scale: 0.8 }}
+            key={rect.item.word}
+            initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.35, delay: i * 0.03 }}
-            whileHover={{ scale: 1.03 }}
-            className="rounded-xl flex items-center justify-center p-3 cursor-default transition-shadow hover:shadow-md"
+            transition={{ duration: 0.35, delay: i * 0.02 }}
+            whileHover={{ scale: 1.02, zIndex: 10 }}
+            className="absolute rounded-xl flex items-center justify-center cursor-default transition-shadow hover:shadow-md overflow-hidden"
             style={{
-              gridColumn: `span ${span}`,
-              gridRow: `span ${rowSpan}`,
+              left: rect.x + gap / 2,
+              top: rect.y + gap / 2,
+              width: rect.w - gap,
+              height: rect.h - gap,
               backgroundColor: bgColor,
-              minHeight: rowSpan > 1 ? 100 : 50,
             }}
           >
             <span
-              className="font-bold text-center leading-tight"
+              className="font-bold text-center leading-tight px-2 break-words"
               style={{
-                fontSize: `${0.75 + item.ratio * 0.9}rem`,
+                fontSize,
                 color: textColor,
+                maxWidth: "100%",
+                wordBreak: "break-word",
               }}
             >
-              {item.word}
+              {rect.item.word}
             </span>
           </motion.div>
         );
@@ -181,7 +291,7 @@ const BubbleView = ({ data }: { data: NormalizedItem[] }) => (
   >
     {data.map((item, i) => {
       const size = 56 + item.ratio * 72;
-      const bgColor = getBgPalette(i).replace("VAR", `${0.12 + item.ratio * 0.10}`);
+      const bgColor = getBgColor(i, 0.12 + item.ratio * 0.10);
       const textColor = PALETTE[i % PALETTE.length];
 
       return (

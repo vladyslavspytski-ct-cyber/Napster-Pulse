@@ -298,13 +298,13 @@ const BubbleView = ({ data }: { data: NormalizedItem[] }) => {
   }, []);
 
   const containerHeight = useMemo(
-    () => Math.max(260, Math.min(400, containerWidth * 0.55)),
+    () => Math.max(300, Math.min(500, containerWidth * 0.65)),
     [containerWidth]
   );
 
   useEffect(() => {
-    const minR = Math.max(18, containerWidth * 0.025);
-    const maxR = Math.max(34, containerWidth * 0.055);
+    const minR = Math.max(14, containerWidth * 0.018);
+    const maxR = Math.max(28, containerWidth * 0.042);
 
     const initialNodes: BubbleNode[] = data.map((item, i) => ({
       word: item.word,

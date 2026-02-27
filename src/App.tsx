@@ -26,6 +26,7 @@ import TemplateDirectory from "./pages/TemplateDirectory";
 import CreateInterviewFromTemplate from "./pages/CreateInterviewFromTemplate";
 import InterviewAnalysis from "./pages/InterviewAnalysis";
 import InterviewAnalysisV2 from "./pages/InterviewAnalysisV2";
+import InterviewAnalysisExp from "./pages/InterviewAnalysisExp";
 import InsightDemo from "./pages/InsightDemo";
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="/create-interview-from-template" element={<CreateInterviewFromTemplate />} />
             <Route path="/dashboard/interview/:interviewId" element={<InterviewAnalysis />} />
             <Route path="/dashboard/interview/:interviewId/test" element={<InterviewAnalysisV2 />} />
+            <Route path="/dashboard/interview/:interviewId/test-2" element={<InterviewAnalysisExp />} />
             <Route path="/dashboard/insight-demo" element={<InsightDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

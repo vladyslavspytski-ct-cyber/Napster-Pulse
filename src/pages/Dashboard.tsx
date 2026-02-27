@@ -275,6 +275,15 @@ const DashboardV2 = () => {
                     {sentiment}
                   </Button>
                 ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!selectedInterview}
+                  onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test-2`)}
+                  className="h-9 px-3 bg-amber-500/10 border-amber-500/30 text-amber-600 hover:bg-amber-500/20"
+                >
+                  TEST
+                </Button>
               </div>
 
               {/* Sentiment Distribution - Mobile */}
@@ -478,6 +487,15 @@ const DashboardV2 = () => {
                         {sentiment}
                       </Button>
                     ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!selectedInterview}
+                      onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test-2`)}
+                      className="h-8 px-3 bg-amber-500/10 border-amber-500/30 text-amber-600 hover:bg-amber-500/20"
+                    >
+                      TEST
+                    </Button>
                   </div>
                   </div>
 

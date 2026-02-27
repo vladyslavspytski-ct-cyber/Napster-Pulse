@@ -108,27 +108,13 @@ export const SummarySection = ({ data, title, completedCount }: SummarySectionPr
   // Parse markdown content
   const blocks = useMemo(() => parseMarkdown(data.text || ""), [data.text]);
 
-  // Check if content is long enough to need expansion (more than 2 sections)
-  const headingCount = blocks.filter((b) => b.type === "heading").length;
-  const isLongContent = headingCount > 2 || blocks.length > 8;
+  // Always collapsible if more than one block
+  const isLongContent = blocks.length > 1;
 
-  // For collapsed view, show only first section
+  // For collapsed view, show only the first block
   const visibleBlocks = useMemo(() => {
     if (isExpanded || !isLongContent) return blocks;
-
-    // Find first heading and include content until next heading
-    const result: ContentBlock[] = [];
-    let foundFirstHeading = false;
-
-    for (const block of blocks) {
-      if (block.type === "heading") {
-        if (foundFirstHeading) break;
-        foundFirstHeading = true;
-      }
-      result.push(block);
-    }
-
-    return result.length > 0 ? result : blocks.slice(0, 3);
+    return blocks.slice(0, 1);
   }, [blocks, isExpanded, isLongContent]);
 
   return (

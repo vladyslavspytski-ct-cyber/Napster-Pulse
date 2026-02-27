@@ -30,7 +30,7 @@ export const LeaderboardSection = ({ data }: LeaderboardSectionProps) => {
       <div className="section-container max-w-6xl mx-auto py-14">
         <motion.div {...pop(0)} className="flex items-center gap-2 mb-8">
           <Award className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-bold text-foreground">Top Performers</h2>
+          <h2 className="text-xl font-bold text-foreground">Ranked Participants</h2>
         </motion.div>
         {/* Horizontal scroll container - no vertical scroll */}
         <div className="overflow-x-auto overflow-y-hidden -mx-4 px-4 pb-3 scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">

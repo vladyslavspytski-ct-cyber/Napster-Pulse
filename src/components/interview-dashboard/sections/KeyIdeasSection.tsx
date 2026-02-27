@@ -28,7 +28,7 @@ export const KeyIdeasSection = ({ data }: KeyIdeasSectionProps) => {
     <section className="section-container max-w-6xl mx-auto pb-20">
       <motion.div {...pop(0)} className="flex items-center gap-2 mb-8">
         <Lightbulb className="w-5 h-5 text-primary" />
-        <h2 className="text-xl font-bold text-foreground">AI Recommendations</h2>
+        <h2 className="text-xl font-bold text-foreground">Key Insights</h2>
       </motion.div>
       <div className="space-y-0">
         {ideas.map((idea, i) => (

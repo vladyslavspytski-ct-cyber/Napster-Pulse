@@ -82,12 +82,11 @@ export type SectionType =
   | "stats_cards"
   | "leaderboard"
   | "criteria_benchmarks"
-  | "skills_radar"
+  | "comparative_analysis"
   | "recurring_themes"
   | "red_flags"
   | "key_ideas"
   | "top_quotes"
-  | "dynamic_insights"
   | "distribution_chart";
 
 export interface DashboardSection {

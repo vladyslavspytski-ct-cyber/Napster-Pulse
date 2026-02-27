@@ -74,7 +74,7 @@ export const SkillsRadarSection = ({ data }: SkillsRadarSectionProps) => {
     <section className="section-container max-w-6xl mx-auto py-16">
       <motion.div {...pop(0)} className="flex items-center gap-2 mb-8">
         <Radar className="w-5 h-5 text-primary" />
-        <h2 className="text-xl font-bold text-foreground">Skills Assessment</h2>
+        <h2 className="text-xl font-bold text-foreground">Comparative Analysis</h2>
       </motion.div>
       <motion.div
         {...pop(0.1)}

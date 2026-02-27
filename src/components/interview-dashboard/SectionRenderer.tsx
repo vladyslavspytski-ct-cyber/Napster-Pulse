@@ -11,7 +11,6 @@ import {
   KeyIdeasSection,
   RecurringThemesSection,
   SkillsRadarSection,
-  DynamicInsightsSection,
   DistributionChartSection,
 } from "./sections";
 
@@ -57,7 +56,8 @@ export const SectionRenderer = ({ section, title, completedCount }: SectionRende
     case "criteria_benchmarks":
       return <CriteriaBenchmarksSection data={anyData} />;
 
-    case "skills_radar":
+    case "comparative_analysis":
+      // Temporarily using SkillsRadarSection until dedicated component is created
       return <SkillsRadarSection data={anyData} />;
 
     case "recurring_themes":
@@ -71,9 +71,6 @@ export const SectionRenderer = ({ section, title, completedCount }: SectionRende
 
     case "top_quotes":
       return <TopQuotesSection data={anyData} />;
-
-    case "dynamic_insights":
-      return <DynamicInsightsSection data={anyData} />;
 
     case "distribution_chart":
       return <DistributionChartSection data={anyData} />;

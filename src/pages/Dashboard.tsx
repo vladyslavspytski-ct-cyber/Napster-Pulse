@@ -244,13 +244,23 @@ const DashboardV2 = () => {
               </div>
 
               {/* View Interview Analysis - Mobile */}
-              <PrimaryButton
-                className="w-full"
-                disabled={!selectedInterview}
-                onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}`)}
-              >
-                View Interview Analysis
-              </PrimaryButton>
+              <div className="flex gap-2">
+                <PrimaryButton
+                  className="flex-1"
+                  disabled={!selectedInterview}
+                  onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}`)}
+                >
+                  View Interview Analysis
+                </PrimaryButton>
+                <Button
+                  variant="outline"
+                  disabled={!selectedInterview}
+                  onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test`)}
+                  className="text-accent border-accent/30 hover:bg-accent/10"
+                >
+                  TEST
+                </Button>
+              </div>
 
               {/* Sentiment filter - Mobile */}
               <div className="flex gap-2">
@@ -443,6 +453,15 @@ const DashboardV2 = () => {
                       >
                         View Interview Analysis
                       </PrimaryButton>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!selectedInterview}
+                        onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test`)}
+                        className="whitespace-nowrap text-accent border-accent/30 hover:bg-accent/10"
+                      >
+                        TEST
+                      </Button>
                     </div>
                   </div>
                   {/* Sentiment filter */}

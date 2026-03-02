@@ -92,7 +92,7 @@ const InterviewAnalysisV2 = () => {
             className="-ml-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Dashboard
+            Results
           </Button>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent/10 text-accent border border-accent/20">
             <FlaskConical className="w-3 h-3" />

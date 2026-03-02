@@ -89,7 +89,7 @@ const InterviewAnalysis = () => {
             className="-ml-2 text-muted-foreground hover:text-foreground mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Dashboard
+            Results
           </Button>
         </div>
 
@@ -216,7 +216,7 @@ const ErrorState = ({ error, onRetry, onBack }: ErrorStateProps) => (
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          Back to Results
         </Button>
         <Button onClick={onRetry}>
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -251,7 +251,7 @@ const NotFoundState = ({ onBack }: NotFoundStateProps) => (
       </p>
       <Button variant="outline" onClick={onBack}>
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Dashboard
+        Back to Results
       </Button>
     </motion.div>
   </div>
@@ -281,7 +281,7 @@ const EmptyState = ({ onBack }: EmptyStateProps) => (
       </p>
       <Button variant="outline" onClick={onBack}>
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Dashboard
+        Back to Results
       </Button>
     </motion.div>
   </div>

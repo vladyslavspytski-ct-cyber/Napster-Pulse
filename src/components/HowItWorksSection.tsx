@@ -33,7 +33,7 @@ const steps: Step[] = [
   },
   {
     icon: <BarChart2 className="w-6 h-6" />,
-    title: "Your Dashboard shows the result",
+    title: "Results shows the insights",
     description: "View comprehensive summaries with sentiment analysis and insights from all responses.",
     color: "text-interu-purple",
     bgColor: "bg-interu-purple-light",

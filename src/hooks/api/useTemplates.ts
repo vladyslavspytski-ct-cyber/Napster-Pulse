@@ -23,6 +23,7 @@ export interface Template {
   subcategory: string;
   emoji: string;
   color: string;
+  department?: string;
   seq: number;
   questions: TemplateQuestion[];
 }

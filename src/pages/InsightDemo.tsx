@@ -43,7 +43,7 @@ const InsightDemo = () => {
               className="-ml-2 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
-              Dashboard
+              Results
             </Button>
 
             <div className="flex items-center gap-2 p-1 rounded-xl bg-muted/50 border border-border/40">

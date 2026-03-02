@@ -52,8 +52,8 @@ const Header = () => {
     }
   };
 
-  // Handle Dashboard click - if logged out, open login modal and redirect after
-  const handleDashboardClick = (e: React.MouseEvent) => {
+  // Handle Results click - if logged out, open login modal and redirect after
+  const handleResultsClick = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
       e.preventDefault();
       openAuthModal("login", "/dashboard");
@@ -104,13 +104,13 @@ const Header = () => {
                   </button>
                 </>
               )}
-              {/* Saved Interviews - only visible when logged in */}
+              {/* Library - only visible when logged in */}
               {isLoggedIn && (
                 <a
                   href="/saved-interviews"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Saved Interviews
+                  Library
                 </a>
               )}
               {/* Templates - gated with login modal */}
@@ -121,13 +121,13 @@ const Header = () => {
               >
                 Templates
               </a>
-              {/* Dashboard - gated with login modal */}
+              {/* Results - gated with login modal */}
               <a
                 href="/dashboard"
-                onClick={handleDashboardClick}
+                onClick={handleResultsClick}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                Dashboard
+                Results
               </a>
             </nav>
 
@@ -178,13 +178,13 @@ const Header = () => {
                     </button>
                   </>
                 )}
-                {/* Saved Interviews - only visible when logged in */}
+                {/* Library - only visible when logged in */}
                 {isLoggedIn && (
                   <a
                     href="/saved-interviews"
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Saved Interviews
+                    Library
                   </a>
                 )}
                 {/* Templates - gated with login modal */}
@@ -195,13 +195,13 @@ const Header = () => {
                 >
                   Templates
                 </a>
-                {/* Dashboard - gated with login modal */}
+                {/* Results - gated with login modal */}
                 <a
                   href="/dashboard"
-                  onClick={handleDashboardClick}
+                  onClick={handleResultsClick}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Dashboard
+                  Results
                 </a>
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isLoggedIn ? (

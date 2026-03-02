@@ -133,7 +133,7 @@ const SavedInterviewBlock = ({
               className="flex-1"
               asChild
             >
-              <a href="/dashboard">Go to Dashboard</a>
+              <a href="/dashboard">Go to Results</a>
             </SecondaryButton>
           </motion.div>
 
@@ -144,7 +144,7 @@ const SavedInterviewBlock = ({
             transition={{ delay: 0.6, duration: 0.3 }}
             className="text-xs text-muted-foreground text-center"
           >
-            View responses in the Dashboard once participants complete interviews.
+            View responses in Results once participants complete interviews.
           </motion.p>
         </CardContent>
       </Card>

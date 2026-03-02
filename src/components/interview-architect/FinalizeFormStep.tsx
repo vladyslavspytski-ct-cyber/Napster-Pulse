@@ -1,17 +1,31 @@
 import { motion } from "framer-motion";
-import { Check, Copy, FileText, Loader2, Sparkles } from "lucide-react";
+import { Check, Copy, FileText, Loader2, Sparkles, AlertCircle, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { StructuredQuestion } from "./StructuredQuestionCard";
+
+/**
+ * Introduction source tracking
+ * - "agent": Introduction came from WebSocket (agent generated)
+ * - "generated": Introduction came from POST /interview/generate-introduction
+ * - null: No introduction yet
+ */
+type IntroductionSource = "agent" | "generated" | null;
 
 interface FinalizeFormStepProps {
   questions: StructuredQuestion[];
   interviewType?: string;
   interviewTitle: string;
   onTitleChange: (title: string) => void;
+  introduction: string;
+  introductionSource: IntroductionSource;
+  onIntroductionChange: (intro: string) => void;
+  isGeneratingIntro: boolean;
+  introError: string | null;
   onCreateInterview: () => void;
   onClose: () => void;
   isCreating: boolean;
@@ -22,6 +36,11 @@ const FinalizeFormStep = ({
   interviewType,
   interviewTitle,
   onTitleChange,
+  introduction,
+  introductionSource,
+  onIntroductionChange,
+  isGeneratingIntro,
+  introError,
   onCreateInterview,
   onClose,
   isCreating,
@@ -69,6 +88,45 @@ const FinalizeFormStep = ({
           onChange={(e) => onTitleChange(e.target.value)}
           className="mt-2 rounded-xl"
           autoFocus
+        />
+      </div>
+
+      {/* Introduction textarea */}
+      <div className="p-5 border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-2 mb-2">
+          <MessageSquare className="w-4 h-4 text-muted-foreground" />
+          <Label htmlFor="interview-introduction" className="text-sm font-medium">
+            Introduction Message
+          </Label>
+          {isGeneratingIntro && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Generating...
+            </span>
+          )}
+          {!isGeneratingIntro && introductionSource === "agent" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+              <Sparkles className="w-2.5 h-2.5" />
+              From Agent
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mb-2">
+          This message will be shown to participants before the interview begins.
+        </p>
+        {introError && (
+          <div className="flex items-center gap-2 text-xs text-amber-600 mb-2">
+            <AlertCircle className="w-3 h-3" />
+            {introError}
+          </div>
+        )}
+        <Textarea
+          id="interview-introduction"
+          placeholder={isGeneratingIntro ? "Generating introduction..." : "Enter an introduction message for participants..."}
+          value={introduction}
+          onChange={(e) => onIntroductionChange(e.target.value)}
+          className="mt-1 rounded-xl min-h-[100px] resize-none"
+          disabled={isGeneratingIntro}
         />
       </div>
 

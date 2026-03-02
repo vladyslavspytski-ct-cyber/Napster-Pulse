@@ -400,6 +400,8 @@ const InterviewArchitectTest = () => {
     lastWsEventType,
     applyTemplateEvent,
     clearApplyTemplateEvent,
+    introductionFromAgent,
+    clearIntroductionFromAgent,
     disconnect: disconnectWs,
     syncQuestions,
   } = useInterviewArchitectWs(conversationId, isAgentSessionActive);
@@ -1389,6 +1391,8 @@ const InterviewArchitectTest = () => {
         questions={questions}
         interviewType={interviewContext.type}
         defaultTitle={selectedTemplate?.title}
+        agentIntroduction={introductionFromAgent}
+        onIntroductionUsed={clearIntroductionFromAgent}
         onInterviewCreated={() => {
           // Cancel any pending autosave first (prevents race condition)
           cancelPendingSave();

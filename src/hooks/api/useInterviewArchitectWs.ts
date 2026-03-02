@@ -27,6 +27,14 @@ export interface ApplyTemplateEvent {
  */
 export type WsEventType = "offer" | "update" | "delete" | null;
 
+/**
+ * Introduction source tracking
+ * - "agent": Introduction came from WebSocket (agent generated)
+ * - "generated": Introduction came from POST /interview/generate-introduction
+ * - null: No introduction yet
+ */
+export type IntroductionSource = "agent" | "generated" | null;
+
 interface UseInterviewArchitectWsResult {
   questionsFromWs: ActualQuestion[];
   isConnected: boolean;
@@ -38,6 +46,10 @@ interface UseInterviewArchitectWsResult {
   applyTemplateEvent: ApplyTemplateEvent | null;
   /** Clear the applyTemplateEvent after handling */
   clearApplyTemplateEvent: () => void;
+  /** Introduction text from agent (via WebSocket) */
+  introductionFromAgent: string | null;
+  /** Clear the agent introduction */
+  clearIntroductionFromAgent: () => void;
   connect: () => void;
   disconnect: () => void;
   syncQuestions: (questions: ActualQuestion[]) => Promise<void>;
@@ -60,6 +72,7 @@ export function useInterviewArchitectWs(
   const [error, setError] = useState<Error | null>(null);
   const [applyTemplateEvent, setApplyTemplateEvent] = useState<ApplyTemplateEvent | null>(null);
   const [lastWsEventType, setLastWsEventType] = useState<WsEventType>(null);
+  const [introductionFromAgent, setIntroductionFromAgent] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -91,6 +104,10 @@ export function useInterviewArchitectWs(
 
   const clearApplyTemplateEvent = useCallback(() => {
     setApplyTemplateEvent(null);
+  }, []);
+
+  const clearIntroductionFromAgent = useCallback(() => {
+    setIntroductionFromAgent(null);
   }, []);
 
   const connect = useCallback(() => {
@@ -160,6 +177,10 @@ export function useInterviewArchitectWs(
               handleApplyTemplate(msgData);
               break;
 
+            case "introduction_update":
+              handleIntroductionUpdate(msgData);
+              break;
+
             case "questions_offer":
               // ADD new questions (with dedup)
               handleQuestionsOffer(msgData);
@@ -225,6 +246,29 @@ export function useInterviewArchitectWs(
           templateId,
           timestamp: Date.now(),
         });
+      }
+
+      // === Handler: introduction_update ===
+      function handleIntroductionUpdate(data: unknown) {
+        // Support: data as string directly, or data.introduction as string
+        let introduction: string | null = null;
+
+        if (typeof data === "string" && data.trim()) {
+          introduction = data.trim();
+        } else if (typeof data === "object" && data !== null) {
+          const obj = data as Record<string, unknown>;
+          if (typeof obj.introduction === "string") {
+            introduction = obj.introduction.trim();
+          }
+        }
+
+        if (!introduction) {
+          console.log("[InterviewArchitectWs] introduction_update: No introduction found in data:", data);
+          return;
+        }
+
+        console.log("[InterviewArchitectWs] introduction_update | length:", introduction.length, "chars");
+        setIntroductionFromAgent(introduction);
       }
 
       // === Helper: Parse questions array ===
@@ -486,6 +530,8 @@ export function useInterviewArchitectWs(
     lastWsEventType,
     applyTemplateEvent,
     clearApplyTemplateEvent,
+    introductionFromAgent,
+    clearIntroductionFromAgent,
     connect,
     disconnect,
     syncQuestions,

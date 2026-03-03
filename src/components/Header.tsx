@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import AuthModal from "@/components/AuthModal";
 import UserMenu from "@/components/UserMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
@@ -133,6 +134,7 @@ const Header = () => {
 
             {/* Desktop Auth Buttons - fixed width for balance */}
             <div className="hidden lg:flex items-center justify-end gap-3 lg:min-w-[140px]">
+              <ThemeToggle />
               {isLoggedIn ? (
                 <UserMenu onLogout={handleLogout} />
               ) : (
@@ -203,7 +205,8 @@ const Header = () => {
                 >
                   Results
                 </a>
-                <div className="flex gap-3 pt-4 border-t border-border">
+                <div className="flex items-center gap-3 pt-4 border-t border-border">
+                  <ThemeToggle />
                   {isLoggedIn ? (
                     <UserMenu onLogout={handleLogout} compact />
                   ) : (

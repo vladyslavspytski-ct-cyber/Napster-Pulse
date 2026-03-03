@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import InterviewArchitectTest from "./pages/InterviewArchitectTest";
 import PublicInterview from "./pages/PublicInterview";
@@ -53,14 +54,15 @@ function SessionExpiredListener() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <SessionExpiredListener />
-        <BrowserRouter>
-          <Routes>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <SessionExpiredListener />
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Index />} />
             {/* /create-interview now uses InterviewArchitectTest (CreateInterview temporarily hidden) */}
             <Route path="/create-interview" element={<InterviewArchitectTest />} />
@@ -89,11 +91,12 @@ const App = () => (
             <Route path="/dashboard/insight-demo" element={<InsightDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

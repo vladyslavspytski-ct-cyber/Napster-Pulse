@@ -32,6 +32,8 @@ interface ArchitectFinalizeModalProps {
   questions: StructuredQuestion[];
   interviewType?: string;
   defaultTitle?: string;
+  /** Existing introduction from main page (highest priority - don't regenerate) */
+  existingIntroduction?: string | null;
   /** Introduction from agent (via WebSocket) - takes priority over API generation */
   agentIntroduction?: string | null;
   /** Called when agent introduction is used (for cleanup) */
@@ -52,6 +54,7 @@ const ArchitectFinalizeModal = ({
   questions,
   interviewType,
   defaultTitle,
+  existingIntroduction,
   agentIntroduction,
   onIntroductionUsed,
   onInterviewCreated,
@@ -73,7 +76,7 @@ const ArchitectFinalizeModal = ({
   const { createInterview, isLoading: isCreating } = useCreateInterview();
   const { toast } = useToast();
 
-  // Handle introduction when modal opens - dual source logic
+  // Handle introduction when modal opens - triple source logic
   useEffect(() => {
     if (!isOpen || questions.length === 0) return;
 
@@ -83,7 +86,16 @@ const ArchitectFinalizeModal = ({
     // Create a hash of question texts to detect if questions changed
     const questionsHash = questions.map((q) => q.text).join("|");
 
-    // FLOW 2: Use agent introduction if available (priority)
+    // PRIORITY 1: Use existing introduction from main page (highest priority - don't regenerate)
+    if (existingIntroduction) {
+      console.log("[ArchitectFinalizeModal] Using existing introduction from main page | length:", existingIntroduction.length);
+      setIntroduction(existingIntroduction);
+      setIntroductionSource(null); // Don't set source since it's from main page
+      generatedForQuestionsRef.current = questionsHash;
+      return;
+    }
+
+    // PRIORITY 2: Use agent introduction if available
     if (agentIntroduction && !usedAgentIntroRef.current) {
       console.log("[ArchitectFinalizeModal] Using agent introduction | length:", agentIntroduction.length);
       setIntroduction(agentIntroduction);
@@ -96,7 +108,7 @@ const ArchitectFinalizeModal = ({
       return;
     }
 
-    // FLOW 1: Generate introduction via API if no agent introduction
+    // PRIORITY 3: Generate introduction via API if no existing or agent introduction
     // Skip if we already generated for these exact questions
     if (generatedForQuestionsRef.current === questionsHash) return;
 
@@ -130,7 +142,7 @@ const ArchitectFinalizeModal = ({
     };
 
     generateIntroductionFromApi();
-  }, [isOpen, questions, agentIntroduction, userHasEditedIntro, introductionSource, onIntroductionUsed]);
+  }, [isOpen, questions, existingIntroduction, agentIntroduction, userHasEditedIntro, introductionSource, onIntroductionUsed]);
 
   // Reset state when modal closes
   useEffect(() => {

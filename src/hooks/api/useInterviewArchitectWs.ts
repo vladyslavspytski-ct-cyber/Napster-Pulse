@@ -250,15 +250,20 @@ export function useInterviewArchitectWs(
 
       // === Handler: introduction_update ===
       function handleIntroductionUpdate(data: unknown) {
+        console.log("[InterviewArchitectWs] introduction_update raw data:", data);
+
         // Support: data as string directly, or data.introduction as string
         let introduction: string | null = null;
 
         if (typeof data === "string" && data.trim()) {
           introduction = data.trim();
+          console.log("[InterviewArchitectWs] introduction_update | parsed as string | length:", introduction.length);
         } else if (typeof data === "object" && data !== null) {
           const obj = data as Record<string, unknown>;
+          console.log("[InterviewArchitectWs] introduction_update | parsed as object | obj.introduction type:", typeof obj.introduction);
           if (typeof obj.introduction === "string") {
             introduction = obj.introduction.trim();
+            console.log("[InterviewArchitectWs] introduction_update | extracted introduction | length:", introduction.length);
           }
         }
 
@@ -267,8 +272,9 @@ export function useInterviewArchitectWs(
           return;
         }
 
-        console.log("[InterviewArchitectWs] introduction_update | length:", introduction.length, "chars");
+        console.log("[InterviewArchitectWs] introduction_update | calling setIntroductionFromAgent with:", introduction.substring(0, 100));
         setIntroductionFromAgent(introduction);
+        console.log("[InterviewArchitectWs] introduction_update | setIntroductionFromAgent called successfully");
       }
 
       // === Helper: Parse questions array ===

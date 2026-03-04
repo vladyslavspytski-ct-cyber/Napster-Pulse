@@ -1,9 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" suppressHydrationWarning>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
+    <!-- Prevent FOUC: Apply theme before page renders -->
+    <script>
+      (function() {
+        const storageKey = 'theme';
+        const theme = localStorage.getItem(storageKey);
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        const isDark = theme === 'dark' || (theme !== 'light' && systemDark);
+
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        // Set color-scheme for native elements
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+      })();
+    </script>
+    <!-- Prevent white flash with immediate background color -->
+    <style>
+      html { background-color: hsl(210 20% 98%); }
+      html.dark { background-color: hsl(220 20% 8%); }
+    </style>
     <title>Napster Pulse</title>
     <meta name="description" content="Create and participate in voice-based interviews. Easy, fast, and insightful." />
     <meta name="author" content="Napster Pulse" />

@@ -53,7 +53,13 @@ function SessionExpiredListener() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="system"
+    enableSystem
+    disableTransitionOnChange
+    storageKey="theme"
+  >
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>

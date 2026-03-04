@@ -174,11 +174,18 @@
 
   html {
     scroll-behavior: smooth;
+    @apply bg-background;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Prevent theme transition flash */
+  html.disable-transitions,
+  html.disable-transitions * {
+    transition: none !important;
   }
 }
 

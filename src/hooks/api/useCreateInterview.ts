@@ -5,6 +5,7 @@ import { API_ROUTES } from "@/lib/apiRoutes";
 export interface CreateInterviewPayload {
   title: string;
   questions: string[];
+  introduction?: string;
 }
 
 export interface CreateInterviewResponse {

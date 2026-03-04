@@ -27,7 +27,7 @@ const ConductedRunCard = ({ run, index }: ConductedRunCardProps) => {
   const sentimentConfig = {
     positive: {
       variant: "default" as const,
-      className: "bg-green-100 text-green-700 border-green-200 hover:bg-green-100",
+      className: "bg-sentiment-positive-bg text-sentiment-positive-text border-sentiment-positive/20 hover:bg-sentiment-positive-bg",
     },
     neutral: {
       variant: "secondary" as const,
@@ -35,7 +35,7 @@ const ConductedRunCard = ({ run, index }: ConductedRunCardProps) => {
     },
     negative: {
       variant: "destructive" as const,
-      className: "bg-red-100 text-red-700 border-red-200 hover:bg-red-100",
+      className: "bg-sentiment-negative-bg text-sentiment-negative-text border-sentiment-negative/20 hover:bg-sentiment-negative-bg",
     },
   };
 

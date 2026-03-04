@@ -14,6 +14,7 @@ export interface InterviewData {
     created_at: string;
   };
   questions: string[];
+  introduction?: string;
 }
 
 interface UsePublicInterviewResult {

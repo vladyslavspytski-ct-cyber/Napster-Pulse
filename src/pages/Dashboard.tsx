@@ -1,10 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import InterviewListItem from "@/components/dashboard-v2/InterviewListItem";
 import ConductedRunCard from "@/components/dashboard-v2/ConductedRunCard";
@@ -27,6 +29,7 @@ type SentimentFilter = "all" | "positive" | "neutral" | "negative";
 
 const DashboardV2 = () => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // State - Interviews
@@ -197,6 +200,15 @@ const DashboardV2 = () => {
           >
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Conducted Interviews</h1>
             <p className="text-muted-foreground mt-1">View responses from all your completed interview sessions</p>
+            {/* DEV ONLY — Insight Demo link */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/dashboard/insight-demo")}
+              className="mt-2 text-xs opacity-60 hover:opacity-100"
+            >
+              🧪 Insight Demo
+            </Button>
           </motion.div>
 
           {/* Mobile Layout */}
@@ -231,6 +243,25 @@ const DashboardV2 = () => {
                 />
               </div>
 
+              {/* View Interview Analysis - Mobile */}
+              <div className="flex gap-2">
+                <PrimaryButton
+                  className="flex-1"
+                  disabled={!selectedInterview}
+                  onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}`)}
+                >
+                  View Interview Analysis
+                </PrimaryButton>
+                <Button
+                  variant="outline"
+                  disabled={!selectedInterview}
+                  onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test`)}
+                  className="text-accent border-accent/30 hover:bg-accent/10"
+                >
+                  TEST
+                </Button>
+              </div>
+
               {/* Sentiment filter - Mobile */}
               <div className="flex gap-2">
                 {(["all", "positive", "neutral", "negative"] as SentimentFilter[]).map((sentiment) => (
@@ -244,6 +275,15 @@ const DashboardV2 = () => {
                     {sentiment}
                   </Button>
                 ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!selectedInterview}
+                  onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test-2`)}
+                  className="h-9 px-3 bg-amber-500/10 border-amber-500/30 text-amber-600 hover:bg-amber-500/20"
+                >
+                  TEST
+                </Button>
               </div>
 
               {/* Sentiment Distribution - Mobile */}
@@ -403,8 +443,8 @@ const DashboardV2 = () => {
                     <h2 className="text-lg font-semibold text-foreground truncate">
                       {selectedInterview?.title || "Select an interview"}
                     </h2>
-                    <div className="flex-1 max-w-xs ml-auto">
-                      <div className="relative">
+                    <div className="flex items-center gap-3 ml-auto">
+                      <div className="relative flex-1 max-w-xs">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           placeholder="Search participants..."
@@ -414,6 +454,23 @@ const DashboardV2 = () => {
                           disabled={!selectedInterview}
                         />
                       </div>
+                      <PrimaryButton
+                        size="sm"
+                        disabled={!selectedInterview}
+                        onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}`)}
+                        className="whitespace-nowrap"
+                      >
+                        View Interview Analysis
+                      </PrimaryButton>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!selectedInterview}
+                        onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test`)}
+                        className="whitespace-nowrap text-accent border-accent/30 hover:bg-accent/10"
+                      >
+                        TEST
+                      </Button>
                     </div>
                   </div>
                   {/* Sentiment filter */}
@@ -430,6 +487,15 @@ const DashboardV2 = () => {
                         {sentiment}
                       </Button>
                     ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!selectedInterview}
+                      onClick={() => selectedInterview && navigate(`/dashboard/interview/${selectedInterview.id}/test-2`)}
+                      className="h-8 px-3 bg-amber-500/10 border-amber-500/30 text-amber-600 hover:bg-amber-500/20"
+                    >
+                      TEST
+                    </Button>
                   </div>
                   </div>
 

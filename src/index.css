@@ -59,6 +59,16 @@
     --shadow-lg: 0 16px 48px -8px hsl(220 20% 10% / 0.12);
     --shadow-glow: 0 0 40px hsl(220 70% 55% / 0.2);
 
+    /* Analytics tokens */
+    --analytics-surface: 220 20% 99%;
+    --analytics-accent-1: 220 70% 55%;
+    --analytics-accent-2: 260 60% 60%;
+    --analytics-accent-3: 15 85% 60%;
+    --analytics-accent-4: 160 50% 50%;
+    --analytics-kpi-glow: 220 70% 55%;
+    --analytics-grid-line: 220 15% 92%;
+    --analytics-hero-gradient: linear-gradient(135deg, hsl(220 80% 97%) 0%, hsl(260 50% 97%) 40%, hsl(220 60% 96%) 100%);
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -67,6 +77,17 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Sentiment colors - Light mode */
+    --sentiment-positive: 142 76% 36%;
+    --sentiment-positive-bg: 142 76% 94%;
+    --sentiment-positive-text: 142 71% 29%;
+    --sentiment-neutral: 215 16% 47%;
+    --sentiment-neutral-bg: 210 40% 96%;
+    --sentiment-neutral-text: 215 25% 27%;
+    --sentiment-negative: 347 77% 50%;
+    --sentiment-negative-bg: 356 100% 97%;
+    --sentiment-negative-text: 347 77% 42%;
   }
 
   .dark {
@@ -91,7 +112,7 @@
     --accent: 15 85% 55%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
@@ -105,6 +126,44 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Sentiment colors - Dark mode */
+    --sentiment-positive: 142 71% 45%;
+    --sentiment-positive-bg: 142 76% 10%;
+    --sentiment-positive-text: 142 69% 58%;
+    --sentiment-neutral: 215 20% 55%;
+    --sentiment-neutral-bg: 217 33% 17%;
+    --sentiment-neutral-text: 215 20% 65%;
+    --sentiment-negative: 347 77% 55%;
+    --sentiment-negative-bg: 347 77% 12%;
+    --sentiment-negative-text: 347 77% 65%;
+
+    /* Custom Interu colors - Dark mode */
+    --interu-blue: 220 70% 60%;
+    --interu-blue-light: 220 50% 15%;
+    --interu-coral: 15 85% 55%;
+    --interu-coral-light: 15 50% 15%;
+    --interu-mint: 160 50% 45%;
+    --interu-mint-light: 160 40% 15%;
+    --interu-purple: 260 60% 55%;
+    --interu-purple-light: 260 40% 15%;
+    --interu-gray: 220 10% 55%;
+    --interu-gray-light: 220 15% 12%;
+
+    /* Gradients - Dark mode */
+    --gradient-hero: linear-gradient(135deg, hsl(220 20% 8%) 0%, hsl(260 20% 10%) 50%, hsl(15 20% 10%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220 20% 10%) 0%, hsl(220 20% 8%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(220 70% 50%) 0%, hsl(260 60% 50%) 100%);
+
+    /* Shadows - Dark mode */
+    --shadow-sm: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 16px 48px -8px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px hsl(220 70% 55% / 0.3);
+
+    /* Analytics tokens - Dark mode */
+    --analytics-surface: 220 20% 10%;
+    --analytics-grid-line: 220 15% 20%;
   }
 }
 

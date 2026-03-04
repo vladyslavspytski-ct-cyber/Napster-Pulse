@@ -42,6 +42,7 @@ export const API_ROUTES = {
     return `/interview/${interviewId}/attempts${query ? `?${query}` : ""}`;
   },
   createInterview: "/interview",
+  generateIntroduction: "/interview/generate-introduction",
   activateInterview: (id: string) => `/interview/${id}/activate`,
   deleteInterview: (id: string) => `/interview/${id}`,
   interviewByKey: (key: string) => `/interview-by-key/${key}`,

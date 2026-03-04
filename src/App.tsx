@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import InterviewArchitectTest from "./pages/InterviewArchitectTest";
 import PublicInterview from "./pages/PublicInterview";
@@ -21,9 +22,12 @@ import PricingV2 from "./pages/PricingV2";
 import PricingV3 from "./pages/PricingV3";
 import MyPlanV2 from "./pages/MyPlanV2";
 import MyPlanV3 from "./pages/MyPlanV3";
-import CreateInterviewTest from "./pages/CreateInterviewTest";
 import TemplateDirectory from "./pages/TemplateDirectory";
 import CreateInterviewFromTemplate from "./pages/CreateInterviewFromTemplate";
+import InterviewAnalysis from "./pages/InterviewAnalysis";
+import InterviewAnalysisV2 from "./pages/InterviewAnalysisV2";
+import InterviewAnalysisExp from "./pages/InterviewAnalysisExp";
+import InsightDemo from "./pages/InsightDemo";
 
 const queryClient = new QueryClient();
 
@@ -49,14 +53,15 @@ function SessionExpiredListener() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <SessionExpiredListener />
-        <BrowserRouter>
-          <Routes>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <SessionExpiredListener />
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Index />} />
             {/* /create-interview now uses InterviewArchitectTest (CreateInterview temporarily hidden) */}
             <Route path="/create-interview" element={<InterviewArchitectTest />} />
@@ -74,18 +79,22 @@ const App = () => (
             <Route path="/my-plan" element={<MyPlan />} />
             <Route path="/my-plan-v2" element={<MyPlanV2 />} />
             <Route path="/my-plan-v3" element={<MyPlanV3 />} />
-            <Route path="/create-interview-test" element={<CreateInterviewTest />} />
             <Route path="/templates" element={<TemplateDirectory />} />
             <Route path="/templates/:categoryId" element={<TemplateDirectory />} />
             <Route path="/templates/:categoryId/:typeId" element={<TemplateDirectory />} />
             <Route path="/create-interview-from-template" element={<CreateInterviewFromTemplate />} />
+            <Route path="/dashboard/interview/:interviewId" element={<InterviewAnalysis />} />
+            <Route path="/dashboard/interview/:interviewId/test" element={<InterviewAnalysisV2 />} />
+            <Route path="/dashboard/interview/:interviewId/test-2" element={<InterviewAnalysisExp />} />
+            <Route path="/dashboard/insight-demo" element={<InsightDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import AuthModal from "@/components/AuthModal";
 import UserMenu from "@/components/UserMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
@@ -52,8 +53,8 @@ const Header = () => {
     }
   };
 
-  // Handle Dashboard click - if logged out, open login modal and redirect after
-  const handleDashboardClick = (e: React.MouseEvent) => {
+  // Handle Results click - if logged out, open login modal and redirect after
+  const handleResultsClick = (e: React.MouseEvent) => {
     if (!isLoggedIn) {
       e.preventDefault();
       openAuthModal("login", "/dashboard");
@@ -104,13 +105,13 @@ const Header = () => {
                   </button>
                 </>
               )}
-              {/* Saved Interviews - only visible when logged in */}
+              {/* Library - only visible when logged in */}
               {isLoggedIn && (
                 <a
                   href="/saved-interviews"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Saved Interviews
+                  Library
                 </a>
               )}
               {/* Templates - gated with login modal */}
@@ -121,18 +122,19 @@ const Header = () => {
               >
                 Templates
               </a>
-              {/* Dashboard - gated with login modal */}
+              {/* Results - gated with login modal */}
               <a
                 href="/dashboard"
-                onClick={handleDashboardClick}
+                onClick={handleResultsClick}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                Dashboard
+                Results
               </a>
             </nav>
 
             {/* Desktop Auth Buttons - fixed width for balance */}
             <div className="hidden lg:flex items-center justify-end gap-3 lg:min-w-[140px]">
+              <ThemeToggle />
               {isLoggedIn ? (
                 <UserMenu onLogout={handleLogout} />
               ) : (
@@ -178,13 +180,13 @@ const Header = () => {
                     </button>
                   </>
                 )}
-                {/* Saved Interviews - only visible when logged in */}
+                {/* Library - only visible when logged in */}
                 {isLoggedIn && (
                   <a
                     href="/saved-interviews"
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Saved Interviews
+                    Library
                   </a>
                 )}
                 {/* Templates - gated with login modal */}
@@ -195,15 +197,16 @@ const Header = () => {
                 >
                   Templates
                 </a>
-                {/* Dashboard - gated with login modal */}
+                {/* Results - gated with login modal */}
                 <a
                   href="/dashboard"
-                  onClick={handleDashboardClick}
+                  onClick={handleResultsClick}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Dashboard
+                  Results
                 </a>
-                <div className="flex gap-3 pt-4 border-t border-border">
+                <div className="flex items-center gap-3 pt-4 border-t border-border">
+                  <ThemeToggle />
                   {isLoggedIn ? (
                     <UserMenu onLogout={handleLogout} compact />
                   ) : (

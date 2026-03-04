@@ -294,7 +294,13 @@ const PublicInterview = () => {
       console.log("[PublicInterview] PARTICIPANT_LAST_NAME:", formData.lastName);
       console.log("[PublicInterview] PARTICIPANT_EMAIL:", formData.email);
       console.log("[PublicInterview] QUESTIONS:", questionsText);
+      console.log("[PublicInterview] INTRODUCTION:", interviewData?.introduction || "(missing)");
       console.log("[PublicInterview] ===========================");
+
+      // Defensive check for introduction
+      if (!interviewData?.introduction) {
+        console.warn("[PublicInterview] Warning: Interview introduction is missing. Agent will proceed without it.");
+      }
 
       // Create conversation instance
       const conversation = new ElevenLabsConversation({
@@ -364,6 +370,7 @@ const PublicInterview = () => {
           PARTICIPANT_FIRST_NAME: formData.firstName,
           PARTICIPANT_LAST_NAME: formData.lastName,
           PARTICIPANT_EMAIL: formData.email,
+          INTRODUCTION: interviewData?.introduction || "",
         },
       });
 

@@ -65,7 +65,6 @@ const Footer = () => {
               <li><a href="/pricing-v3" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Pricing V3</a></li>
               <li><a href="/my-plan-v2" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">My Plan V2</a></li>
               <li><a href="/my-plan-v3" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">My Plan V3</a></li>
-              <li><a href="/templates" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">Create V2 (directory)</a></li>
             </ul>
           </div>
 
@@ -86,11 +85,6 @@ const Footer = () => {
               <li>
                 <a href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Contact
-                </a>
-              </li>
-              <li>
-                <a href="/create-interview-test" className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-                  Create Interview Test
                 </a>
               </li>
             </ul>

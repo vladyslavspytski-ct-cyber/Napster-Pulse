@@ -72,6 +72,23 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        sentiment: {
+          positive: {
+            DEFAULT: "hsl(var(--sentiment-positive))",
+            bg: "hsl(var(--sentiment-positive-bg))",
+            text: "hsl(var(--sentiment-positive-text))",
+          },
+          neutral: {
+            DEFAULT: "hsl(var(--sentiment-neutral))",
+            bg: "hsl(var(--sentiment-neutral-bg))",
+            text: "hsl(var(--sentiment-neutral-text))",
+          },
+          negative: {
+            DEFAULT: "hsl(var(--sentiment-negative))",
+            bg: "hsl(var(--sentiment-negative-bg))",
+            text: "hsl(var(--sentiment-negative-text))",
+          },
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

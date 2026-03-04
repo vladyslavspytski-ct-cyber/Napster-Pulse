@@ -22,7 +22,6 @@ import PricingV2 from "./pages/PricingV2";
 import PricingV3 from "./pages/PricingV3";
 import MyPlanV2 from "./pages/MyPlanV2";
 import MyPlanV3 from "./pages/MyPlanV3";
-import CreateInterviewTest from "./pages/CreateInterviewTest";
 import TemplateDirectory from "./pages/TemplateDirectory";
 import CreateInterviewFromTemplate from "./pages/CreateInterviewFromTemplate";
 import InterviewAnalysis from "./pages/InterviewAnalysis";
@@ -80,7 +79,6 @@ const App = () => (
             <Route path="/my-plan" element={<MyPlan />} />
             <Route path="/my-plan-v2" element={<MyPlanV2 />} />
             <Route path="/my-plan-v3" element={<MyPlanV3 />} />
-            <Route path="/create-interview-test" element={<CreateInterviewTest />} />
             <Route path="/templates" element={<TemplateDirectory />} />
             <Route path="/templates/:categoryId" element={<TemplateDirectory />} />
             <Route path="/templates/:categoryId/:typeId" element={<TemplateDirectory />} />

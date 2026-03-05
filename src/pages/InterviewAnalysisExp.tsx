@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, AlertCircle, BarChart3, RefreshCw, Sparkles, Users, Beaker } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInterviewDashboard, DashboardSection } from "@/hooks/api/useInterviewDashboard";
@@ -15,6 +17,7 @@ import SectionRendererExp from "@/components/interview-dashboard/SectionRenderer
 const InterviewAnalysisExp = () => {
   const { interviewId } = useParams<{ interviewId: string }>();
   const navigate = useNavigate();
+  const isDesktop = useIsElectron();
 
   const { data, isLoading, error, notFound, refetch } = useInterviewDashboard({
     interviewId,
@@ -24,52 +27,60 @@ const InterviewAnalysisExp = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <LoadingState />
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <ErrorState error={error} onRetry={refetch} onBack={() => navigate("/dashboard")} />
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
   // Not found state
   if (notFound) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <NotFoundState onBack={() => navigate("/dashboard")} />
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
   // No data state
   if (!data) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <EmptyState onBack={() => navigate("/dashboard")} />
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
@@ -80,10 +91,11 @@ const InterviewAnalysisExp = () => {
   const organizedSections = organizeSectionsByPriority(data.sections);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         {/* Top bar with back button and experimental badge */}
         <div className="section-container max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-2">
@@ -160,8 +172,9 @@ const InterviewAnalysisExp = () => {
         })}
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
+    </ElectronPageWrapper>
   );
 };
 

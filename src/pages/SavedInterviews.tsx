@@ -1,8 +1,11 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, FileText, ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -27,7 +30,9 @@ import { useToast } from "@/hooks/use-toast";
 const ITEMS_PER_PAGE = 10;
 
 const SavedInterviews = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const isDesktop = useIsElectron();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,7 +77,7 @@ const SavedInterviews = () => {
   }, []);
 
   const handleCreateInterview = () => {
-    window.location.href = "/create-interview";
+    navigate("/create-interview");
   };
 
   // Handle delete interview
@@ -106,10 +111,11 @@ const SavedInterviews = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-8">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-8`}>
         <div className="section-container">
           {/* Page Header */}
           <motion.div
@@ -263,7 +269,7 @@ const SavedInterviews = () => {
 
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!interviewToDelete} onOpenChange={(open) => !open && handleCancelDelete()}>
@@ -287,6 +293,7 @@ const SavedInterviews = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </ElectronPageWrapper>
   );
 };
 

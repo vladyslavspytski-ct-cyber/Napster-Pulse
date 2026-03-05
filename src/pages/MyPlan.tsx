@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Check, CreditCard, FileText, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,11 +60,14 @@ const item = {
 };
 
 const MyPlan = () => {
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+  const isDesktop = useIsElectron();
 
-      <main className="flex-1 pt-24 pb-16">
+  return (
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
+
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         <div className="section-container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Title */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
@@ -192,8 +197,9 @@ const MyPlan = () => {
         </div>
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
+    </ElectronPageWrapper>
   );
 };
 

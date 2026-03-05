@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { isElectron } from "@/lib/electron";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
@@ -28,8 +29,13 @@ import InterviewAnalysis from "./pages/InterviewAnalysis";
 import InterviewAnalysisV2 from "./pages/InterviewAnalysisV2";
 import InterviewAnalysisExp from "./pages/InterviewAnalysisExp";
 import InsightDemo from "./pages/InsightDemo";
+import ElectronAuth from "./pages/ElectronAuth";
 
 const queryClient = new QueryClient();
+
+// Use HashRouter for Electron (file:// protocol doesn't work with BrowserRouter)
+// Use BrowserRouter for web
+const Router = isElectron() ? HashRouter : BrowserRouter;
 
 // Component to listen for session expired events and show toast
 function SessionExpiredListener() {
@@ -66,7 +72,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <SessionExpiredListener />
-          <BrowserRouter>
+          <Router>
             <Routes>
             <Route path="/" element={<Index />} />
             {/* /create-interview now uses InterviewArchitectTest (CreateInterview temporarily hidden) */}
@@ -93,10 +99,12 @@ const App = () => (
             <Route path="/dashboard/interview/:interviewId/test" element={<InterviewAnalysisV2 />} />
             <Route path="/dashboard/interview/:interviewId/test-2" element={<InterviewAnalysisExp />} />
             <Route path="/dashboard/insight-demo" element={<InsightDemo />} />
+            {/* Electron-specific routes */}
+            <Route path="/electron-auth" element={<ElectronAuth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
+          </Router>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

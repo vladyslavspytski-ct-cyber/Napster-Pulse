@@ -1,7 +1,10 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useIsElectron } from "@/lib/electron";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,6 +93,18 @@ const item = {
 };
 
 const Pricing = () => {
+  const navigate = useNavigate();
+  const isDesktop = useIsElectron();
+
+  // Redirect to dashboard in Electron mode
+  useEffect(() => {
+    if (isDesktop) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isDesktop, navigate]);
+
+  if (isDesktop) return null;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />

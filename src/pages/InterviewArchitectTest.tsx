@@ -4,6 +4,8 @@ import { Sparkles, RotateCcw, CheckCircle, LayoutTemplate } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -313,6 +315,7 @@ const InterviewArchitectTest = () => {
   const navigate = useNavigate();
   const { isLoggedIn, isLoading: authLoading } = useAuth();
   const { fetchSignedUrl } = useSignedUrl(undefined, { enabled: false });
+  const isDesktop = useIsElectron();
 
   // Redirect to home if not logged in
   useEffect(() => {
@@ -1232,10 +1235,11 @@ const InterviewArchitectTest = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         <div className="section-container">
           {/* Page Header */}
           <div className="text-center mb-6">
@@ -1434,7 +1438,7 @@ const InterviewArchitectTest = () => {
         </div>
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
 
       {/* Finalize Modal */}
       <ArchitectFinalizeModal
@@ -1478,6 +1482,7 @@ const InterviewArchitectTest = () => {
         }}
       />
     </div>
+    </ElectronPageWrapper>
   );
 };
 

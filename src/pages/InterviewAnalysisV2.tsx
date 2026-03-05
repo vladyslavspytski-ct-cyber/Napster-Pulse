@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, AlertCircle, BarChart3, RefreshCw, Sparkles, Users, FlaskConical } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInterviewDashboard } from "@/hooks/api/useInterviewDashboard";
@@ -11,6 +13,7 @@ import SectionRendererV2 from "@/components/interview-dashboard-v2/SectionRender
 const InterviewAnalysisV2 = () => {
   const { interviewId } = useParams<{ interviewId: string }>();
   const navigate = useNavigate();
+  const isDesktop = useIsElectron();
 
   const { data, isLoading, error, notFound, refetch } = useInterviewDashboard({
     interviewId,
@@ -19,35 +22,41 @@ const InterviewAnalysisV2 = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16"><LoadingState /></main>
-        <Footer />
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}><LoadingState /></main>
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <ErrorState error={error} onRetry={refetch} onBack={() => navigate("/dashboard")} />
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <NotFoundState onBack={() => navigate("/dashboard")} />
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
@@ -79,10 +88,11 @@ const InterviewAnalysisV2 = () => {
   flushSmall();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         {/* Back + badge */}
         <div className="section-container max-w-6xl mx-auto flex items-center gap-3">
           <Button
@@ -137,8 +147,9 @@ const InterviewAnalysisV2 = () => {
         </div>
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
+    </ElectronPageWrapper>
   );
 };
 

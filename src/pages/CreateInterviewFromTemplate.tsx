@@ -11,6 +11,8 @@ import {
 import CreateInterviewVoiceAgentCard from "@/components/CreateInterviewVoiceAgentCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,7 @@ interface QuestionCard {
 const CreateInterviewFromTemplate = () => {
   const [searchParams] = useSearchParams();
   const templateId = searchParams.get("templateId");
+  const isDesktop = useIsElectron();
 
   // Try mock templates first, then directory v1, then directory v2
   const resolved = useMemo<{ title: string; questions: QuestionCard[] } | null>(() => {
@@ -84,9 +87,10 @@ const CreateInterviewFromTemplate = () => {
   // No template found state
   if (!resolved) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-24 pb-16 flex items-center justify-center">
+      <ElectronPageWrapper>
+      <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16 flex items-center justify-center`}>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
               <LayoutTemplate className="w-8 h-8 text-muted-foreground/50" />
@@ -105,16 +109,18 @@ const CreateInterviewFromTemplate = () => {
             </Button>
           </motion.div>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
+      </ElectronPageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         <div className="section-container">
           {/* Page Header */}
           <div className="text-center mb-6">
@@ -239,8 +245,9 @@ const CreateInterviewFromTemplate = () => {
         </div>
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
+    </ElectronPageWrapper>
   );
 };
 

@@ -11,6 +11,8 @@ const DEV_PORT = isElectronDev ? 5100 : 5173;
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Use relative base path for Electron (file:// protocol needs ./ not /)
+  base: process.env.VITE_IS_ELECTRON === 'true' ? './' : '/',
   server: {
     host: "0.0.0.0",
     port: DEV_PORT,

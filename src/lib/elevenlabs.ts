@@ -310,6 +310,11 @@ export class ElevenLabsConversation {
 
     this.audioWorkletNode = processor;
 
+    // Log audio context sample rate once
+    console.log('[Audio] AudioContext sampleRate:', this.audioContext.sampleRate);
+
+    let audioLogCounter = 0;
+
     processor.onaudioprocess = (event) => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
         return;
@@ -317,6 +322,18 @@ export class ElevenLabsConversation {
 
       // Get input audio data (mono channel)
       const inputData = event.inputBuffer.getChannelData(0);
+
+      // Debug: log max amplitude every 50 frames (~1 second)
+      audioLogCounter++;
+      if (audioLogCounter % 50 === 0) {
+        let maxAmplitude = 0;
+        for (let i = 0; i < inputData.length; i++) {
+          const abs = Math.abs(inputData[i]);
+          if (abs > maxAmplitude) maxAmplitude = abs;
+        }
+        console.log('[Audio] max amplitude:', maxAmplitude.toFixed(6),
+          maxAmplitude > 0.01 ? '✓ AUDIO OK' : '✗ SILENCE/NO DATA');
+      }
 
       // Resample from current sample rate to 16kHz and convert to PCM16
       const pcmData = this.resampleAndConvertToPCM16(

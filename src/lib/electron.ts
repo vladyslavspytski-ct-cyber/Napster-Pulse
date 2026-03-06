@@ -12,7 +12,7 @@ declare global {
     electron?: {
       isElectron: boolean;
       platform?: string;
-      // Add more Electron API methods here as needed
+      openSystemPreferences?: () => Promise<void>;
     };
   }
 }
@@ -117,4 +117,14 @@ export function isWindows(): boolean {
  */
 export function isLinux(): boolean {
   return getElectronPlatform() === 'linux';
+}
+
+/**
+ * Open system preferences for microphone access (macOS only)
+ * Used when unsigned Electron app cannot trigger system permission dialog
+ */
+export async function openSystemPreferences(): Promise<void> {
+  if (typeof window !== 'undefined' && window.electron?.openSystemPreferences) {
+    await window.electron.openSystemPreferences();
+  }
 }

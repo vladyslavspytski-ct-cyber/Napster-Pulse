@@ -5,12 +5,11 @@
  * It creates the browser window and handles app lifecycle events.
  */
 
-import { app, BrowserWindow, Menu, shell } from 'electron';
+import { app, BrowserWindow, Menu, shell, session, systemPreferences, ipcMain } from 'electron';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Note: __dirname is provided by esbuild banner in build.mjs
+// It points to electron/dist in both dev and production
 
 // Check if running in development mode
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -51,7 +50,10 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     // Production: load from built files
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // app.getAppPath() returns the root of app.asar, where dist/ is located
+    const indexPath = path.join(app.getAppPath(), 'dist', 'index.html');
+    console.log('Loading index.html from:', indexPath);
+    mainWindow.loadFile(indexPath);
   }
 
   // Show window when ready to prevent visual flash
@@ -130,7 +132,40 @@ function createAppMenu() {
 }
 
 // App lifecycle events
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Request microphone access on macOS
+  if (process.platform === 'darwin') {
+    const micStatus = systemPreferences.getMediaAccessStatus('microphone');
+    console.log('[Electron] Microphone access status:', micStatus);
+
+    if (micStatus !== 'granted') {
+      const granted = await systemPreferences.askForMediaAccess('microphone');
+      console.log('[Electron] Microphone access granted:', granted);
+    }
+  }
+
+  // Set up permission handler for microphone access
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    // Allow microphone and other media permissions
+    const allowedPermissions = ['media', 'mediaKeySystem', 'geolocation', 'notifications'];
+    if (allowedPermissions.includes(permission)) {
+      callback(true);
+    } else {
+      callback(true); // Allow all permissions for now
+    }
+  });
+
+  // Also handle permission check requests
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    // Allow all permission checks
+    return true;
+  });
+
+  // IPC handler to open system preferences for microphone access
+  ipcMain.handle('open-system-preferences', () => {
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
+  });
+
   createWindow();
 
   // macOS: re-create window when clicking dock icon

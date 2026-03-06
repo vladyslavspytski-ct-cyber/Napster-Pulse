@@ -6,6 +6,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
 import { useIsElectron } from "@/lib/electron";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Copy, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,8 +26,9 @@ import ArchitectPhaseIndicator, {
 import ArchitectAgentCard, {
   AgentState,
 } from "@/components/interview-architect/ArchitectAgentCard";
-import InterviewContextBadges,
-  { InterviewContext } from "@/components/interview-architect/InterviewContextBadges";
+import InterviewContextBadges, {
+  InterviewContext,
+} from "@/components/interview-architect/InterviewContextBadges";
 import StructuredQuestionCard, {
   StructuredQuestion,
 } from "@/components/interview-architect/StructuredQuestionCard";
@@ -31,7 +42,10 @@ import { useTemplates, Template } from "@/hooks/api/useTemplates";
 import { useQuestionsSync, SyncQuestion } from "@/hooks/api/useQuestionsSync";
 import { ElevenLabsConversation } from "@/lib/elevenlabs";
 import { useSignedUrl } from "@/hooks/api";
-import { useInterviewDraft, type InterviewDraft } from "@/hooks/useInterviewDraft";
+import {
+  useInterviewDraft,
+  type InterviewDraft,
+} from "@/hooks/useInterviewDraft";
 
 // Mock data by preset (kept unchanged for demo purposes)
 const mockDataByPreset: Record<
@@ -327,15 +341,22 @@ const InterviewArchitectTest = () => {
   // === Templates state ===
   const [searchParams, setSearchParams] = useSearchParams();
   // Track if we need templates (templateId in URL or apply_template WS event pending)
-  const [needsTemplates, setNeedsTemplates] = useState(() => !!searchParams.get("templateId"));
-  const { findTemplateById, isLoading: templatesLoading } = useTemplates({ enabled: needsTemplates });
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [needsTemplates, setNeedsTemplates] = useState(
+    () => !!searchParams.get("templateId"),
+  );
+  const { findTemplateById, isLoading: templatesLoading } = useTemplates({
+    enabled: needsTemplates,
+  });
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
+    null,
+  );
 
   // === Questions sync hook ===
   const { syncQuestions: syncQuestionsToBackend } = useQuestionsSync();
 
   // === Draft persistence hook ===
-  const { debouncedSaveDraft, loadDraft, clearDraft, cancelPendingSave } = useInterviewDraft();
+  const { debouncedSaveDraft, loadDraft, clearDraft, cancelPendingSave } =
+    useInterviewDraft();
 
   // === Preset demo state (unchanged) ===
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
@@ -365,6 +386,11 @@ const InterviewArchitectTest = () => {
   // Template selection sets conversationId but NOT this flag
   const [isAgentSessionActive, setIsAgentSessionActive] = useState(false);
   const [realInputLevel, setRealInputLevel] = useState(0);
+  // Microphone permission error state
+  const [microphoneError, setMicrophoneError] = useState<
+    "denied" | "not-found" | null
+  >(null);
+  const [commandCopied, setCommandCopied] = useState(false);
 
   // Refs for real agent session
   const conversationRef = useRef<ElevenLabsConversation | null>(null);
@@ -392,9 +418,12 @@ const InterviewArchitectTest = () => {
   const templateIdLoadedRef = useRef<string | null>(null);
 
   // Helper: compute simple hash of questions for comparison
-  const computeQuestionsHash = useCallback((qs: StructuredQuestion[]): string => {
-    return qs.map((q) => `${q.id}:${q.text}`).join("|");
-  }, []);
+  const computeQuestionsHash = useCallback(
+    (qs: StructuredQuestion[]): string => {
+      return qs.map((q) => `${q.id}:${q.text}`).join("|");
+    },
+    [],
+  );
 
   // WebSocket hook for real-time questions
   // Only connects when agent session is active (not on template selection)
@@ -416,7 +445,12 @@ const InterviewArchitectTest = () => {
 
   // === Sync introduction from agent (WebSocket) ===
   useEffect(() => {
-    console.log("[Introduction] useEffect triggered | introductionFromAgent:", introductionFromAgent ? `${introductionFromAgent.length} chars` : "null", "| isIntroductionEdited:", isIntroductionEdited);
+    console.log(
+      "[Introduction] useEffect triggered | introductionFromAgent:",
+      introductionFromAgent ? `${introductionFromAgent.length} chars` : "null",
+      "| isIntroductionEdited:",
+      isIntroductionEdited,
+    );
 
     if (!introductionFromAgent) {
       console.log("[Introduction] SKIP - no introductionFromAgent");
@@ -429,7 +463,10 @@ const InterviewArchitectTest = () => {
       return;
     }
 
-    console.log("[Introduction] Setting introduction from agent:", introductionFromAgent.substring(0, 100));
+    console.log(
+      "[Introduction] Setting introduction from agent:",
+      introductionFromAgent.substring(0, 100),
+    );
     setIntroduction(introductionFromAgent);
   }, [introductionFromAgent, isIntroductionEdited]);
 
@@ -477,27 +514,30 @@ const InterviewArchitectTest = () => {
   }, []);
 
   // === URL params helper ===
-  const updateUrlParams = useCallback((params: { templateId?: string | null; conv?: string | null }) => {
-    const newParams = new URLSearchParams(searchParams);
+  const updateUrlParams = useCallback(
+    (params: { templateId?: string | null; conv?: string | null }) => {
+      const newParams = new URLSearchParams(searchParams);
 
-    if (params.templateId !== undefined) {
-      if (params.templateId) {
-        newParams.set("templateId", params.templateId);
-      } else {
-        newParams.delete("templateId");
+      if (params.templateId !== undefined) {
+        if (params.templateId) {
+          newParams.set("templateId", params.templateId);
+        } else {
+          newParams.delete("templateId");
+        }
       }
-    }
 
-    if (params.conv !== undefined) {
-      if (params.conv) {
-        newParams.set("conv", params.conv);
-      } else {
-        newParams.delete("conv");
+      if (params.conv !== undefined) {
+        if (params.conv) {
+          newParams.set("conv", params.conv);
+        } else {
+          newParams.delete("conv");
+        }
       }
-    }
 
-    setSearchParams(newParams, { replace: true });
-  }, [searchParams, setSearchParams]);
+      setSearchParams(newParams, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   // === Draft restoration on mount ===
   // Using ref to track if restoration was attempted (mount-only effect)
@@ -520,7 +560,11 @@ const InterviewArchitectTest = () => {
 
     // If draft not found OR has no questions -> clean start
     if (!draft || draft.questions.length === 0) {
-      console.log("[Draft] No valid draft for conv:", convFromUrl, "| clearing URL and starting fresh");
+      console.log(
+        "[Draft] No valid draft for conv:",
+        convFromUrl,
+        "| clearing URL and starting fresh",
+      );
 
       // Clear conv (and templateId) from URL - reset to clean /create-interview
       const newParams = new URLSearchParams(searchParams);
@@ -539,7 +583,12 @@ const InterviewArchitectTest = () => {
     }
 
     // Draft found with questions -> restore
-    console.log("[Draft] Restoring draft | conv:", convFromUrl, "| questions:", draft.questions.length);
+    console.log(
+      "[Draft] Restoring draft | conv:",
+      convFromUrl,
+      "| questions:",
+      draft.questions.length,
+    );
     draftRestoredRef.current = true;
 
     // Restore state from draft
@@ -571,13 +620,25 @@ const InterviewArchitectTest = () => {
       conversationId,
       templateId: searchParams.get("templateId"),
       title: draftTitle || interviewContext.type || "Untitled Interview",
-      questions: questions.map(q => ({ id: q.id, text: q.text, phase: q.phase })),
+      questions: questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        phase: q.phase,
+      })),
       interviewContext,
       updatedAt: Date.now(),
     };
 
     debouncedSaveDraft(draft);
-  }, [conversationId, questions, interviewContext, draftTitle, selectedPresetId, searchParams, debouncedSaveDraft]);
+  }, [
+    conversationId,
+    questions,
+    interviewContext,
+    draftTitle,
+    selectedPresetId,
+    searchParams,
+    debouncedSaveDraft,
+  ]);
 
   // === Update URL when conversationId changes ===
   useEffect(() => {
@@ -587,54 +648,71 @@ const InterviewArchitectTest = () => {
   }, [conversationId, searchParams, updateUrlParams]);
 
   // === Debounced sync helper with anti-loop guard ===
-  const debouncedSync = useCallback((
-    questionsToSync: StructuredQuestion[],
-    source: "user" | "ws" | "template"
-  ) => {
-    // Clear any pending sync
-    if (syncDebounceRef.current) {
-      clearTimeout(syncDebounceRef.current);
-    }
-
-    // GUARD: Never sync empty array - this confuses the agent
-    if (questionsToSync.length === 0) {
-      console.log(`[Sync] SKIP | source: ${source} | reason: empty array | conversationId: ${conversationId}`);
-      return;
-    }
-
-    // Track the source of this update
-    updateSourceRef.current = source;
-
-    // Compute hash for anti-loop guard
-    const currentHash = computeQuestionsHash(questionsToSync);
-
-    // Skip if hash matches last synced (prevents loops)
-    if (currentHash === lastSyncedHashRef.current) {
-      console.log(`[Sync] SKIP | source: ${source} | reason: hash unchanged | questions: ${questionsToSync.length}`);
-      return;
-    }
-
-    // Debounce for 300ms to avoid spamming backend on rapid edits
-    syncDebounceRef.current = setTimeout(() => {
-      if (conversationId) {
-        const syncPayload = questionsToSync.map(structuredToSyncQuestion);
-
-        // Log sync details
-        console.log(`[Sync] POST | source: ${source} | conversationId: ${conversationId} | questions: ${syncPayload.length}`);
-        console.log(`[Sync] POST | ids: [${syncPayload.map(q => q.id).join(", ")}]`);
-
-        // Update last synced hash BEFORE posting to prevent re-sync on echo
-        lastSyncedHashRef.current = currentHash;
-
-        // Use the WS hook's syncQuestions for active sessions, otherwise use direct sync
-        if (isAgentSessionActive) {
-          syncQuestions(syncPayload as ActualQuestion[]);
-        } else {
-          syncQuestionsToBackend(conversationId, syncPayload);
-        }
+  const debouncedSync = useCallback(
+    (
+      questionsToSync: StructuredQuestion[],
+      source: "user" | "ws" | "template",
+    ) => {
+      // Clear any pending sync
+      if (syncDebounceRef.current) {
+        clearTimeout(syncDebounceRef.current);
       }
-    }, 300);
-  }, [conversationId, syncQuestions, syncQuestionsToBackend, isAgentSessionActive, computeQuestionsHash]);
+
+      // GUARD: Never sync empty array - this confuses the agent
+      if (questionsToSync.length === 0) {
+        console.log(
+          `[Sync] SKIP | source: ${source} | reason: empty array | conversationId: ${conversationId}`,
+        );
+        return;
+      }
+
+      // Track the source of this update
+      updateSourceRef.current = source;
+
+      // Compute hash for anti-loop guard
+      const currentHash = computeQuestionsHash(questionsToSync);
+
+      // Skip if hash matches last synced (prevents loops)
+      if (currentHash === lastSyncedHashRef.current) {
+        console.log(
+          `[Sync] SKIP | source: ${source} | reason: hash unchanged | questions: ${questionsToSync.length}`,
+        );
+        return;
+      }
+
+      // Debounce for 300ms to avoid spamming backend on rapid edits
+      syncDebounceRef.current = setTimeout(() => {
+        if (conversationId) {
+          const syncPayload = questionsToSync.map(structuredToSyncQuestion);
+
+          // Log sync details
+          console.log(
+            `[Sync] POST | source: ${source} | conversationId: ${conversationId} | questions: ${syncPayload.length}`,
+          );
+          console.log(
+            `[Sync] POST | ids: [${syncPayload.map((q) => q.id).join(", ")}]`,
+          );
+
+          // Update last synced hash BEFORE posting to prevent re-sync on echo
+          lastSyncedHashRef.current = currentHash;
+
+          // Use the WS hook's syncQuestions for active sessions, otherwise use direct sync
+          if (isAgentSessionActive) {
+            syncQuestions(syncPayload as ActualQuestion[]);
+          } else {
+            syncQuestionsToBackend(conversationId, syncPayload);
+          }
+        }
+      }, 300);
+    },
+    [
+      conversationId,
+      syncQuestions,
+      syncQuestionsToBackend,
+      isAgentSessionActive,
+      computeQuestionsHash,
+    ],
+  );
 
   // === Convert WS questions to StructuredQuestion objects ===
   // Track previous hash to detect content changes
@@ -658,7 +736,9 @@ const InterviewArchitectTest = () => {
 
     // Skip if nothing changed (prevents duplicate processing)
     if (currentHash === prevHash) {
-      console.log(`[WS] SKIP | reason: hash unchanged | eventType: ${lastWsEventType}`);
+      console.log(
+        `[WS] SKIP | reason: hash unchanged | eventType: ${lastWsEventType}`,
+      );
       return;
     }
 
@@ -667,27 +747,38 @@ const InterviewArchitectTest = () => {
 
     const currentLength = questionsFromWs.length;
 
-    console.log(`[WS] Processing | eventType: ${lastWsEventType} | count: ${currentLength}`);
+    console.log(
+      `[WS] Processing | eventType: ${lastWsEventType} | count: ${currentLength}`,
+    );
     if (currentLength > 0) {
-      console.log("[WS] WS Question IDs:", questionsFromWs.map(q => q.id).join(", "));
+      console.log(
+        "[WS] WS Question IDs:",
+        questionsFromWs.map((q) => q.id).join(", "),
+      );
     }
 
     // Convert ActualQuestion objects to StructuredQuestion objects (using backend IDs)
-    const wsStructuredQuestions = questionsFromWs.map(actualQuestionToStructured);
+    const wsStructuredQuestions = questionsFromWs.map(
+      actualQuestionToStructured,
+    );
 
     // Route based on event type (not count heuristics)
     if (lastWsEventType === "offer") {
       // questions_offer: MERGE new questions with existing UI questions
       // Compute merge OUTSIDE of setState to avoid side effects in updater
       const currentQuestions = questionsRef.current;
-      const existingIds = new Set(currentQuestions.map(q => q.id));
-      const newFromWs = wsStructuredQuestions.filter(q => !existingIds.has(q.id));
+      const existingIds = new Set(currentQuestions.map((q) => q.id));
+      const newFromWs = wsStructuredQuestions.filter(
+        (q) => !existingIds.has(q.id),
+      );
 
       if (newFromWs.length === 0) {
         console.log("[WS] MERGE | no new questions (all duplicates)");
       } else {
         const merged = [...currentQuestions, ...newFromWs];
-        console.log(`[WS] MERGE | existing: ${currentQuestions.length} | new: ${newFromWs.length} | total: ${merged.length}`);
+        console.log(
+          `[WS] MERGE | existing: ${currentQuestions.length} | new: ${newFromWs.length} | total: ${merged.length}`,
+        );
 
         // Update state (pure state update, no side effects)
         setQuestions(merged);
@@ -701,7 +792,9 @@ const InterviewArchitectTest = () => {
     } else if (lastWsEventType === "update" || lastWsEventType === "delete") {
       // questions_update/questions_delete: REPLACE UI with WS state
       // Backend is source of truth - no need to sync back
-      console.log(`[WS] REPLACE | eventType: ${lastWsEventType} | new count: ${wsStructuredQuestions.length}`);
+      console.log(
+        `[WS] REPLACE | eventType: ${lastWsEventType} | new count: ${wsStructuredQuestions.length}`,
+      );
       setQuestions(wsStructuredQuestions);
       // NO sync needed - backend already has this state
     }
@@ -710,7 +803,15 @@ const InterviewArchitectTest = () => {
     if (wsStructuredQuestions.length > 0 && phase === "context") {
       setPhase("structure");
     }
-  }, [questionsFromWs, lastWsEventType, isRealMode, phase, conversationId, debouncedSync, computeWsQuestionsHash]);
+  }, [
+    questionsFromWs,
+    lastWsEventType,
+    isRealMode,
+    phase,
+    conversationId,
+    debouncedSync,
+    computeWsQuestionsHash,
+  ]);
 
   // === Real agent session management ===
   const startRealAgentSession = async () => {
@@ -723,10 +824,16 @@ const InterviewArchitectTest = () => {
       let activeConversationId = conversationId;
       if (!activeConversationId) {
         activeConversationId = generateConversationId();
-        console.log("[InterviewArchitectTest] Generated new conversationId:", activeConversationId);
+        console.log(
+          "[InterviewArchitectTest] Generated new conversationId:",
+          activeConversationId,
+        );
         setConversationId(activeConversationId);
       } else {
-        console.log("[InterviewArchitectTest] Reusing existing conversationId:", activeConversationId);
+        console.log(
+          "[InterviewArchitectTest] Reusing existing conversationId:",
+          activeConversationId,
+        );
       }
 
       // 2. Request microphone access
@@ -801,6 +908,29 @@ const InterviewArchitectTest = () => {
       setAgentState("disconnected");
       setIsAgentSessionActive(false);
       // Note: We do NOT clear conversationId on error - it persists for the session
+
+      // Check if this is a microphone permission error
+      if (error instanceof Error) {
+        const errorName = error.name;
+        const errorMessage = error.message.toLowerCase();
+
+        if (
+          errorName === "NotAllowedError" ||
+          errorName === "PermissionDeniedError" ||
+          errorMessage.includes("permission denied") ||
+          errorMessage.includes("not allowed")
+        ) {
+          console.log("[InterviewArchitectTest] Microphone permission denied");
+          setMicrophoneError("denied");
+        } else if (
+          errorName === "NotFoundError" ||
+          errorMessage.includes("not found") ||
+          errorMessage.includes("no device")
+        ) {
+          console.log("[InterviewArchitectTest] Microphone not found");
+          setMicrophoneError("not-found");
+        }
+      }
 
       // Cleanup media stream if acquired
       if (mediaStreamRef.current) {
@@ -937,11 +1067,16 @@ const InterviewArchitectTest = () => {
   // === Question handlers (user-driven) ===
   const handleEditQuestion = (id: string, newText: string) => {
     setQuestions((prev) => {
-      const updated = prev.map((q) => (q.id === id ? { ...q, text: newText } : q));
+      const updated = prev.map((q) =>
+        q.id === id ? { ...q, text: newText } : q,
+      );
 
       // Sync to backend if conversationId exists (template or real agent mode)
       if (conversationId) {
-        console.log("[User] Question edited:", { id, newText: newText.substring(0, 50) });
+        console.log("[User] Question edited:", {
+          id,
+          newText: newText.substring(0, 50),
+        });
         debouncedSync(updated, "user");
       }
 
@@ -955,7 +1090,10 @@ const InterviewArchitectTest = () => {
 
       // Sync to backend if conversationId exists
       if (conversationId) {
-        console.log("[User] Question deleted:", { id, remainingCount: updated.length });
+        console.log("[User] Question deleted:", {
+          id,
+          remainingCount: updated.length,
+        });
         debouncedSync(updated, "user");
       }
 
@@ -1020,7 +1158,9 @@ const InterviewArchitectTest = () => {
     // Clear URL params
     setSearchParams({}, { replace: true });
 
-    console.log("[InterviewArchitectTest] Reset complete - conversationId and draft cleared");
+    console.log(
+      "[InterviewArchitectTest] Reset complete - conversationId and draft cleared",
+    );
   };
 
   const getHelperText = () => {
@@ -1079,11 +1219,16 @@ const InterviewArchitectTest = () => {
     if (!applyTemplateEvent) return;
 
     const { templateId } = applyTemplateEvent;
-    console.log("[InterviewArchitectTest] apply_template event received:", templateId);
+    console.log(
+      "[InterviewArchitectTest] apply_template event received:",
+      templateId,
+    );
 
     // If templates aren't loaded yet, trigger loading and wait
     if (!needsTemplates) {
-      console.log("[InterviewArchitectTest] Triggering templates load for apply_template");
+      console.log(
+        "[InterviewArchitectTest] Triggering templates load for apply_template",
+      );
       setNeedsTemplates(true);
       return; // Effect will re-run when templates are loaded
     }
@@ -1099,18 +1244,31 @@ const InterviewArchitectTest = () => {
     if (!template) {
       // If we just triggered loading and templates aren't available yet, wait
       // This handles the race condition where effect runs before fetch completes
-      console.log("[InterviewArchitectTest] Template not found:", templateId, "- may still be loading");
+      console.log(
+        "[InterviewArchitectTest] Template not found:",
+        templateId,
+        "- may still be loading",
+      );
       // Don't clear the event yet - it will be processed on next render when templates are available
       return;
     }
 
-    console.log("[InterviewArchitectTest] Found template:", template.title, "with", template.questions.length, "questions");
+    console.log(
+      "[InterviewArchitectTest] Found template:",
+      template.title,
+      "with",
+      template.questions.length,
+      "questions",
+    );
 
     // Sort template questions by order
-    const sortedTemplateQuestions = [...template.questions].sort((a, b) => a.order - b.order);
+    const sortedTemplateQuestions = [...template.questions].sort(
+      (a, b) => a.order - b.order,
+    );
 
     // Normalize text for deduplication (lowercase, trim, remove extra spaces)
-    const normalizeText = (text: string) => text.toLowerCase().trim().replace(/\s+/g, " ");
+    const normalizeText = (text: string) =>
+      text.toLowerCase().trim().replace(/\s+/g, " ");
 
     // Get existing question texts for dedup
     const existingTexts = new Set(questions.map((q) => normalizeText(q.text)));
@@ -1129,11 +1287,18 @@ const InterviewArchitectTest = () => {
         });
         existingTexts.add(normalized); // Prevent duplicates within template
       } else {
-        console.log("[InterviewArchitectTest] Skipping duplicate question:", tq.text.substring(0, 50));
+        console.log(
+          "[InterviewArchitectTest] Skipping duplicate question:",
+          tq.text.substring(0, 50),
+        );
       }
     }
 
-    console.log("[InterviewArchitectTest] Adding", newQuestions.length, "new questions from template");
+    console.log(
+      "[InterviewArchitectTest] Adding",
+      newQuestions.length,
+      "new questions from template",
+    );
 
     if (newQuestions.length > 0) {
       // Merge: ADD to existing questions (no delete)
@@ -1147,7 +1312,10 @@ const InterviewArchitectTest = () => {
 
       // Sync merged questions to backend (via debouncedSync for consistency)
       if (conversationId) {
-        console.log("[Template] apply_template | syncing merged questions | count:", mergedQuestions.length);
+        console.log(
+          "[Template] apply_template | syncing merged questions | count:",
+          mergedQuestions.length,
+        );
         debouncedSync(mergedQuestions, "template");
       }
 
@@ -1159,14 +1327,27 @@ const InterviewArchitectTest = () => {
     } else {
       toast({
         title: "Template already applied",
-        description: "All questions from this template are already in your list.",
+        description:
+          "All questions from this template are already in your list.",
         variant: "default",
       });
     }
 
     // Clear the event after handling
     clearApplyTemplateEvent();
-  }, [applyTemplateEvent, findTemplateById, questions, conversationId, phase, syncQuestionsToBackend, clearApplyTemplateEvent, toast, needsTemplates, templatesLoading, debouncedSync]);
+  }, [
+    applyTemplateEvent,
+    findTemplateById,
+    questions,
+    conversationId,
+    phase,
+    syncQuestionsToBackend,
+    clearApplyTemplateEvent,
+    toast,
+    needsTemplates,
+    templatesLoading,
+    debouncedSync,
+  ]);
 
   // === Handle templateId from URL query params ===
   // When coming from /templates page with a template selected
@@ -1176,7 +1357,9 @@ const InterviewArchitectTest = () => {
 
     // Skip if draft was restored (already has questions)
     if (draftRestoredRef.current) {
-      console.log("[InterviewArchitectTest] Skipping template load - draft was restored");
+      console.log(
+        "[InterviewArchitectTest] Skipping template load - draft was restored",
+      );
       templateIdLoadedRef.current = templateId;
       return;
     }
@@ -1186,7 +1369,10 @@ const InterviewArchitectTest = () => {
 
     const template = findTemplateById(templateId);
     if (template) {
-      console.log("[InterviewArchitectTest] Loading template from URL:", templateId);
+      console.log(
+        "[InterviewArchitectTest] Loading template from URL:",
+        templateId,
+      );
       templateIdLoadedRef.current = templateId;
 
       // Inline the template selection logic to avoid dependency issues
@@ -1198,12 +1384,16 @@ const InterviewArchitectTest = () => {
       setDemoStep(0);
 
       // Convert template questions to StructuredQuestion format
-      const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
-      const structuredQuestions: StructuredQuestion[] = sortedQuestions.map((q) => ({
-        id: q.id,
-        text: q.text,
-        phase: "core" as const,
-      }));
+      const sortedQuestions = [...template.questions].sort(
+        (a, b) => a.order - b.order,
+      );
+      const structuredQuestions: StructuredQuestion[] = sortedQuestions.map(
+        (q) => ({
+          id: q.id,
+          text: q.text,
+          phase: "core" as const,
+        }),
+      );
 
       setQuestions(structuredQuestions);
       setPhase("structure");
@@ -1215,8 +1405,12 @@ const InterviewArchitectTest = () => {
 
       // Sync questions to backend (direct call since conversationId not in state yet)
       const syncPayload = structuredQuestions.map(structuredToSyncQuestion);
-      console.log(`[Sync] POST | source: template | conversationId: ${newConversationId} | questions: ${syncPayload.length}`);
-      console.log(`[Sync] POST | ids: [${syncPayload.map(q => q.id).join(", ")}]`);
+      console.log(
+        `[Sync] POST | source: template | conversationId: ${newConversationId} | questions: ${syncPayload.length}`,
+      );
+      console.log(
+        `[Sync] POST | ids: [${syncPayload.map((q) => q.id).join(", ")}]`,
+      );
 
       // Update hash ref to prevent re-sync when WS echoes back
       lastSyncedHashRef.current = computeQuestionsHash(structuredQuestions);
@@ -1227,7 +1421,14 @@ const InterviewArchitectTest = () => {
       // Update URL with conv param (keep templateId)
       updateUrlParams({ conv: newConversationId });
     }
-  }, [searchParams, templatesLoading, findTemplateById, syncQuestionsToBackend, computeQuestionsHash, updateUrlParams]);
+  }, [
+    searchParams,
+    templatesLoading,
+    findTemplateById,
+    syncQuestionsToBackend,
+    computeQuestionsHash,
+    updateUrlParams,
+  ]);
 
   // Show nothing while checking auth (prevents flash before redirect)
   if (authLoading || !isLoggedIn) {
@@ -1236,252 +1437,346 @@ const InterviewArchitectTest = () => {
 
   return (
     <ElectronPageWrapper>
-    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
-      {!isDesktop && <Header />}
+      <div
+        className={`min-h-screen flex flex-col bg-background ${isDesktop ? "electron-page" : ""}`}
+      >
+        {!isDesktop && <Header />}
 
-      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
-        <div className="section-container">
-          {/* Page Header */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">
-                Interview Architect
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Voice-First Question Builder
-            </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto text-sm">
-              Speak naturally to design structured, expert-level interview
-              questions
-            </p>
-          </div>
-
-          {/* Phase Indicator */}
-          <ArchitectPhaseIndicator currentPhase={phase} className="mb-6" />
-
-          {/* Interview Context Badges */}
-          <InterviewContextBadges
-            context={interviewContext}
-            className="justify-center mb-8"
-          />
-
-          {/* Main Content - Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
-            {/* Left Column: Agent Card */}
-            <div className="lg:col-span-4 space-y-4">
-              <ArchitectAgentCard
-                agentName="Interview Architect"
-                agentDescription="I'll help you design structured, expert-level interview questions."
-                state={agentState}
-                helperText={getHelperText()}
-                inputLevel={inputLevel}
-                onToggle={handleAgentToggle}
-              />
-
-              {/* Reset button */}
-              {(questions.length > 0 || selectedPresetId || selectedTemplate || conversationId) && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-center"
-                >
-                  <Button variant="ghost" size="sm" onClick={handleReset}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Start Over
-                  </Button>
-                </motion.div>
-              )}
-
+        <main className={`flex-1 ${isDesktop ? "pt-6" : "pt-24"} pb-16`}>
+          <div className="section-container">
+            {/* Page Header */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">
+                  Interview Architect
+                </span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                Voice-First Question Builder
+              </h1>
+              <p className="text-muted-foreground max-w-xl mx-auto text-sm">
+                Speak naturally to design structured, expert-level interview
+                questions
+              </p>
             </div>
 
-            {/* Right Column: Introduction + Question Cards */}
-            <div className="lg:col-span-8 space-y-4">
-              {/* Interview Introduction Section */}
-              {questions.length > 0 && introduction && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="glass-card rounded-2xl p-6"
-                >
-                  <div className="mb-3">
-                    <h3 className="text-base font-semibold text-foreground mb-1">
-                      Interview Introduction
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      This introduction will be read by the AI agent before the interview starts. You can edit it.
-                    </p>
-                  </div>
-                  <textarea
-                    value={introduction ?? ""}
-                    onChange={(e) => {
-                      setIntroduction(e.target.value);
-                      setIsIntroductionEdited(true);
-                    }}
-                    placeholder="The introduction will be generated by the AI agent, or you can type your own..."
-                    className="w-full h-[60px] px-4 py-3 bg-background/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none overflow-y-auto"
-                    rows={2}
-                  />
-                </motion.div>
-              )}
+            {/* Phase Indicator */}
+            <ArchitectPhaseIndicator currentPhase={phase} className="mb-6" />
 
-              {/* Question Cards Container */}
-              <div className="glass-card rounded-2xl flex flex-col h-[420px] lg:h-[480px] overflow-hidden">
-                {/* Sticky header */}
-                <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
-                  <h3 className="text-sm font-medium text-foreground">
-                    Question Sequence
-                  </h3>
-                  {questions.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {questions.length} question
-                      {questions.length !== 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
+            {/* Interview Context Badges */}
+            <InterviewContextBadges
+              context={interviewContext}
+              className="justify-center mb-8"
+            />
 
-                {/* Scrollable content area */}
-                <div className="flex-1 min-h-0 relative">
-                  <div className="h-full overflow-y-auto custom-scrollbar px-5">
-                    <AnimatePresence mode="wait">
-                      {questions.length === 0 ? (
-                        <motion.div
-                          key="empty"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="flex flex-col items-center justify-center py-16 text-center"
-                        >
-                          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                            <Sparkles className="w-8 h-8 text-muted-foreground/50" />
-                          </div>
-                          <p className="text-muted-foreground text-sm mb-2">
-                            Questions will appear here as you speak
-                          </p>
-                          <p className="text-muted-foreground/60 text-xs max-w-xs">
-                            {selectedPresetId
-                              ? "Tap the microphone to start the conversation"
-                              : "Start speaking or browse templates to create your interview"}
-                          </p>
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="questions"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="pb-2"
-                        >
-                          <Reorder.Group
-                            axis="y"
-                            values={questions}
-                            onReorder={handleReorder}
-                            className="space-y-3"
-                          >
-                            {questions.map((question, index) => (
-                              <Reorder.Item
-                                key={question.id}
-                                value={question}
-                                className="cursor-grab active:cursor-grabbing"
-                              >
-                                <StructuredQuestionCard
-                                  question={question}
-                                  index={index}
-                                  onEdit={handleEditQuestion}
-                                  onDelete={handleDeleteQuestion}
-                                />
-                              </Reorder.Item>
-                            ))}
-                          </Reorder.Group>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  {/* Bottom fade overlay - scroll affordance */}
-                  {questions.length > 3 && (
-                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/90 to-transparent pointer-events-none rounded-b-2xl" />
-                  )}
-                </div>
+            {/* Main Content - Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+              {/* Left Column: Agent Card */}
+              <div className="lg:col-span-4 space-y-4">
+                <ArchitectAgentCard
+                  agentName="Interview Architect"
+                  agentDescription="I'll help you design structured, expert-level interview questions."
+                  state={agentState}
+                  helperText={getHelperText()}
+                  inputLevel={inputLevel}
+                  onToggle={handleAgentToggle}
+                />
 
-                {/* Sticky footer CTA */}
-                {questions.length > 0 && (
+                {/* Reset button */}
+                {(questions.length > 0 ||
+                  selectedPresetId ||
+                  selectedTemplate ||
+                  conversationId) && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex-shrink-0 p-4 pt-3 border-t border-border/50 flex justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-center"
                   >
-                    <PrimaryButton
-                      onClick={handleFinalize}
-                      className="px-8"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Finalize Questions
-                    </PrimaryButton>
+                    <Button variant="ghost" size="sm" onClick={handleReset}>
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Start Over
+                    </Button>
                   </motion.div>
                 )}
               </div>
+
+              {/* Right Column: Introduction + Question Cards */}
+              <div className="lg:col-span-8 space-y-4">
+                {/* Interview Introduction Section */}
+                {questions.length > 0 && introduction && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-card rounded-2xl p-6"
+                  >
+                    <div className="mb-3">
+                      <h3 className="text-base font-semibold text-foreground mb-1">
+                        Interview Introduction
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        This introduction will be read by the AI agent before
+                        the interview starts. You can edit it.
+                      </p>
+                    </div>
+                    <textarea
+                      value={introduction ?? ""}
+                      onChange={(e) => {
+                        setIntroduction(e.target.value);
+                        setIsIntroductionEdited(true);
+                      }}
+                      placeholder="The introduction will be generated by the AI agent, or you can type your own..."
+                      className="w-full h-[60px] px-4 py-3 bg-background/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none overflow-y-auto"
+                      rows={2}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Question Cards Container */}
+                <div className="glass-card rounded-2xl flex flex-col h-[420px] lg:h-[480px] overflow-hidden">
+                  {/* Sticky header */}
+                  <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
+                    <h3 className="text-sm font-medium text-foreground">
+                      Question Sequence
+                    </h3>
+                    {questions.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {questions.length} question
+                        {questions.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Scrollable content area */}
+                  <div className="flex-1 min-h-0 relative">
+                    <div className="h-full overflow-y-auto custom-scrollbar px-5">
+                      <AnimatePresence mode="wait">
+                        {questions.length === 0 ? (
+                          <motion.div
+                            key="empty"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="flex flex-col items-center justify-center py-16 text-center"
+                          >
+                            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                              <Sparkles className="w-8 h-8 text-muted-foreground/50" />
+                            </div>
+                            <p className="text-muted-foreground text-sm mb-2">
+                              Questions will appear here as you speak
+                            </p>
+                            <p className="text-muted-foreground/60 text-xs max-w-xs">
+                              {selectedPresetId
+                                ? "Tap the microphone to start the conversation"
+                                : "Start speaking or browse templates to create your interview"}
+                            </p>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="questions"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="pb-2"
+                          >
+                            <Reorder.Group
+                              axis="y"
+                              values={questions}
+                              onReorder={handleReorder}
+                              className="space-y-3"
+                            >
+                              {questions.map((question, index) => (
+                                <Reorder.Item
+                                  key={question.id}
+                                  value={question}
+                                  className="cursor-grab active:cursor-grabbing"
+                                >
+                                  <StructuredQuestionCard
+                                    question={question}
+                                    index={index}
+                                    onEdit={handleEditQuestion}
+                                    onDelete={handleDeleteQuestion}
+                                  />
+                                </Reorder.Item>
+                              ))}
+                            </Reorder.Group>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    {/* Bottom fade overlay - scroll affordance */}
+                    {questions.length > 3 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/90 to-transparent pointer-events-none rounded-b-2xl" />
+                    )}
+                  </div>
+
+                  {/* Sticky footer CTA */}
+                  {questions.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="flex-shrink-0 p-4 pt-3 border-t border-border/50 flex justify-center"
+                    >
+                      <PrimaryButton onClick={handleFinalize} className="px-8">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Finalize Questions
+                      </PrimaryButton>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Browse Templates Link */}
+            <div className="max-w-6xl mx-auto mt-8 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/templates")}
+                className="gap-2"
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                Browse Templates
+              </Button>
             </div>
           </div>
+        </main>
 
-          {/* Browse Templates Link */}
-          <div className="max-w-6xl mx-auto mt-8 flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/templates")}
-              className="gap-2"
-            >
-              <LayoutTemplate className="w-4 h-4" />
-              Browse Templates
-            </Button>
-          </div>
-        </div>
-      </main>
+        {!isDesktop && <Footer />}
 
-      {!isDesktop && <Footer />}
+        {/* Finalize Modal */}
+        <ArchitectFinalizeModal
+          isOpen={showFinalizeModal}
+          onClose={() => setShowFinalizeModal(false)}
+          questions={questions}
+          interviewType={interviewContext.type}
+          defaultTitle={selectedTemplate?.title}
+          existingIntroduction={introduction}
+          agentIntroduction={introductionFromAgent}
+          onIntroductionUsed={clearIntroductionFromAgent}
+          onInterviewCreated={() => {
+            // Cancel any pending autosave first (prevents race condition)
+            cancelPendingSave();
 
-      {/* Finalize Modal */}
-      <ArchitectFinalizeModal
-        isOpen={showFinalizeModal}
-        onClose={() => setShowFinalizeModal(false)}
-        questions={questions}
-        interviewType={interviewContext.type}
-        defaultTitle={selectedTemplate?.title}
-        existingIntroduction={introduction}
-        agentIntroduction={introductionFromAgent}
-        onIntroductionUsed={clearIntroductionFromAgent}
-        onInterviewCreated={() => {
-          // Cancel any pending autosave first (prevents race condition)
-          cancelPendingSave();
+            // Clear draft from sessionStorage
+            if (conversationId) {
+              clearDraft(conversationId);
+              console.log(
+                "[Draft] Cleared on Done click | conv:",
+                conversationId,
+              );
+            }
 
-          // Clear draft from sessionStorage
-          if (conversationId) {
-            clearDraft(conversationId);
-            console.log("[Draft] Cleared on Done click | conv:", conversationId);
-          }
+            // Clear URL params (conv, templateId)
+            setSearchParams({}, { replace: true });
 
-          // Clear URL params (conv, templateId)
-          setSearchParams({}, { replace: true });
+            // Reset page state to fresh start
+            setConversationId(null);
+            setQuestions([]);
+            setInterviewContext({});
+            setDraftTitle("");
+            setIntroduction(null);
+            setIsIntroductionEdited(false);
+            setPhase("context");
+            setSelectedTemplate(null);
+            setSelectedPresetId(null);
 
-          // Reset page state to fresh start
-          setConversationId(null);
-          setQuestions([]);
-          setInterviewContext({});
-          setDraftTitle("");
-          setIntroduction(null);
-          setIsIntroductionEdited(false);
-          setPhase("context");
-          setSelectedTemplate(null);
-          setSelectedPresetId(null);
+            // Reset tracking refs
+            draftRestoredRef.current = false;
+            templateIdLoadedRef.current = null;
 
-          // Reset tracking refs
-          draftRestoredRef.current = false;
-          templateIdLoadedRef.current = null;
+            console.log("[Draft] Page state reset to fresh start");
+          }}
+        />
 
-          console.log("[Draft] Page state reset to fresh start");
-        }}
-      />
-    </div>
+        {/* Microphone Permission Error Dialog - Only show in Electron */}
+        <AlertDialog
+          open={microphoneError === "denied" && isDesktop}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMicrophoneError(null);
+              setCommandCopied(false);
+            }
+          }}
+        >
+          <AlertDialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden">
+            <div className="p-6 space-y-4">
+              <AlertDialogTitle className="text-lg font-semibold">
+                Microphone Access Required
+              </AlertDialogTitle>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  This is a test build without Apple Developer signature, so
+                  macOS cannot show the standard microphone permission dialog.
+                </p>
+                <p>Run the app once from Terminal to enable microphone:</p>
+                <div
+                  onClick={async () => {
+                    const command =
+                      "/Applications/Napster\\ Pulse.app/Contents/MacOS/Napster\\ Pulse";
+                    await navigator.clipboard.writeText(command);
+                    setCommandCopied(true);
+                    setTimeout(() => setCommandCopied(false), 2000);
+                  }}
+                  className="relative bg-gray-900 text-green-400 rounded-lg p-4 pr-10 font-mono text-xs cursor-pointer hover:bg-gray-800 transition-colors overflow-x-auto"
+                >
+                  <code className="whitespace-nowrap">
+                    /Applications/Napster\ Pulse.app/Contents/MacOS/Napster\
+                    Pulse
+                  </code>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {commandCopied ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-400" />
+                    )}
+                  </span>
+                </div>
+                <p>
+                  When macOS asks{" "}
+                  <strong className="text-foreground">
+                    "Terminal would like to access the Microphone"
+                  </strong>{" "}
+                  — click <strong className="text-foreground">Allow</strong>.
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  The app will reopen in a new window. You can close this window
+                  after.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 border-t bg-muted/30">
+              <AlertDialogCancel
+                onClick={() => setMicrophoneError(null)}
+                className="mt-0"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                onClick={async () => {
+                  const command =
+                    "/Applications/Napster\\ Pulse.app/Contents/MacOS/Napster\\ Pulse";
+                  await navigator.clipboard.writeText(command);
+                  setCommandCopied(true);
+                  setTimeout(() => setCommandCopied(false), 2000);
+                }}
+                className="gap-2"
+              >
+                {commandCopied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy Command
+                  </>
+                )}
+              </Button>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </ElectronPageWrapper>
   );
 };

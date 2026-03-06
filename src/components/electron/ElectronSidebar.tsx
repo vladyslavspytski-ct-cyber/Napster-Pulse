@@ -93,15 +93,15 @@ const ElectronSidebar = () => {
         )}
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
-        <a
-          href="/"
+        <button
+          onClick={() => navigate("/dashboard")}
           className="flex items-center justify-center"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center transition-transform hover:scale-105">
             <Mic className="w-5 h-5 text-primary-foreground" />
           </div>
-        </a>
+        </button>
       </div>
 
       {/* Navigation */}

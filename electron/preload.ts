@@ -5,7 +5,7 @@
  * It exposes safe APIs to the renderer via contextBridge.
  */
 
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 // Expose Electron APIs to the renderer process
 contextBridge.exposeInMainWorld('electron', {
@@ -18,11 +18,8 @@ contextBridge.exposeInMainWorld('electron', {
   // App version (will be available in production)
   version: process.env.npm_package_version || '0.0.0',
 
-  // Add more APIs here as needed:
-  // - File system operations
-  // - Native dialogs
-  // - Notifications
-  // - etc.
+  // Open system preferences (for microphone permissions on macOS)
+  openSystemPreferences: () => ipcRenderer.invoke('open-system-preferences'),
 });
 
 // TypeScript declaration for window.electron (matches src/lib/electron.ts)
@@ -32,6 +29,7 @@ declare global {
       isElectron: boolean;
       platform: string;
       version: string;
+      openSystemPreferences: () => Promise<void>;
     };
   }
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SavedInterview } from "@/lib/mockDashboardData";
+import { useIsElectron } from "@/lib/electron";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +16,7 @@ interface SavedInterviewListCardProps {
 
 const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedInterviewListCardProps) => {
   const { toast } = useToast();
+  const isDesktop = useIsElectron();
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyLink = async () => {
@@ -80,10 +82,12 @@ const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedIntervi
                   </>
                 )}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleOpen} className="h-8 px-3">
-                <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                Open
-              </Button>
+              {!isDesktop && (
+                <Button variant="outline" size="sm" onClick={handleOpen} className="h-8 px-3">
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                  Open
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"

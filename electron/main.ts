@@ -74,18 +74,12 @@ function createWindow() {
 }
 
 function createAppMenu() {
-  // Minimal menu for Electron
+  // Minimal menu - only App name and Edit (for Cmd+C/V shortcuts on Mac)
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: app.name,
       submenu: [
         { role: 'about' },
-        { type: 'separator' },
-        { role: 'services' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
         { type: 'separator' },
         { role: 'quit' },
       ],
@@ -100,29 +94,6 @@ function createAppMenu() {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
-      ],
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' },
-      ],
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        { type: 'separator' },
-        { role: 'front' },
       ],
     },
   ];

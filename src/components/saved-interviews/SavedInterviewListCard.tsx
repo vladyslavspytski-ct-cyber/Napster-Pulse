@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SavedInterview } from "@/lib/mockDashboardData";
-import { useIsElectron } from "@/lib/electron";
+import { useIsElectron, WEB_BASE_URL, WEB_PREVIEW_TOKEN } from "@/lib/electron";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,8 +19,18 @@ const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedIntervi
   const isDesktop = useIsElectron();
   const [isCopied, setIsCopied] = useState(false);
 
+  // In Electron, public_url might be file:// based - use WEB_BASE_URL instead
+  // TODO: Remove token when production domain is ready
+  const getWebUrl = () => {
+    if (isDesktop) {
+      const path = interview.public_url.replace(/^(file:\/\/|https?:\/\/[^/]+)/, '');
+      return `${WEB_BASE_URL}${path}?__lovable_token=${WEB_PREVIEW_TOKEN}`;
+    }
+    return interview.public_url;
+  };
+
   const handleCopyLink = async () => {
-    await navigator.clipboard.writeText(interview.public_url);
+    await navigator.clipboard.writeText(getWebUrl());
     setIsCopied(true);
     toast({
       title: "Link copied!",

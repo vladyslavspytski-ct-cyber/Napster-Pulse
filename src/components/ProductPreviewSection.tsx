@@ -64,7 +64,7 @@ const ProductPreviewSection = () => {
             <div className="glass-card rounded-3xl p-4 md:p-6 shadow-lg overflow-hidden">
               {/* Dashboard Header */}
               <div className="mb-6 pb-4 border-b border-border">
-                <h3 className="text-xl font-semibold text-foreground">Conducted Interviews</h3>
+                <h3 className="text-xl font-semibold text-foreground">Results</h3>
               <p className="text-sm text-muted-foreground">View responses from all your completed interview sessions</p>
             </div>
 

@@ -202,7 +202,7 @@ const DashboardV2 = () => {
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Conducted Interviews</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Results</h1>
             <p className="text-muted-foreground mt-1">View responses from all your completed interview sessions</p>
             {/* DEV ONLY — Insight Demo link */}
             <Button

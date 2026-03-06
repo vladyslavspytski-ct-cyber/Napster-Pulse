@@ -6,6 +6,7 @@ import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useIsElectron, WEB_BASE_URL, WEB_PREVIEW_TOKEN } from "@/lib/electron";
 
 interface FinalizeSuccessStepProps {
   savedData: {
@@ -21,13 +22,31 @@ interface FinalizeSuccessStepProps {
 const FinalizeSuccessStep = ({ savedData, onClose, onDone }: FinalizeSuccessStepProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isDesktop = useIsElectron();
+
+  // In Electron, publicUrl might be file:// based - use WEB_BASE_URL instead
+  // TODO: Remove token when production domain is ready
+  const getWebUrl = () => {
+    if (isDesktop) {
+      // Extract path from publicUrl (e.g., "/i/abc123" from "file:///i/abc123")
+      const path = savedData.publicUrl.replace(/^(file:\/\/|https?:\/\/[^/]+)/, '');
+      return `${WEB_BASE_URL}${path}?__lovable_token=${WEB_PREVIEW_TOKEN}`;
+    }
+    return savedData.publicUrl;
+  };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(savedData.publicUrl);
+    navigator.clipboard.writeText(getWebUrl());
     toast({
       title: "Link copied",
       description: "Interview link copied to clipboard",
     });
+  };
+
+  const handleOpenLink = () => {
+    const url = getWebUrl();
+    // window.open with _blank will open in system browser in Electron
+    window.open(url, "_blank");
   };
 
   return (
@@ -60,14 +79,14 @@ const FinalizeSuccessStep = ({ savedData, onClose, onDone }: FinalizeSuccessStep
           Share this link with candidates
         </Label>
         <div className="flex gap-2">
-          <Input value={savedData.publicUrl} readOnly className="flex-1 text-sm rounded-xl" />
+          <Input value={getWebUrl()} readOnly className="flex-1 text-sm rounded-xl" />
           <Button size="icon" variant="outline" onClick={handleCopyLink} className="rounded-xl">
             <Copy className="w-4 h-4" />
           </Button>
           <Button
             size="icon"
             variant="outline"
-            onClick={() => window.open(savedData.publicUrl, "_blank")}
+            onClick={handleOpenLink}
             className="rounded-xl"
           >
             <ExternalLink className="w-4 h-4" />

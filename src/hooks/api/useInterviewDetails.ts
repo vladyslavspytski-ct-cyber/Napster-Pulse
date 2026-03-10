@@ -76,6 +76,7 @@ export function useInterviewDetails(
 
 // Update interview hook
 interface UpdateInterviewData {
+  title: string;
   introduction: string;
   questions: string[]; // Array of question texts
 }

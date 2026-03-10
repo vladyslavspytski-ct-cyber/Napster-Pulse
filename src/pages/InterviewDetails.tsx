@@ -126,6 +126,7 @@ const InterviewDetails = () => {
 
     try {
       await updateInterview(id, {
+        title: interview.title,
         introduction,
         questions: questions.map((q) => q.text), // Send only question texts in order
       });

@@ -31,6 +31,7 @@ import InterviewAnalysisExp from "./pages/InterviewAnalysisExp";
 import InsightDemo from "./pages/InsightDemo";
 import ElectronAuth from "./pages/ElectronAuth";
 import MyAccount from "./pages/MyAccount";
+import InterviewDetails from "./pages/InterviewDetails";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/interview-architect-test" element={<InterviewArchitectTest />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/saved-interviews" element={<SavedInterviews />} />
+            <Route path="/interview/:id" element={<InterviewDetails />} />
             <Route path="/i/:token" element={<PublicInterview />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />

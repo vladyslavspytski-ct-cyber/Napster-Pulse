@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogOut, ChevronDown, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,25 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/useAuth";
-
-/**
- * Extract email from JWT token payload.
- * Returns null if token is invalid or email is not present.
- */
-function extractEmailFromToken(token: string | null): string | null {
-  if (!token) return null;
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = parts[1];
-    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-    const parsed = JSON.parse(decoded);
-    return parsed.email ?? parsed.sub ?? null;
-  } catch {
-    return null;
-  }
-}
+import { useAccount } from "@/hooks/api/useAccount";
 
 interface UserMenuProps {
   onLogout: () => void;
@@ -35,12 +16,19 @@ interface UserMenuProps {
 }
 
 const UserMenu = ({ onLogout, compact = false }: UserMenuProps) => {
-  const { token } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAccount();
 
-  const userEmail = useMemo(() => extractEmailFromToken(token), [token]);
-  const displayName = userEmail ?? "User";
-  const initial = displayName.charAt(0).toUpperCase();
+  // Display name: prefer "First Last", fallback to email, then "User"
+  const getDisplayName = () => {
+    if (user?.first_name || user?.last_name) {
+      return [user.first_name, user.last_name].filter(Boolean).join(" ");
+    }
+    return user?.email ?? "User";
+  };
+
+  const displayName = getDisplayName();
+  const initial = (user?.first_name?.[0] || user?.email?.[0] || "U").toUpperCase();
 
   return (
     <DropdownMenu>
@@ -63,7 +51,7 @@ const UserMenu = ({ onLogout, compact = false }: UserMenuProps) => {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
-        {/* Show email in dropdown when compact (mobile) */}
+        {/* Show name/email in dropdown when compact (mobile) */}
         {compact && (
           <div className="px-3 py-2 border-b border-border">
             <p className="text-xs text-muted-foreground">Signed in as</p>

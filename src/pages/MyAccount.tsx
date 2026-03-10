@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Lock, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useAccount, useUpdateProfile, useChangePassword } from "@/hooks/api/useAccount";
 
 const item = {
@@ -17,8 +19,17 @@ const item = {
 };
 
 const MyAccount = () => {
+  const navigate = useNavigate();
   const isDesktop = useIsElectron();
   const { toast } = useToast();
+  const { isLoggedIn } = useAuth();
+
+  // Redirect to home when logged out
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate("/");
+    }
+  }, [isLoggedIn, navigate]);
 
   // Account data
   const { user, isLoading: isLoadingUser } = useAccount();

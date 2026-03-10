@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Copy, ExternalLink, FileText, Calendar, Check, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SavedInterview } from "@/lib/mockDashboardData";
@@ -15,9 +16,14 @@ interface SavedInterviewListCardProps {
 }
 
 const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedInterviewListCardProps) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const isDesktop = useIsElectron();
   const [isCopied, setIsCopied] = useState(false);
+
+  const handleCardClick = () => {
+    navigate(`/interview/${interview.id}`);
+  };
 
   // In Electron, public_url might be file:// based - use WEB_BASE_URL instead
   // TODO: Remove token when production domain is ready
@@ -53,8 +59,8 @@ const SavedInterviewListCard = ({ interview, index = 0, onDelete }: SavedIntervi
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             {/* Left: Title & Meta */}
-            <div className="flex-1 min-w-0 space-y-2">
-              <h3 className="text-base font-semibold text-foreground leading-tight truncate">
+            <div className="flex-1 min-w-0 space-y-2 cursor-pointer" onClick={handleCardClick}>
+              <h3 className="text-base font-semibold text-foreground leading-tight truncate hover:text-primary transition-colors">
                 {interview.title}
               </h3>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">

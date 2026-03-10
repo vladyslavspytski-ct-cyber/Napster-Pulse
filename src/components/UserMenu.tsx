@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { LogOut, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LogOut, ChevronDown, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -35,6 +36,7 @@ interface UserMenuProps {
 
 const UserMenu = ({ onLogout, compact = false }: UserMenuProps) => {
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   const userEmail = useMemo(() => extractEmailFromToken(token), [token]);
   const displayName = userEmail ?? "User";
@@ -68,6 +70,13 @@ const UserMenu = ({ onLogout, compact = false }: UserMenuProps) => {
             <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
           </div>
         )}
+        <DropdownMenuItem
+          onClick={() => navigate("/account")}
+          className="cursor-pointer"
+        >
+          <User className="mr-2 h-4 w-4" />
+          My Account
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={onLogout}
           className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"

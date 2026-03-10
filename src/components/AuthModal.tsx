@@ -31,7 +31,8 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
   const [loginPassword, setLoginPassword] = useState("");
 
   // Sign up form state
-  const [signupName, setSignupName] = useState("");
+  const [signupFirstName, setSignupFirstName] = useState("");
+  const [signupLastName, setSignupLastName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
@@ -69,7 +70,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
     }
 
     try {
-      await register(signupEmail, signupPassword, signupName || undefined);
+      await register(signupEmail, signupPassword, signupFirstName || undefined, signupLastName || undefined);
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -83,7 +84,8 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
   const resetForms = () => {
     setLoginEmail("");
     setLoginPassword("");
-    setSignupName("");
+    setSignupFirstName("");
+    setSignupLastName("");
     setSignupEmail("");
     setSignupPassword("");
     setLoginError("");
@@ -200,21 +202,39 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login", onSuccess }: AuthMod
                   {signupError}
                 </div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="signup-name" className="text-sm font-medium">
-                  Name
-                </Label>
-                <Input
-                  id="signup-name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={signupName}
-                  onChange={(e) => {
-                    setSignupName(e.target.value);
-                    setSignupError("");
-                  }}
-                  className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-first-name" className="text-sm font-medium">
+                    First Name
+                  </Label>
+                  <Input
+                    id="signup-first-name"
+                    type="text"
+                    placeholder="John"
+                    value={signupFirstName}
+                    onChange={(e) => {
+                      setSignupFirstName(e.target.value);
+                      setSignupError("");
+                    }}
+                    className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-last-name" className="text-sm font-medium">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="signup-last-name"
+                    type="text"
+                    placeholder="Doe"
+                    value={signupLastName}
+                    onChange={(e) => {
+                      setSignupLastName(e.target.value);
+                      setSignupError("");
+                    }}
+                    className="h-11 bg-muted/50 border-border/50 focus:border-primary/50 transition-colors"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-email" className="text-sm font-medium">

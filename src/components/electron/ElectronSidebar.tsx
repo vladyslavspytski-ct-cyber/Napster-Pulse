@@ -13,6 +13,7 @@ import {
   Plus,
   Settings,
   Mic,
+  User,
 } from "lucide-react";
 import {
   Tooltip,
@@ -156,8 +157,26 @@ const ElectronSidebar = () => {
         })}
       </nav>
 
-      {/* Bottom section - Settings */}
-      <div className="py-4 flex flex-col items-center border-t border-sidebar-border">
+      {/* Bottom section - Account & Settings */}
+      <div className="py-4 flex flex-col items-center gap-2 border-t border-sidebar-border">
+        <Tooltip delayDuration={100}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate("/account")}
+              className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                location.pathname === "/account"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              )}
+            >
+              <User className="w-5 h-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            <p>My Account</p>
+          </TooltipContent>
+        </Tooltip>
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
             <button

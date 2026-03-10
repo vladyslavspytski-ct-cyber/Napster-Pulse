@@ -3,6 +3,9 @@ export const API_ROUTES = {
   logout: "/logout",
   register: "/register",
   health: "/health",
+  // User account
+  me: "/me",
+  mePassword: "/me/password",
   signedUrl: "/elevenlabs/signed-url",
   // Interview Architect agent signed URL (uses agentKey "interview-architect")
   interviewArchitectSignedUrl: "/elevenlabs/signed-url?agentKey=interview-architect",

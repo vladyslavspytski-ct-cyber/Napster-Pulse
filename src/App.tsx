@@ -30,6 +30,7 @@ import InterviewAnalysisV2 from "./pages/InterviewAnalysisV2";
 import InterviewAnalysisExp from "./pages/InterviewAnalysisExp";
 import InsightDemo from "./pages/InsightDemo";
 import ElectronAuth from "./pages/ElectronAuth";
+import MyAccount from "./pages/MyAccount";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/pricing-v2" element={<PricingV2 />} />
             <Route path="/pricing-v3" element={<PricingV3 />} />
             <Route path="/my-plan" element={<MyPlan />} />
+            <Route path="/account" element={<MyAccount />} />
             <Route path="/my-plan-v2" element={<MyPlanV2 />} />
             <Route path="/my-plan-v3" element={<MyPlanV3 />} />
             <Route path="/templates" element={<TemplateDirectory />} />

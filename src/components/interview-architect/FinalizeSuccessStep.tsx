@@ -102,7 +102,7 @@ const FinalizeSuccessStep = ({ savedData, onClose, onDone }: FinalizeSuccessStep
             // Cleanup draft and reset state before navigating
             onDone?.();
             onClose();
-            navigate("/saved-interviews");
+            navigate("/library");
           }}
         >
           Done

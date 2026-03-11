@@ -24,7 +24,7 @@ const getPageTitle = (pathname: string): string => {
   const titles: Record<string, string> = {
     "/": "Home",
     "/dashboard": "Results",
-    "/saved-interviews": "Library",
+    "/library": "Library",
     "/templates": "Templates",
     "/create-interview": "Create Interview",
     "/my-plan": "My Plan",

@@ -82,7 +82,7 @@ const App = () => (
             {/* Keep old path for backwards compatibility */}
             <Route path="/interview-architect-test" element={<InterviewArchitectTest />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/saved-interviews" element={<SavedInterviews />} />
+            <Route path="/library" element={<SavedInterviews />} />
             <Route path="/interview/:id" element={<InterviewDetails />} />
             <Route path="/i/:token" element={<PublicInterview />} />
             <Route path="/terms" element={<Terms />} />

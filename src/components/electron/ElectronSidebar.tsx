@@ -41,7 +41,7 @@ const navItems: NavItem[] = [
   {
     icon: FolderOpen,
     label: "Library",
-    href: "/saved-interviews",
+    href: "/library",
     requiresAuth: true,
   },
   {

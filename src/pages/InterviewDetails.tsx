@@ -165,7 +165,7 @@ const InterviewDetails = () => {
             <div className="section-container">
               <div className="text-center py-12">
                 <p className="text-destructive">Failed to load interview. Please try again.</p>
-                <Button variant="outline" className="mt-4" onClick={() => navigate("/saved-interviews")}>
+                <Button variant="outline" className="mt-4" onClick={() => navigate("/library")}>
                   Back to Library
                 </Button>
               </div>
@@ -194,7 +194,7 @@ const InterviewDetails = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate("/saved-interviews")}
+                onClick={() => navigate("/library")}
                 className="gap-2 text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="w-4 h-4" />

@@ -43,7 +43,7 @@ const Header = () => {
   };
 
   // Protected pages that require redirect to home on logout
-  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/saved-interviews", "/templates"];
+  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/library", "/templates"];
 
   const handleLogout = () => {
     logout();
@@ -110,7 +110,7 @@ const Header = () => {
               {/* Library - only visible when logged in */}
               {isLoggedIn && (
                 <a
-                  href="/saved-interviews"
+                  href="/library"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Library
@@ -141,10 +141,10 @@ const Header = () => {
                 <UserMenu onLogout={handleLogout} />
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/saved-interviews")}>
+                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/library")}>
                     Log in
                   </Button>
-                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/saved-interviews")}>
+                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/library")}>
                     Sign up
                   </PrimaryButton>
                 </>
@@ -185,7 +185,7 @@ const Header = () => {
                 {/* Library - only visible when logged in */}
                 {isLoggedIn && (
                   <a
-                    href="/saved-interviews"
+                    href="/library"
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Library
@@ -213,10 +213,10 @@ const Header = () => {
                     <UserMenu onLogout={handleLogout} compact />
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/saved-interviews")}>
+                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/library")}>
                         Log in
                       </Button>
-                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/saved-interviews")}>
+                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/library")}>
                         Sign up
                       </PrimaryButton>
                     </>

@@ -467,6 +467,13 @@ const PublicInterview = () => {
     autoDisconnectTimerRef.current = null;
   };
 
+  // Check if window was opened via window.open() (can be closed programmatically)
+  const canCloseWindow = window.opener !== null;
+
+  const handleDone = () => {
+    window.close();
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -794,12 +801,17 @@ const PublicInterview = () => {
                         transition={{ delay: 0.5 }}
                         className="flex flex-col sm:flex-row gap-3 w-full max-w-xs"
                       >
-                        <PrimaryButton
-                          onClick={() => window.close()}
-                          className="flex-1 h-12"
-                        >
-                          Done
-                        </PrimaryButton>
+                        {canCloseWindow ? (
+                          <PrimaryButton
+                            onClick={handleDone}
+                            className="flex-1 h-12"
+                          >
+                            Done
+                          </PrimaryButton>
+                        ) : (
+                          <>
+                          </>
+                        )}
                         <SecondaryButton
                           onClick={handleStartOver}
                           className="flex-1 h-12"

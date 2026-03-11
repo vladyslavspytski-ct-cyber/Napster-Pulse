@@ -1,7 +1,23 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useIsElectron } from "@/lib/electron";
 
-const Privacy = () => (
+const Privacy = () => {
+  const navigate = useNavigate();
+  const isDesktop = useIsElectron();
+
+  // Redirect to dashboard in Electron mode
+  useEffect(() => {
+    if (isDesktop) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isDesktop, navigate]);
+
+  if (isDesktop) return null;
+
+  return (
   <div className="min-h-screen bg-background flex flex-col">
     <Header />
     <main className="flex-1 py-16 md:py-24">
@@ -185,6 +201,7 @@ const Privacy = () => (
     </main>
     <Footer />
   </div>
-);
+  );
+};
 
 export default Privacy;

@@ -24,7 +24,7 @@ interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  register: (email: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
   logout: () => void; // Returns void (not Promise) since local logout is immediate
 }
 
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name?: string): Promise<void> => {
+  const register = useCallback(async (email: string, password: string, firstName?: string, lastName?: string): Promise<void> => {
     setIsLoading(true);
 
     try {
@@ -185,7 +185,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+        }),
       });
 
       if (!response.ok) {

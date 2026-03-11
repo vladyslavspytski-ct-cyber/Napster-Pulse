@@ -3,6 +3,9 @@ export const API_ROUTES = {
   logout: "/logout",
   register: "/register",
   health: "/health",
+  // User account
+  me: "/me",
+  mePassword: "/me/password",
   signedUrl: "/elevenlabs/signed-url",
   // Interview Architect agent signed URL (uses agentKey "interview-architect")
   interviewArchitectSignedUrl: "/elevenlabs/signed-url?agentKey=interview-architect",
@@ -45,5 +48,7 @@ export const API_ROUTES = {
   generateIntroduction: "/interview/generate-introduction",
   activateInterview: (id: string) => `/interview/${id}/activate`,
   deleteInterview: (id: string) => `/interview/${id}`,
+  interviewDetails: (id: string) => `/interview/${id}`,
+  updateInterview: (id: string) => `/interview/${id}`,
   interviewByKey: (key: string) => `/interview-by-key/${key}`,
 } as const;

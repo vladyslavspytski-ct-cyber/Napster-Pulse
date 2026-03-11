@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Inbox, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -31,6 +33,7 @@ const DashboardV2 = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isDesktop = useIsElectron();
 
   // State - Interviews
   const [selectedInterview, setSelectedInterview] = useState<InterviewTemplate | null>(null);
@@ -185,10 +188,11 @@ const DashboardV2 = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-8">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-8`}>
         <div className="section-container">
           {/* Page Header */}
           <motion.div
@@ -198,7 +202,7 @@ const DashboardV2 = () => {
             transition={{ duration: 0.4 }}
             className="mb-6"
           >
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Conducted Interviews</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Results</h1>
             <p className="text-muted-foreground mt-1">View responses from all your completed interview sessions</p>
             {/* DEV ONLY — Insight Demo link */}
             <Button
@@ -576,8 +580,9 @@ const DashboardV2 = () => {
         </div>
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
+    </ElectronPageWrapper>
   );
 };
 

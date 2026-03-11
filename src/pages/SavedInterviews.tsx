@@ -1,8 +1,11 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, FileText, ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -14,8 +17,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import SavedInterviewListCard from "@/components/saved-interviews/SavedInterviewListCard";
@@ -27,7 +28,9 @@ import { useToast } from "@/hooks/use-toast";
 const ITEMS_PER_PAGE = 10;
 
 const SavedInterviews = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const isDesktop = useIsElectron();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,7 +75,7 @@ const SavedInterviews = () => {
   }, []);
 
   const handleCreateInterview = () => {
-    window.location.href = "/create-interview";
+    navigate("/create-interview");
   };
 
   // Handle delete interview
@@ -106,10 +109,11 @@ const SavedInterviews = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-8">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-8`}>
         <div className="section-container">
           {/* Page Header */}
           <motion.div
@@ -122,7 +126,7 @@ const SavedInterviews = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Saved Interviews
+                  Library
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   Manage your interview templates and share links
@@ -263,30 +267,33 @@ const SavedInterviews = () => {
 
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!interviewToDelete} onOpenChange={(open) => !open && handleCancelDelete()}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Interview</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="p-0 gap-0 overflow-hidden sm:max-w-md">
+          <div className="p-6">
+            <AlertDialogTitle className="text-lg font-semibold">Delete Interview</AlertDialogTitle>
+            <AlertDialogDescription className="mt-2">
               Are you sure you want to delete "{interviewToDelete?.title}"? This action cannot be undone.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t bg-muted/30">
+            <AlertDialogCancel disabled={isDeleting} className="sm:mt-0">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700 text-white border-0"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
-          </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </ElectronPageWrapper>
   );
 };
 

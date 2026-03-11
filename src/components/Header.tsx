@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Mic, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
@@ -8,6 +9,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -34,22 +37,21 @@ const Header = () => {
   const handleAuthSuccess = () => {
     // If there's a pending redirect, navigate there
     if (pendingRedirectRef.current) {
-      window.location.href = pendingRedirectRef.current;
+      navigate(pendingRedirectRef.current);
       pendingRedirectRef.current = null;
     }
   };
 
   // Protected pages that require redirect to home on logout
-  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/saved-interviews", "/templates"];
+  const PROTECTED_PATHS = ["/create-interview", "/dashboard", "/library", "/templates"];
 
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
 
     // Redirect to home if on a protected page
-    const currentPath = window.location.pathname;
-    if (PROTECTED_PATHS.some((path) => currentPath.startsWith(path))) {
-      window.location.href = "/";
+    if (PROTECTED_PATHS.some((path) => location.pathname.startsWith(path))) {
+      navigate("/");
     }
   };
 
@@ -89,7 +91,7 @@ const Header = () => {
             {/* Desktop Navigation - centered (hidden until lg breakpoint) */}
             <nav className="hidden lg:flex items-center justify-center gap-4 xl:gap-6 flex-1">
               {/* How it works & Features - only visible on home page */}
-              {window.location.pathname === "/" && (
+              {location.pathname === "/" && (
                 <>
                   <button
                     onClick={() => scrollToSection("how-it-works")}
@@ -108,7 +110,7 @@ const Header = () => {
               {/* Library - only visible when logged in */}
               {isLoggedIn && (
                 <a
-                  href="/saved-interviews"
+                  href="/library"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Library
@@ -139,10 +141,10 @@ const Header = () => {
                 <UserMenu onLogout={handleLogout} />
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/saved-interviews")}>
+                  <Button variant="ghost" size="sm" onClick={() => openAuthModal("login", "/library")}>
                     Log in
                   </Button>
-                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/saved-interviews")}>
+                  <PrimaryButton size="sm" onClick={() => openAuthModal("signup", "/library")}>
                     Sign up
                   </PrimaryButton>
                 </>
@@ -164,7 +166,7 @@ const Header = () => {
             <div className="lg:hidden py-4 border-t border-border animate-fade-in">
               <nav className="flex flex-col gap-4">
                 {/* How it works & Features - only visible on home page */}
-                {window.location.pathname === "/" && (
+                {location.pathname === "/" && (
                   <>
                     <button
                       onClick={() => scrollToSection("how-it-works")}
@@ -183,7 +185,7 @@ const Header = () => {
                 {/* Library - only visible when logged in */}
                 {isLoggedIn && (
                   <a
-                    href="/saved-interviews"
+                    href="/library"
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Library
@@ -211,10 +213,10 @@ const Header = () => {
                     <UserMenu onLogout={handleLogout} compact />
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/saved-interviews")}>
+                      <Button variant="ghost" size="sm" className="flex-1" onClick={() => openAuthModal("login", "/library")}>
                         Log in
                       </Button>
-                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/saved-interviews")}>
+                      <PrimaryButton size="sm" className="flex-1" onClick={() => openAuthModal("signup", "/library")}>
                         Sign up
                       </PrimaryButton>
                     </>

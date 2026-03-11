@@ -18,6 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import {
   useTemplates,
   type Template,
@@ -66,15 +68,23 @@ const DEPT_CHIP_COLORS = [
 /* ── Main component (uses URL params for steps) ──────────── */
 const TemplateDirectory = () => {
   const { categoryId, typeId } = useParams();
+  const isDesktop = useIsElectron();
 
-  // Determine current step
+  // Determine current step and render appropriate view
+  let content;
   if (typeId && categoryId) {
-    return <TypeDetailView categoryId={categoryId} typeId={typeId} />;
+    content = <TypeDetailView categoryId={categoryId} typeId={typeId} isDesktop={isDesktop} />;
+  } else if (categoryId) {
+    content = <CategoryDetailView categoryId={categoryId} isDesktop={isDesktop} />;
+  } else {
+    content = <CategoriesHomeView isDesktop={isDesktop} />;
   }
-  if (categoryId) {
-    return <CategoryDetailView categoryId={categoryId} />;
-  }
-  return <CategoriesHomeView />;
+
+  return (
+    <ElectronPageWrapper>
+      {content}
+    </ElectronPageWrapper>
+  );
 };
 
 /* ── Layout type ─────────────────────────────────────────── */
@@ -83,7 +93,7 @@ type LayoutVariant = "A" | "B";
 /* ═══════════════════════════════════════════════════════════
    Step 1: Categories Home
    ═══════════════════════════════════════════════════════════ */
-function CategoriesHomeView() {
+function CategoriesHomeView({ isDesktop }: { isDesktop: boolean }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
@@ -175,38 +185,38 @@ function CategoriesHomeView() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-24 pb-16">
+      <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <div className="section-container flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
             <p className="text-muted-foreground text-sm">Loading templates...</p>
           </div>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-24 pb-16">
+      <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <div className="section-container text-center py-20">
             <p className="text-destructive text-sm mb-4">Failed to load templates</p>
             <p className="text-muted-foreground text-xs">{error.message}</p>
           </div>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-24 pb-16">
+    <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
+      <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         <div className="section-container">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">Template Directory</h1>
@@ -448,7 +458,7 @@ function CategoriesHomeView() {
           </AnimatePresence>
         </div>
       </main>
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
   );
 }
@@ -627,43 +637,43 @@ function CategoryCard({ category, onClick }: { category: TemplateCategory; onCli
 /* ═══════════════════════════════════════════════════════════
    Step 2: Category Detail
    ═══════════════════════════════════════════════════════════ */
-function CategoryDetailView({ categoryId }: { categoryId: string }) {
+function CategoryDetailView({ categoryId, isDesktop }: { categoryId: string; isDesktop: boolean }) {
   const navigate = useNavigate();
   const { findCategoryById, isLoading, error } = useTemplates();
   const category = findCategoryById(categoryId);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-24 pb-16">
+      <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <div className="section-container flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
             <p className="text-muted-foreground text-sm">Loading...</p>
           </div>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
     );
   }
 
   if (error || !category) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-24 pb-16 text-center">
+      <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16 text-center`}>
           <p className="text-muted-foreground">Category not found.</p>
           <button onClick={() => navigate("/templates")} className="text-primary text-sm mt-4 hover:underline">← Back to directory</button>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-24 pb-16">
+    <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
+      <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         <div className="section-container">
           <motion.div {...pageVariants}>
             {/* Back link */}
@@ -720,7 +730,7 @@ function CategoryDetailView({ categoryId }: { categoryId: string }) {
           </motion.div>
         </div>
       </main>
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
   );
 }
@@ -728,7 +738,7 @@ function CategoryDetailView({ categoryId }: { categoryId: string }) {
 /* ═══════════════════════════════════════════════════════════
    Step 3: Interview Type Detail (questions)
    ═══════════════════════════════════════════════════════════ */
-function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: string }) {
+function TypeDetailView({ categoryId, typeId, isDesktop }: { categoryId: string; typeId: string; isDesktop: boolean }) {
   const navigate = useNavigate();
   const { findCategoryById, findTemplateById, isLoading, error } = useTemplates();
   const category = findCategoryById(categoryId);
@@ -736,28 +746,28 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-24 pb-16">
+      <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
           <div className="section-container flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
             <p className="text-muted-foreground text-sm">Loading...</p>
           </div>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
     );
   }
 
   if (error || !category || !template) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-24 pb-16 text-center">
+      <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+        {!isDesktop && <Header />}
+        <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16 text-center`}>
           <p className="text-muted-foreground">Interview type not found.</p>
           <button onClick={() => navigate("/templates")} className="text-primary text-sm mt-4 hover:underline">← Back to directory</button>
         </main>
-        <Footer />
+        {!isDesktop && <Footer />}
       </div>
     );
   }
@@ -766,9 +776,9 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
   const sortedQuestions = [...template.questions].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="pt-24 pb-16">
+    <div className={`min-h-screen bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
+      <main className={`${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         <div className="section-container">
           <motion.div {...pageVariants}>
             {/* Breadcrumb */}
@@ -825,7 +835,7 @@ function TypeDetailView({ categoryId, typeId }: { categoryId: string; typeId: st
           </motion.div>
         </div>
       </main>
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
   );
 }

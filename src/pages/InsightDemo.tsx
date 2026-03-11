@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ElectronPageWrapper from "@/components/electron/ElectronPageWrapper";
+import { useIsElectron } from "@/lib/electron";
 import { Button } from "@/components/ui/button";
 import ConceptA from "@/components/insight-concepts/ConceptA";
 import ConceptB from "@/components/insight-concepts/ConceptB";
@@ -26,13 +28,15 @@ type ConceptKey = (typeof CONCEPTS)[number]["key"];
 
 const InsightDemo = () => {
   const navigate = useNavigate();
+  const isDesktop = useIsElectron();
   const [active, setActive] = useState<ConceptKey>("A");
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <ElectronPageWrapper>
+    <div className={`min-h-screen flex flex-col bg-background ${isDesktop ? 'electron-page' : ''}`}>
+      {!isDesktop && <Header />}
 
-      <main className="flex-1 pt-24 pb-16">
+      <main className={`flex-1 ${isDesktop ? 'pt-6' : 'pt-24'} pb-16`}>
         {/* Concept Switcher Bar */}
         <div className="section-container max-w-7xl mx-auto mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -96,8 +100,9 @@ const InsightDemo = () => {
         </div>
       </main>
 
-      <Footer />
+      {!isDesktop && <Footer />}
     </div>
+    </ElectronPageWrapper>
   );
 };
 

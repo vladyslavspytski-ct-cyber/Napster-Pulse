@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { isElectron } from "@/lib/electron";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
@@ -28,8 +29,15 @@ import InterviewAnalysis from "./pages/InterviewAnalysis";
 import InterviewAnalysisV2 from "./pages/InterviewAnalysisV2";
 import InterviewAnalysisExp from "./pages/InterviewAnalysisExp";
 import InsightDemo from "./pages/InsightDemo";
+import ElectronAuth from "./pages/ElectronAuth";
+import MyAccount from "./pages/MyAccount";
+import InterviewDetails from "./pages/InterviewDetails";
 
 const queryClient = new QueryClient();
+
+// Use HashRouter for Electron (file:// protocol doesn't work with BrowserRouter)
+// Use BrowserRouter for web
+const Router = isElectron() ? HashRouter : BrowserRouter;
 
 // Component to listen for session expired events and show toast
 function SessionExpiredListener() {
@@ -66,7 +74,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <SessionExpiredListener />
-          <BrowserRouter>
+          <Router>
             <Routes>
             <Route path="/" element={<Index />} />
             {/* /create-interview now uses InterviewArchitectTest (CreateInterview temporarily hidden) */}
@@ -74,7 +82,8 @@ const App = () => (
             {/* Keep old path for backwards compatibility */}
             <Route path="/interview-architect-test" element={<InterviewArchitectTest />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/saved-interviews" element={<SavedInterviews />} />
+            <Route path="/library" element={<SavedInterviews />} />
+            <Route path="/interview/:id" element={<InterviewDetails />} />
             <Route path="/i/:token" element={<PublicInterview />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
@@ -83,6 +92,7 @@ const App = () => (
             <Route path="/pricing-v2" element={<PricingV2 />} />
             <Route path="/pricing-v3" element={<PricingV3 />} />
             <Route path="/my-plan" element={<MyPlan />} />
+            <Route path="/account" element={<MyAccount />} />
             <Route path="/my-plan-v2" element={<MyPlanV2 />} />
             <Route path="/my-plan-v3" element={<MyPlanV3 />} />
             <Route path="/templates" element={<TemplateDirectory />} />
@@ -93,10 +103,12 @@ const App = () => (
             <Route path="/dashboard/interview/:interviewId/test" element={<InterviewAnalysisV2 />} />
             <Route path="/dashboard/interview/:interviewId/test-2" element={<InterviewAnalysisExp />} />
             <Route path="/dashboard/insight-demo" element={<InsightDemo />} />
+            {/* Electron-specific routes */}
+            <Route path="/electron-auth" element={<ElectronAuth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
+          </Router>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

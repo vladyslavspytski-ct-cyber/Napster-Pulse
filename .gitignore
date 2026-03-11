@@ -26,12 +26,6 @@ dist-ssr
 # Electron build output
 release/
 electron/dist/
-
-# Electron build output
-release/
-electron/dist/
-
-# Electron build output
 build/
 *.dmg
 *.exe

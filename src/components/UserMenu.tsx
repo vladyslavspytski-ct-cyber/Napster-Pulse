@@ -34,7 +34,9 @@ const UserMenu = ({ onLogout, compact = false }: UserMenuProps) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full border border-border bg-background/60 backdrop-blur-sm pl-1 pr-2 py-1 hover:bg-accent/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={`flex items-center gap-2 rounded-full border border-border bg-background/60 backdrop-blur-sm py-1 hover:bg-accent/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            compact ? "pl-2 pr-3" : "pl-1 pr-2"
+          }`}
           aria-label="User menu"
         >
           <Avatar className="h-7 w-7 text-xs">
@@ -50,7 +52,7 @@ const UserMenu = ({ onLogout, compact = false }: UserMenuProps) => {
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuContent align="end" className="w-52 ml-2">
         {/* Show name/email in dropdown when compact (mobile) */}
         {compact && (
           <div className="px-3 py-2 border-b border-border">
